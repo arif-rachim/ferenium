@@ -1,6 +1,6 @@
-# Sate Suite
+# Ferenium
 
-Sate Suite is a rapid application development (RAD) framework designed to accelerate the creation of business applications, particularly ERP (Enterprise Resource Planning) systems. Built on React, it provides a visual drag-and-drop interface for designing application interfaces, along with a powerful signal-based system for connecting components and data.
+Ferenium is a rapid application development (RAD) framework designed to accelerate the creation of business applications, particularly ERP (Enterprise Resource Planning) systems. Built on React, it provides a visual drag-and-drop interface for designing application interfaces, along with a powerful signal-based system for connecting components and data.
 
 ## Key Features
 
