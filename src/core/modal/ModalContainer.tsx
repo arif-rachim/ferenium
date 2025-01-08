@@ -16,6 +16,7 @@ export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
                     left: 0,
                     width: '100%',
                     height: '100%',
+                    overflow : 'hidden'
                 }} key={p.id}>{p.element}</AutoFocusDiv>
             }
             return <AutoFocusDiv style={{
