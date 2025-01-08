@@ -341,7 +341,7 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                         }
                     }} key={col}>
                         <div style={{display: 'flex', justifyContent: 'center', gap: 5}}>
-                            <div style={{width: '100%', fontSize: 'smaller', fontWeight: 'bold'}}>
+                            <div title={title} style={{width: '100%', fontSize: 'smaller', fontWeight: 'bold',textOverflow:'ellipsis',overflow:'hidden'}}>
                                 {title}
                             </div>
                             {sortable && sortIndex >= 0 &&

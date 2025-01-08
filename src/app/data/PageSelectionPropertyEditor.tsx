@@ -33,7 +33,7 @@ export function PageSelectionPropertyEditor(props: { propertyName: string }) {
     })
     const style: CSSProperties = {
         width: 38,
-        flexShrink:0,
+        flexShrink: 0,
         height: 21,
         borderTopLeftRadius: 20,
         borderBottomLeftRadius: 20,

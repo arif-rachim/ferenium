@@ -13,7 +13,7 @@ import {PageInputSelector} from "../../data/PageInputSelector.tsx";
 import {AppDesignerContext} from "../AppDesignerContext.ts";
 import {MdOutlineCheckBox, MdOutlineCheckBoxOutlineBlank} from "react-icons/md";
 import {IoMdCheckbox} from "react-icons/io";
-import {queryGridColumnsTemporalColumns} from "./queryGridColumnsTemporalColumns.ts";
+import {queryGridColumnsTemporalColumnsSignal} from "./queryGridColumnsTemporalColumnsSignal.ts";
 
 const green = 'green';
 const red = 'red';
@@ -41,7 +41,7 @@ export function ConfigPropertyEditor(props: { propertyName: string }) {
         const updatedFormula = await showModal(closePanel => {
             return <AppDesignerContext.Provider value={context}>
                 <EditColumnConfigFormula closePanel={closePanel} formula={formula}
-                                         columns={queryGridColumnsTemporalColumns[container?.id ?? '']}
+                                         columns={queryGridColumnsTemporalColumnsSignal.get()[container?.id ?? '']}
                 />
             </AppDesignerContext.Provider>
         });
@@ -294,11 +294,12 @@ function EditColumnConfigFormula(props: {
                             borderBottom: isLastIndex ? BORDER : 'unset',
                         }}
                                            chipColor={'rgba(0,0,0,0)'}
-                                           onChange={(value) => {
+                                           onChange={(pageId,mapperFormula) => {
                                                setConfig(old => {
                                                    const clone = {...old};
                                                    clone[col] = {...clone[col]}
-                                                   clone[col].rendererPageId = value
+                                                   clone[col].rendererPageId = pageId;
+                                                   clone[col].rendererPageDataMapperFormula = mapperFormula;
                                                    return clone;
                                                })
                                            }}
@@ -306,14 +307,7 @@ function EditColumnConfigFormula(props: {
                                            bindWithMapper={true}
                                            mapperInputSchema={composeMapperInputSchema(columns)}
                                            mapperValue={conf.rendererPageDataMapperFormula}
-                                           mapperValueChange={(value) => {
-                                               setConfig(old => {
-                                                   const clone = {...old};
-                                                   clone[col] = {...clone[col]}
-                                                   clone[col].rendererPageDataMapperFormula = value
-                                                   return clone;
-                                               })
-                                           }}
+
                         />
                     </div>
 
@@ -405,5 +399,7 @@ function InputThreeStateCheckbox(props: {
 
 function composeMapperInputSchema(columns?: string[]) {
     columns = columns ?? [];
-    return `{${columns.map(c => `${c} ?: number | string | Uint8Array | null `).join(',')}}`
+    const inputSchema = `{${columns.map(c => `${c} ?: number | string | Uint8Array | null `).join(',')}}`
+    return `{cellValue?:string|number|null,rowIndex:number,rowData:${inputSchema},columnName:string,gridData:Array<${inputSchema}>}`
+
 }

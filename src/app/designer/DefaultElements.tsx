@@ -32,6 +32,7 @@ import {IoMdTime} from "react-icons/io";
 import {LuCalendarRange, LuTextCursorInput} from "react-icons/lu";
 import {RxButton} from "react-icons/rx";
 import {BsMenuButtonWide} from "react-icons/bs";
+import {PageSelectionWithMapperPropertyEditor} from "../data/PageSelectionWithMapperPropertyEditor.tsx";
 
 const ZodSqlValue = z.union([z.number(), z.string(), z.instanceof(Uint8Array), z.null()]);
 
@@ -214,7 +215,7 @@ export const DefaultElements: Record<string, Element> = {
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
             disabled: z.boolean().optional(),
-            type: z.enum(['text', 'number', 'password']).optional()
+            type: z.enum(['text', 'number', 'password','textarea']).optional()
         },
         component: (props, ref) => {
             const {name, onChange, onBlur, value, label, error, type, disabled, inputStyle} = props;
@@ -412,6 +413,7 @@ export const DefaultElements: Record<string, Element> = {
             })),
             valueToRowData: z.function().args(z.union([z.string(), z.number()]).optional()).returns(z.promise(z.record(z.union([z.number(), z.string()])))),
             rowDataToText: z.function().args(z.record(ZodSqlValue).optional()).returns(z.string()),
+            rowDataToRenderer: z.object({rendererPageId:z.string().optional(),rendererPageDataMapperFormula:z.string().optional()}),
             rowDataToValue: z.function().args(z.record(ZodSqlValue).optional()).returns(z.union([z.string(), z.number()])),
             filterable: z.boolean().optional(),
             sortable: z.boolean().optional(),
@@ -430,6 +432,7 @@ export const DefaultElements: Record<string, Element> = {
                 query,
                 itemToKey,
                 rowDataToText,
+                rowDataToRenderer,
                 onChange,
                 value,
                 label,
@@ -451,6 +454,7 @@ export const DefaultElements: Record<string, Element> = {
                                 query={query}
                                 itemToKey={itemToKey}
                                 rowDataToText={rowDataToText}
+                                rowDataToRenderer={rowDataToRenderer}
                                 onChange={onChange}
                                 value={value}
                                 label={label}
@@ -522,6 +526,10 @@ export const DefaultElements: Record<string, Element> = {
                     }
                     return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
                 })
+            },
+            rowDataToRenderer : {
+                label : 'rowDataToRenderer',
+                component: PageSelectionWithMapperPropertyEditor
             }
         }
     }),

@@ -5,7 +5,15 @@ import {Query, Table} from "../../app/designer/panels/database/getTables.ts";
 import {Signal} from "signal-polyfill";
 import {ErrorType} from "../ErrorType.ts";
 import {useEffect, useMemo} from "react";
-import {Application, Callable, Container, Fetcher, Page, Variable, VariableInstance} from "../../app/designer/AppDesigner.tsx";
+import {
+    Application,
+    Callable,
+    Container,
+    Fetcher,
+    Page,
+    Variable,
+    VariableInstance
+} from "../../app/designer/AppDesigner.tsx";
 
 export function useAppInitiator(props: LayoutBuilderProps & {
     startingPage?: string,

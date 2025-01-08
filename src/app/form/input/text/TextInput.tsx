@@ -1,5 +1,15 @@
 import {BORDER, BORDER_ERROR} from "../../../../core/style/Border.ts";
-import {CSSProperties, ForwardedRef, forwardRef, MutableRefObject, useEffect, useRef, useState} from "react";
+import type {ChangeEvent, ReactNode} from "react";
+import {
+    createElement,
+    CSSProperties,
+    ForwardedRef,
+    forwardRef,
+    MutableRefObject,
+    useEffect,
+    useRef,
+    useState
+} from "react";
 import {Label} from "../../Label.tsx";
 import {guid} from "../../../../core/utils/guid.ts";
 import {useFormInput} from "../../useFormInput.ts";
@@ -19,9 +29,10 @@ export const TextInput = forwardRef(function TextInput(props: {
         inputStyle?: CSSProperties,
         maxLength?: number,
         disabled?: boolean,
-        type?: 'text' | 'number' | 'password',
+        type?: 'text' | 'number' | 'password' | 'textarea',
         allCaps?: boolean,
-        inputRef?: MutableRefObject<HTMLInputElement | undefined>
+        inputRef?: MutableRefObject<HTMLInputElement | undefined>,
+        overlayElement?: ReactNode
     }, ref: ForwardedRef<HTMLLabelElement>) {
         const {
             value,
@@ -40,6 +51,7 @@ export const TextInput = forwardRef(function TextInput(props: {
             type,
             allCaps,
             disabled,
+            overlayElement
         } = props;
 
         const {
@@ -82,59 +94,77 @@ export const TextInput = forwardRef(function TextInput(props: {
             textAlign: type === 'number' ? 'right' : 'left',
             ...inputStyle,
         } as CSSProperties
+        const handleChange = (e:ChangeEvent<HTMLInputElement>) => {
+            if (inputDisabled) {
+                return;
+            }
 
+            let val = getValue(e) ?? '';
+            if (allCaps !== false && type !== 'password') {
+                val = val.toUpperCase();
+            }
+            setCursorLoc(e.target.selectionStart);
+            handleValueChange(val);
+        };
+        const handleFocus = () => {
+            if (onFocus) {
+                onFocus()
+            } else {
+                inputRef.current?.select()
+            }
+        };
+        const handleBlur = (e:ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (onBlur) {
+                onBlur(val);
+            }
+        }
+        const handleKeyDown = (e:ChangeEvent<HTMLInputElement>) => {
+            const val = getValue(e) ?? '';
+            if (onKeyDown) {
+                onKeyDown(val)
+            }
+        }
+        const handleKeyUp = (e:ChangeEvent<HTMLInputElement>) => {
+            const val = getValue(e) ?? '';
+            if (onKeyUp) {
+                onKeyUp(val)
+            }
+        }
+        const handleMouseDown = () => {
+            if (onMouseDown) {
+                onMouseDown()
+            }
+        }
+
+        const input = createElement(type === 'textarea' ? 'textarea' : 'input',{
+            ref : inputRef as MutableRefObject<HTMLInputElement>,
+            name : name,
+            disabled : inputDisabled,
+            value : overlayElement ? undefined : localValue ?? '',
+            maxLength,
+            type,
+            onChange : handleChange,
+            onFocus : handleFocus,
+            onBlur : handleBlur,
+            onKeyDown : handleKeyDown,
+            onKeyUp : handleKeyUp,
+            onMouseDown : handleMouseDown,
+            style : style,
+            autoComplete : guid()
+        })
         return <Label label={label} ref={ref} style={{minWidth: 0, ...defaultStyle}}>
-            <input
-                ref={inputRef as MutableRefObject<HTMLInputElement>}
-                name={name}
-                disabled={inputDisabled}
-                value={localValue ?? ''}
-                maxLength={maxLength}
-                type={type}
-                onChange={(e) => {
-                    if (inputDisabled) {
-                        return;
-                    }
-                    let val = getValue(e) ?? '';
-                    if (allCaps !== false && type !== 'password') {
-                        val = val.toUpperCase();
-                    }
-                    setCursorLoc(e.target.selectionStart);
-                    handleValueChange(val);
-                }}
-                onFocus={() => {
-                    if (onFocus) {
-                        onFocus()
-                    } else {
-                        inputRef.current?.select()
-                    }
-                }}
-                onBlur={(e) => {
-                    const val = e.target.value;
-                    if (onBlur) {
-                        onBlur(val);
-                    }
-                }}
-                onKeyDown={(e) => {
-                    const val = getValue(e) ?? '';
-                    if (onKeyDown) {
-                        onKeyDown(val)
-                    }
-                }}
-                onKeyUp={(e) => {
-                    const val = getValue(e) ?? '';
-                    if (onKeyUp) {
-                        onKeyUp(val)
-                    }
-                }}
-                onMouseDown={() => {
-                    if (onMouseDown) {
-                        onMouseDown()
-                    }
-                }}
-                style={style}
-                autoComplete={guid()}
-            />
+            {input}
+            {overlayElement &&
+                <div style={{
+                    position: 'absolute',
+                    bottom: 5,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection:'column'
+                }}>{overlayElement}</div>
+            }
+
             {localError && <div style={{
                 padding: '0 5px',
                 fontSize: 'small',

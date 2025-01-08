@@ -5,23 +5,23 @@ import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {PageSelector} from "./PageSelector.tsx";
 import {CSSProperties} from "react";
 import {PageSchemaMapper} from "./PageSchemaMapper.tsx";
+import {isEmpty} from "../../core/utils/isEmpty.ts";
 
 export function PageInputSelector(props: {
     value?: string,
-    onChange: (value?: string) => void,
+    onChange: (value?: string, mapperFormula?:string) => void,
     style?: CSSProperties,
     chipColor?: CSSProperties['backgroundColor'],
     hidePageName?: boolean,
     bindWithMapper?: boolean,
     mapperInputSchema?: string,
     mapperValue?: string,
-    mapperValueChange?: (value?: string) => void,
 }) {
     // if bind with mapper is set true then we need to introduce function to map the old code to new code
     const showModal = useShowModal();
     const context = useAppContext<AppDesignerContext>();
     const {allPagesSignal} = context;
-    const {value, onChange, bindWithMapper, mapperInputSchema, mapperValue, mapperValueChange} = props;
+    const {value, onChange, bindWithMapper, mapperInputSchema, mapperValue} = props;
     const page = allPagesSignal.get().find(p => p.id === value);
 
     async function showPageSelector() {
@@ -34,8 +34,14 @@ export function PageInputSelector(props: {
                 />
             </AppDesignerContext.Provider>
         });
-
-        if (result !== "cancel" && bindWithMapper === true && mapperInputSchema) {
+        if(result === 'cancel'){
+            return;
+        }
+        if (bindWithMapper === false || isEmpty(result)) {
+            onChange(result);
+            return;
+        }
+        if (mapperInputSchema) {
             const mapperFunction = await showModal<string | undefined | 'cancel'>(closePanel => {
                 return <AppDesignerContext.Provider value={context}>
                     <PageSchemaMapper
@@ -46,12 +52,9 @@ export function PageInputSelector(props: {
                     />
                 </AppDesignerContext.Provider>
             });
-            if (mapperFunction !== 'cancel' && mapperValueChange) {
-                mapperValueChange(mapperFunction);
+            if (mapperFunction !== 'cancel') {
+                onChange(result,mapperFunction);
             }
-        }
-        if (result !== 'cancel') {
-            onChange(result);
         }
     }
 

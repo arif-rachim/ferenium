@@ -1,5 +1,5 @@
 import {PiPackage, PiTrafficSignal, PiWebhooksLogo} from "react-icons/pi";
-import {LuFolderInput, LuSquareSigma} from "react-icons/lu";
+import {LuFolderInput, LuSquare} from "react-icons/lu";
 import {
     IoCodeSlashOutline,
     IoInformationCircleOutline,
@@ -41,7 +41,7 @@ import {ImInsertTemplate} from "react-icons/im";
 
 export const Icon = {
     State: PiTrafficSignal,
-    Computed: LuSquareSigma,
+    Computed: LuSquare,
     Effect: PiWebhooksLogo,
     Delete: IoTrashOutline,
     Detail: IoOpenOutline,

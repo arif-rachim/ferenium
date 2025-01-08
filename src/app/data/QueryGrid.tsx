@@ -3,7 +3,7 @@ import {CSSProperties, forwardRef, useEffect, useRef, useState} from "react";
 import {ColumnsConfig, SimpleTable, SimpleTableFooter} from "../designer/panels/database/TableEditor.tsx";
 import {Container} from "../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
-import {queryGridColumnsTemporalColumns} from "../designer/editor/queryGridColumnsTemporalColumns.ts";
+import {queryGridColumnsTemporalColumnsSignal} from "../designer/editor/queryGridColumnsTemporalColumnsSignal.ts";
 import {useForwardedRef} from "../../core/hooks/useForwardedRef.ts";
 
 export type QueryTypeResult = {
@@ -101,7 +101,12 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
     }, [query, refreshQueryKey, filter, sort, pageable, rowPerPage]);
 
     // this is to just store them in the temporal state to be used by editor
-    queryGridColumnsTemporalColumns[container.id] = queryResult.columns ?? [];
+    useEffect(() => {
+        const queryGridCols = queryGridColumnsTemporalColumnsSignal.get();
+        queryGridCols[container.id] = queryResult.columns ?? [];
+        queryGridColumnsTemporalColumnsSignal.set({...queryGridCols});
+    }, [queryResult]);
+
     useEffect(() => {
         if (propsRef.current.onQueryResultChange) {
             propsRef.current.onQueryResultChange(queryResult);

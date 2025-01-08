@@ -8,6 +8,7 @@ import TableEditor from "./TableEditor.tsx";
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useDeleteSqlLite} from "../../../../core/hooks/useDeleteSqlLite.ts";
 import {useSaveSqlLite} from "../../../../core/hooks/useSaveSqlLite.ts";
+import {useDownloadSqlLite} from "../../../../core/hooks/useDownloadSqlLite.ts";
 
 export function DatabasePanel() {
     const focusedItemSignal = useSignal<string>('');
@@ -26,7 +27,7 @@ export function DatabasePanel() {
 
     const deleteSqlLite = useDeleteSqlLite();
     const saveSqlLite = useSaveSqlLite();
-
+    const downloadSqlLite = useDownloadSqlLite();
     async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const files = e.target.files;
         if (files === null || files.length === 0) {
@@ -71,7 +72,26 @@ export function DatabasePanel() {
                     color: '#333',
                 }}
                 onClick={() => addSqlLite()}
-                icon={'IoMdAdd'}>{'Load SqlLite'}</Button>
+                icon={'IoIosCloudUpload'}>{'Load'}</Button>
+            <Button
+                style={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    justifyContent: 'center',
+                    padding: '0px 10px 2px 10px',
+                    background: 'rgba(0,0,0,0.0)',
+                    border: '1px solid rgba(0,0,0,0.2)',
+                    borderTopRightRadius: 0,
+                    borderBottomRightRadius: 0,
+                    borderBottomLeftRadius : 0,
+                    borderTopLeftRadius : 0,
+                    borderRight: 'unset',
+                    color: '#333',
+                }}
+                onClick={() => downloadSqlLite()}
+                icon={'IoMdDownload'}>{'Download'}</Button>
             <Button
                 style={{
                     flexGrow: 1,
@@ -88,7 +108,7 @@ export function DatabasePanel() {
                 }}
                 onClick={() => deleteSqlLite()} icon={'IoMdRemove'}
             >
-                {'Delete SqlLite'}
+                {'Delete'}
             </Button>
         </div>
         <input type={'file'}

@@ -1,7 +1,11 @@
-import {CSSProperties, ForwardedRef, forwardRef, useRef} from "react";
+import {CSSProperties, ForwardedRef, forwardRef, ReactNode, useContext, useMemo, useRef} from "react";
 import {TextInput} from "../text/TextInput.tsx";
 import {QueryGrid} from "../../../data/QueryGrid.tsx";
-import {QueryType} from "../../../designer/variable-initialization/AppVariableInitialization.tsx";
+import {
+    AppVariableInitializationContext,
+    FormulaDependencyParameter,
+    QueryType
+} from "../../../designer/variable-initialization/AppVariableInitialization.tsx";
 import {ColumnsConfig} from "../../../designer/panels/database/TableEditor.tsx";
 import {Container} from "../../../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
@@ -9,6 +13,12 @@ import {useShowPopUp} from "../../../../core/hooks/useShowPopUp.tsx";
 import {DivWithClickOutside} from "../../../designer/components/DivWithClickOutside.tsx"
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useFormInput} from "../../useFormInput.ts";
+import {utils} from "../../../../core/utils/utils.ts";
+import {
+    PageVariableInitializationContext
+} from "../../../designer/variable-initialization/PageVariableInitialization.tsx";
+import {PageViewer} from "../../../viewer/PageViewer.tsx";
+import {guid} from "../../../../core/utils/guid.ts";
 
 const defaultRowDataToText = (data: unknown) => {
     if (typeof data === "string") {
@@ -30,6 +40,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
     popupStyle?: CSSProperties,
     valueToRowData?: (value?: string | number) => Promise<Record<string, SqlValue>>,
     rowDataToText?: (data?: Record<string, SqlValue>) => string,
+    rowDataToRenderer?: { rendererPageId?: string, rendererPageDataMapperFormula?: string },
     rowDataToValue?: (data?: Record<string, SqlValue>) => string | number,
     itemToKey?: (data?: Record<string, SqlValue>) => string | number,
     filterable?: boolean,
@@ -49,6 +60,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         query,
         valueToRowData,
         rowDataToText,
+        rowDataToRenderer,
         rowDataToValue,
         itemToKey,
         name,
@@ -76,11 +88,49 @@ export const SelectInput = forwardRef(function SelectInput(props: {
     });
 
     const context = useAppContext();
+    const appSignal = useContext(AppVariableInitializationContext);
+    const pageSignal = useContext(PageVariableInitializationContext);
+
     const isDesignMode = 'uiDisplayModeSignal' in context && context.uiDisplayModeSignal.get() === 'design';
     const propsRef = useRef({valueToRowData, rowDataToText, rowDataToValue});
     propsRef.current = {valueToRowData, rowDataToText, rowDataToValue}
     const text = (rowDataToText ? rowDataToText(localValue) : defaultRowDataToText(localValue)) ?? '';
     const showPopup = useShowPopUp();
+    const rendererPageId = rowDataToRenderer?.rendererPageId ?? '';
+    const rendererPageDataMapperFormula = rowDataToRenderer?.rendererPageDataMapperFormula ?? '';
+    const localValueString = localValue ? JSON.stringify(localValue) : undefined;
+    const renderer:ReactNode|undefined = useMemo(() => {
+        const localValue = localValueString ? JSON.parse(localValueString) : undefined;
+        let renderer:ReactNode|undefined = undefined;
+        if (rendererPageId && rendererPageDataMapperFormula) {
+            let valueParams = {value: text};
+            try {
+                const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
+                const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
+                const fun = new Function('module', 'app', 'page', 'utils', rendererPageDataMapperFormula)
+                const module: {
+                    exports: (props: unknown) => unknown
+                } = {exports: (props: unknown) => console.log(props)};
+                fun.call(null, module, app, page, utils)
+                valueParams = module.exports(localValue) as unknown as typeof valueParams;
+            } catch (err) {
+                console.log(err);
+            }
+            const page = context.allPagesSignal.get().find(p => p.id === rendererPageId);
+            if (page) {
+                renderer = <PageViewer
+                    elements={context.elements}
+                    page={page!}
+                    appConfig={context.applicationSignal.get()}
+                    value={valueParams}
+                    navigate={context.navigate}
+                    key={guid()}
+                />
+            }
+        }
+        return renderer;
+    },[rendererPageId,rendererPageDataMapperFormula,localValueString]);
+
     return <TextInput ref={ref}
                       inputStyle={inputStyle}
                       style={style}
@@ -88,6 +138,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                       label={label}
                       value={text}
                       disabled={disabled}
+                      overlayElement={renderer}
                       onFocus={async () => {
                           if (disabled) {
                               return;

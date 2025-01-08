@@ -1,7 +1,7 @@
 import {useAddDashboardPanel} from "../designer/hooks/useAddDashboardPanel.tsx";
 import {ComponentPropertyEditor} from "../designer/panels/properties/ComponentPropertyEditor.tsx";
 import {Icon} from "../../core/components/icon/Icon.ts";
-import {queryGridColumnsTemporalColumns} from "../designer/editor/queryGridColumnsTemporalColumns.ts";
+import {queryGridColumnsTemporalColumnsSignal} from "../designer/editor/queryGridColumnsTemporalColumnsSignal.ts";
 import {z, ZodRawShape, ZodType, ZodTypeAny} from "zod";
 import {Container} from "../designer/AppDesigner.tsx";
 import type {Element} from "../designer/LayoutBuilderProps.ts";
@@ -51,6 +51,7 @@ export function createCustomPropertyEditor(callback: Callback) {
                 if (context.elements && container.type in context.elements) {
                     element = context.elements[container.type];
                 }
+                const queryGridColumnsTemporalColumns = queryGridColumnsTemporalColumnsSignal.get();
                 if (container?.id in queryGridColumnsTemporalColumns && queryGridColumnsTemporalColumns[container.id].length > 0) {
                     gridTemporalColumns = queryGridColumnsTemporalColumns[container.id] as string[];
                 }

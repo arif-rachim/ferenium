@@ -13,7 +13,7 @@
     margin: 0;
 }
 
-label, input, button, option, select, body {
+label, input, button, option, select, body, textarea {
     font-family: "Adobe Clean", Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 21px;
     font-weight: 400;
@@ -45,6 +45,10 @@ html, body, #root {
 }
 
 input:focus {
+    outline: none;
+}
+
+textarea:focus {
     outline: none;
 }
 

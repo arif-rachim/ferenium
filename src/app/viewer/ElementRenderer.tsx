@@ -4,9 +4,7 @@ import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {AppViewerContext} from "./context/AppViewerContext.ts";
 import {EmptyComponent} from "../designer/components/empty-component/EmptyComponent.tsx";
 import {CSSProperties, forwardRef, useEffect, useMemo, useRef, useState} from "react";
-import {
-    PropertyInitialization
-} from "../designer/panels/design/PropertyInitialization.tsx";
+import {PropertyInitialization} from "../designer/panels/design/PropertyInitialization.tsx";
 import ErrorBoundary from "../../core/components/ErrorBoundary.tsx";
 
 /**

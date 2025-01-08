@@ -40,7 +40,7 @@ export function PageSchemaMapper(props: {
         }
         return `{${type}}`;
     }, [allPagesSignal, pageId]);
-    const returnType = `(param:{cellValue?:string|number|null,rowIndex:number,rowData:${mapperInputSchema},columnName:string,gridData:Array<${mapperInputSchema}>}) => ${mapperOutputSchema}`;
+    const returnType = `(param:${mapperInputSchema}) => ${mapperOutputSchema}`;
 
 
     const allApplicationQueries = allApplicationQueriesSignal.get();
