@@ -26,14 +26,14 @@ export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
                 display: 'flex',
                 flexDirection: 'column',
                 backdropFilter: 'blur(0.5px)',
-                backgroundColor: 'rgba(0,0,0,0.1)',
+                background: 'rgba(0,0,0,0.1)',
                 width: '100%',
                 height: '100%',
                 alignItems: 'center',
                 justifyContent: justifyContent,
             }} key={p.id}>
                 <div style={{
-                    backgroundColor: '#FFF',
+                    background: '#FFF',
                     borderRadius: borderRadius,
                     boxShadow: '0 0px 10px -3px rgba(0,0,0,0.3),0 10px 10px 0px rgba(0,0,0,0.2)',
                     overflow: "hidden",

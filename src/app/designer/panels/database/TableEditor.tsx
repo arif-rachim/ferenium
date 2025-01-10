@@ -174,7 +174,7 @@ export function SimpleTableFooter(props: {
             alignItems: 'center',
             justifyContent: 'center',
             color: '#666',
-            backgroundColor: 'white'
+            background: 'white'
         }} onClick={() => onChange(value - 1)}
                 disabled={value === 1}
         >Prev
@@ -190,7 +190,7 @@ export function SimpleTableFooter(props: {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: isSelected ? 'white' : '#666',
-                backgroundColor: isSelected ? colors.blue : 'white'
+                background: isSelected ? colors.blue : 'white'
             }} key={page}
                            onClick={() => onChange(page)}
                            disabled={page === value}
@@ -205,7 +205,7 @@ export function SimpleTableFooter(props: {
             alignItems: 'center',
             justifyContent: 'center',
             color: '#666',
-            backgroundColor: 'white'
+            background: 'white'
         }} onClick={() => onChange(value + 1)}
                 disabled={value === totalPages}
         >Next
@@ -323,7 +323,7 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                     return <div style={{
                         display: hide ? 'none' : 'table-cell',
                         borderBottom: BORDER,
-                        backgroundColor: '#F2F2F2',
+                        background: '#F2F2F2',
                         color: "black",
                         padding: '2px 0px 2px 10px',
                         minWidth,
@@ -378,7 +378,7 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                         return <div style={{
                             display: hide ? 'none' : 'table-cell',
                             borderBottom: BORDER,
-                            backgroundColor: '#F2F2F2',
+                            background: '#F2F2F2',
                             color: "black",
                             minWidth,
                             maxWidth

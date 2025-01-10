@@ -1,5 +1,5 @@
 import {element, Element} from "./LayoutBuilderProps.ts";
-import {z, ZodFunction, ZodObject, ZodRawShape, ZodTuple, ZodType, ZodTypeAny} from "zod";
+import {z, ZodFunction, ZodObject, ZodOptional, ZodRawShape, ZodTuple, ZodType, ZodTypeAny} from "zod";
 import {CSSProperties, ForwardedRef, forwardRef, LegacyRef, MutableRefObject} from "react";
 import {Icon} from "../../core/components/icon/Icon.ts";
 import {Button} from "../button/Button.tsx";
@@ -172,13 +172,17 @@ export const DefaultElements: Record<string, Element> = {
                     if (element) {
                         returnTypeZod = element.property[propertyName]
                     }
+
                     if ('schema' in container.properties && container.properties.schema && container.properties.schema.formula) {
                         try {
                             const fun = new Function('module', 'z', container.properties.schema.formula);
                             const module: { exports: ZodType | undefined } = {exports: undefined};
                             fun.apply(null, [module, z]);
                             if (module.exports) {
-                                const voSchema = module.exports as ZodObject<ZodRawShape>;
+                                let voSchema = module.exports as ZodObject<ZodRawShape>;
+                                if( voSchema instanceof ZodOptional){
+                                    voSchema = voSchema._def.innerType as ZodObject<ZodRawShape>
+                                }
                                 const shapes = Object.keys(voSchema._def.shape() as object) as Array<string>;
                                 const errorsSchema = z.object(shapes.reduce((result, key) => {
                                     result[key] = z.string().optional();
@@ -215,7 +219,7 @@ export const DefaultElements: Record<string, Element> = {
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
             disabled: z.boolean().optional(),
-            type: z.enum(['text', 'number', 'password','textarea']).optional()
+            type: z.enum(['text', 'number', 'password', 'textarea']).optional()
         },
         component: (props, ref) => {
             const {name, onChange, onBlur, value, label, error, type, disabled, inputStyle} = props;
@@ -413,7 +417,10 @@ export const DefaultElements: Record<string, Element> = {
             })),
             valueToRowData: z.function().args(z.union([z.string(), z.number()]).optional()).returns(z.promise(z.record(z.union([z.number(), z.string()])))),
             rowDataToText: z.function().args(z.record(ZodSqlValue).optional()).returns(z.string()),
-            rowDataToRenderer: z.object({rendererPageId:z.string().optional(),rendererPageDataMapperFormula:z.string().optional()}),
+            rowDataToRenderer: z.object({
+                rendererPageId: z.string().optional(),
+                rendererPageDataMapperFormula: z.string().optional()
+            }),
             rowDataToValue: z.function().args(z.record(ZodSqlValue).optional()).returns(z.union([z.string(), z.number()])),
             filterable: z.boolean().optional(),
             sortable: z.boolean().optional(),
@@ -527,8 +534,8 @@ export const DefaultElements: Record<string, Element> = {
                     return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
                 })
             },
-            rowDataToRenderer : {
-                label : 'rowDataToRenderer',
+            rowDataToRenderer: {
+                label: 'rowDataToRenderer',
                 component: PageSelectionWithMapperPropertyEditor
             }
         }
@@ -576,17 +583,17 @@ export const DefaultElements: Record<string, Element> = {
             label: z.string(),
             style: cssPropertiesSchema,
             icon: iconSchema,
-            type: z.enum(['button', 'submit', 'reset']).optional()
+            type: z.enum(['button', 'submit', 'reset']).optional(),
+            hidden: z.boolean().optional()
         },
         component: (props, ref) => {
-            const {onClick, style, type, icon} = props;
+            const {onClick, style, type,hidden, icon} = props;
             let {label} = props;
             label = label ?? 'Add label here';
             delete style.background;
-            delete style.backgroundColor;
 
             return <Button style={style} ref={ref as LegacyRef<HTMLButtonElement>}
-                           onClick={onClick} type={type} icon={icon}>
+                           onClick={onClick} type={type} icon={icon} hidden={hidden}>
                 {label}
             </Button>
         }

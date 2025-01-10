@@ -115,7 +115,7 @@ export function VariableEditorPanel(props: {
         overflow: 'auto',
         flexGrow: 1,
     }}>
-        <div style={{display: 'flex', gap: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.02)'}}>
+        <div style={{display: 'flex', gap: 10, padding: 10, background: 'rgba(0,0,0,0.02)'}}>
             <LabelContainer label={'Name : '}
                             style={{flexGrow: 1, flexBasis: '50%', flexDirection: 'row', alignItems: 'center', gap: 10}}
                             styleLabel={{fontStyle: 'italic'}}>

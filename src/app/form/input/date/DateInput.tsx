@@ -1,6 +1,6 @@
 import {CSSProperties, ForwardedRef, forwardRef, useRef} from "react";
 import {TextInput} from "../text/TextInput.tsx";
-import {format_ddMMMyyyy, toDate} from "../../../../core/utils/dateFormat.ts";
+import {dateToString, format_ddMMMyyyy, toDate} from "../../../../core/utils/dateFormat.ts";
 import {DatePicker} from "./DatePicker.tsx";
 import {isDate} from "./isDate.ts";
 import {useShowPopUp} from "../../../../core/hooks/useShowPopUp.tsx";

@@ -23,12 +23,12 @@ import {useSignalEffect} from "react-hook-signal";
 export const Button = forwardRef(function Button(props: DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> & {
     icon?: IconType
 }, ref) {
-    const {style, type: typeProps, onClick, icon,disabled, ...properties} = props;
+    const {style, type: typeProps, onClick, icon, disabled, hidden, ...properties} = props;
     const Icon = icon && icon in Io ? Io[icon] : undefined;
     const type = typeProps ?? 'button';
     const {ref: localRef, isHovered, isOnPress} = useHoveredOnPress(ref as RefObject<HTMLElement>);
-    const [isBusy,setIsBusy] = useState<boolean>(false);
-    const [isDisabled,setIsDisabled] = useState<boolean>(disabled === true);
+    const [isBusy, setIsBusy] = useState<boolean>(false);
+    const [isDisabled, setIsDisabled] = useState<boolean>(disabled === true);
     const formContext = useContext(FormContext);
     const buttonDisabled = isDisabled || isBusy;
 
@@ -44,9 +44,9 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
     })
     const buttonStyle: CSSProperties = useMemo(() => {
         const defaultStyle: CSSProperties = {
-            opacity : buttonDisabled ? 0.8 : 1,
+            opacity: buttonDisabled ? 0.8 : 1,
             border: type === 'submit' ? BORDER_NONE : BORDER,
-            backgroundColor: type === 'submit' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
+            background: type === 'submit' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
             color: type === 'submit' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
             borderRadius: 20,
             boxShadow: buttonDisabled ? 'unset' : isOnPress ? '0px 5px 5px -3px rgba(0,0,0,0.5) inset' : isHovered ? '0px 5px 8px -3px rgba(255,255,255,0.2) inset' : 'unset',
@@ -56,7 +56,7 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
             paddingRight: isNumber(style?.paddingRight) && style?.paddingRight > 10 ? style?.paddingRight : 10,
             paddingTop: style?.paddingTop,
             paddingBottom: isNumber(style?.paddingBottom) && style?.paddingBottom > 3 ? style?.paddingBottom : 3,
-            display: 'flex',
+            display: hidden ? 'none' : 'flex',
             flexDirection: 'row',
             alignItems: 'center',
             gap: 5
@@ -75,7 +75,8 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
             onClick(event)
         }
     }} disabled={buttonDisabled} {...properties}>
-        {Icon && <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center',paddingTop:1}}><Icon/></div>}
+        {Icon &&
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1}}><Icon/></div>}
         {props.children && <div style={{display: 'flex', flexDirection: 'column'}}>
             {props.children}
         </div>}
@@ -83,6 +84,6 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
     </button>
 });
 
-function isNumber(val:unknown):val is number {
+function isNumber(val: unknown): val is number {
     return val !== null && val !== undefined && typeof val === 'number';
 }

@@ -14,7 +14,7 @@ export function PropertyEditorComponent(props:{isFormulaEmpty: boolean, onClick:
             justifyContent: 'center',
             borderTopRightRadius: 0,
             borderBottomRightRadius: 0,
-            backgroundColor: isFormulaEmpty ? 'rgba(255,255,255,0.9)' : green,
+            background: isFormulaEmpty ? 'rgba(255,255,255,0.9)' : green,
             color: isFormulaEmpty ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)',
             padding: '0px 5px'
         }} onClick={onClick}><Icon.Formula style={{fontSize: 16}}/></Button>
@@ -23,7 +23,7 @@ export function PropertyEditorComponent(props:{isFormulaEmpty: boolean, onClick:
             padding: '0px 5px',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(0,0,0,0.05)',
+            background: 'rgba(0,0,0,0.05)',
             border: BORDER,
             borderTopRightRadius: 20,
             borderBottomRightRadius: 20

@@ -1,4 +1,5 @@
-import type {BindParams, Database, SqlValue} from "sql.js";
+import type {BindParams, Database, ParamsObject, SqlValue} from "sql.js";
+import {utils} from "../../../../core/utils/utils.ts";
 
 const defaultFileName = 'database.db';
 const debug: boolean = false;
@@ -148,6 +149,32 @@ async function persistDb(fileName:string){
     }
 }
 
+function cleanUpParams(params: BindParams):BindParams {
+    if(Array.isArray(params)){
+        return params.map((v:unknown) => {
+            if(v instanceof Date){
+                return utils.dateToString(v)
+            }
+            return v;
+        }) as SqlValue[]
+    }
+    if(typeof params === 'object'){
+        return Object.keys(params).reduce((result,key) => {
+            if(params && key in params){
+                const v = params[key] as unknown;
+                if(v instanceof Date){
+                    result[key] = utils.dateToString(v)
+                }else{
+                    result[key] = v;
+                }
+            }
+            return result;
+        },{}) as ParamsObject;
+    }
+
+    return params;
+}
+
 async function executeQuery({query, params, fileName}: {
     query: string,
     params?: BindParams,
@@ -160,8 +187,9 @@ async function executeQuery({query, params, fileName}: {
     log('[ExecuteQuery]', query)
     const db = await getDatabase(fileName);
     if (db !== undefined) {
-        log('[ExecuteQuery] invoking ', query, params)
         try {
+            params = cleanUpParams(params)
+            log('[ExecuteQuery] invoking ', query, params)
             const result = db.exec(query, params);
             if (result.length > 0) {
                 const {columns, values} = result.pop()!;

@@ -114,7 +114,9 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                 fun.call(null, module, app, page, utils)
                 valueParams = module.exports(localValue) as unknown as typeof valueParams;
             } catch (err) {
-                console.log(err);
+                console.group(`[${label}] There was problem when getting initializing the variable`)
+                console.error(err);
+                console.groupEnd();
             }
             const page = context.allPagesSignal.get().find(p => p.id === rendererPageId);
             if (page) {

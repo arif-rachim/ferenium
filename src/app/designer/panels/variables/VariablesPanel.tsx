@@ -30,7 +30,7 @@ function RenderVariable(props: {
         display: 'flex',
         gap: 5,
         padding: '0px 10px 2px 10px',
-        backgroundColor: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
+        background: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
     }} key={variable.id} onClick={() => {
         focusedItemSignal.set(variable.id);
         editVariable('state', variable).then()

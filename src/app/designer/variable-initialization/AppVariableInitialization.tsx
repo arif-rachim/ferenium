@@ -65,7 +65,6 @@ export function AppVariableInitialization(props: PropsWithChildren) {
         validateVariables(variableInstances, variableValidators, errorMessage);
     });
 
-
     const appScopesSignal = useComputed(() => {
 
         const allApplicationVariablesInstance = allApplicationVariablesSignalInstance.get();

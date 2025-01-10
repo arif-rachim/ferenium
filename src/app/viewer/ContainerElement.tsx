@@ -37,6 +37,9 @@ export function ContainerElement(props: { container: Container }) {
         ['data-element-id']: container?.id ?? '',
         container: container
     };
+
+
+
     if (elements && elements[container?.type]) {
         return <ElementRenderer container={container} elementProps={elementProps}/>
     }

@@ -37,14 +37,18 @@ export function initiateEffect(props: {
                 try {
                     func.call(null, ...instances);
                 } catch (err) {
+                    console.group('There was a problem when running the Effect. Please check the error message below');
                     console.error(err);
                     console.log(v.functionCode);
+                    console.groupEnd();
                 }
             });
             destructorCallbacks.push(destructor);
         } catch (err) {
+            console.group('There was a problem when initiating the Effect. Please check the error message below');
             console.error(err);
             console.log(v.functionCode);
+            console.groupEnd();
         }
     }
     return () => {

@@ -35,7 +35,7 @@ export default function CollapsibleLabelContainer(props: PropsWithChildren<{
                                flexShrink: 0,
                                borderBottom: BORDER,
                                padding: '5px 10px',
-                               backgroundColor: 'rgba(0,0,0,0.02)',
+                               background: 'rgba(0,0,0,0.02)',
                                flexDirection: 'row',
                                display: 'flex',
                                alignItems: 'center',

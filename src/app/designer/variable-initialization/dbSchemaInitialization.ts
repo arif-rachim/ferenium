@@ -1,6 +1,6 @@
 import {Table} from "../panels/database/getTables.ts";
 import sqlite from "../panels/database/sqlite.ts";
-import {SqlValue} from "sql.js";
+import {BindParams, ParamsObject, SqlValue} from "sql.js";
 import {zodSchemaToJson} from "../../../core/utils/zodSchemaToJson.ts";
 
 export function composeTableSchema(table: Table) {
@@ -55,12 +55,14 @@ export function composeDbSchema(allTables: Array<Table>) {
     }
     const schema = `z.object({ ${dbSchema.join(',')} })`;
     return `
-type DbSchema = ${zodSchemaToJson(schema)} 
+type DbSchema = ${zodSchemaToJson(schema)}
+type BindParams = Array<string|number|null> | Record<string, string|number|null> 
 declare const db:{
     record:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<DbSchema[N]>,
     remove:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<DbSchema[N]>,
     read:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<Array<DbSchema[N]>>,
     find:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<DbSchema[N]|undefined>,
+    query : (query:string,params:BindParams) => Promise<Array<Record<string,string|number|null>>>,
     commit: () => Promise<void>
 };
 `
@@ -94,8 +96,12 @@ export function dbSchemaInitialization() {
 
     async function read(tableName: string, item: Record<string, SqlValue>): Promise<Array<Record<string, SqlValue>>> {
         const whereCondition = Object.keys(item).map(k => `${k} = ?`).join(' AND ').trim();
-        const query = `SELECT * FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''}`
-        const queryResult = await sqlite({type: 'executeQuery', query: query, params: Object.values(item)});
+        const qry = `SELECT * FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''}`
+        return query(qry,Object.values(item));
+    }
+
+    async function query(query:string,params:BindParams): Promise<Array<Record<string, SqlValue>>> {
+        const queryResult = await sqlite({type: 'executeQuery', query, params});
         if (queryResult.errors) {
             console.error(queryResult.errors);
             return [];
@@ -131,6 +137,7 @@ export function dbSchemaInitialization() {
         remove,
         read,
         commit,
+        query,
         find
     }
 }

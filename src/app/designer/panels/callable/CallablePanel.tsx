@@ -103,7 +103,7 @@ export function CallablePanel() {
                         display: 'flex',
                         gap: 5,
                         padding: '0px 10px 2px 15px',
-                        backgroundColor: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
+                        background: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
                     }} key={callable.id} onClick={() => {
                         focusedItemSignal.set(callable.id);
                         editCallable(callable, 'page')
@@ -145,7 +145,7 @@ export function CallablePanel() {
                         display: 'flex',
                         gap: 5,
                         padding: '0px 10px 2px 15px',
-                        backgroundColor: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
+                        background: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
                     }} key={callable.id} onClick={() => {
                         focusedItemSignal.set(callable.id);
                         editCallable(callable, 'application')

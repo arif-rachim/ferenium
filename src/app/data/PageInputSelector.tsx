@@ -11,7 +11,7 @@ export function PageInputSelector(props: {
     value?: string,
     onChange: (value?: string, mapperFormula?:string) => void,
     style?: CSSProperties,
-    chipColor?: CSSProperties['backgroundColor'],
+    chipColor?: CSSProperties['background'],
     hidePageName?: boolean,
     bindWithMapper?: boolean,
     mapperInputSchema?: string,
@@ -41,20 +41,18 @@ export function PageInputSelector(props: {
             onChange(result);
             return;
         }
-        if (mapperInputSchema) {
-            const mapperFunction = await showModal<string | undefined | 'cancel'>(closePanel => {
-                return <AppDesignerContext.Provider value={context}>
-                    <PageSchemaMapper
-                        closePanel={closePanel}
-                        value={mapperValue}
-                        pageId={result}
-                        mapperInputSchema={mapperInputSchema}
-                    />
-                </AppDesignerContext.Provider>
-            });
-            if (mapperFunction !== 'cancel') {
-                onChange(result,mapperFunction);
-            }
+        const mapperFunction = await showModal<string | undefined | 'cancel'>(closePanel => {
+            return <AppDesignerContext.Provider value={context}>
+                <PageSchemaMapper
+                    closePanel={closePanel}
+                    value={mapperValue}
+                    pageId={result}
+                    mapperInputSchema={mapperInputSchema}
+                />
+            </AppDesignerContext.Provider>
+        });
+        if (mapperFunction !== 'cancel') {
+            onChange(result,mapperFunction);
         }
     }
 
@@ -73,7 +71,7 @@ export function PageInputSelector(props: {
         onClick={showPageSelector}>
         {page && props.hidePageName !== true &&
             <div style={{
-                backgroundColor: props.chipColor ? props.chipColor : 'rgba(0,0,0,0.1)',
+                background: props.chipColor ? props.chipColor : 'rgba(0,0,0,0.1)',
                 borderRadius: 5,
                 borderBottom: 'unset',
                 flexGrow: 1,

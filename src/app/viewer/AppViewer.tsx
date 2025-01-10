@@ -27,7 +27,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
         background: 'linear-gradient(0deg,#666,#555)'
     }}>
         <div style={{
-            backgroundColor: '#444',
+            background: '#444',
             borderRadius: 20,
             boxShadow: '0px 15px 20px -4px rgba(0,0,0,0.5)',
             maxWidth: 1200,
@@ -49,7 +49,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                                     display: 'flex',
                                     flexDirection: 'column',
                                     overflow: 'auto',
-                                    backgroundColor: 'white',
+                                    background: 'white',
                                     borderRadius: 15,
                                     position: 'relative'
                                 }}>

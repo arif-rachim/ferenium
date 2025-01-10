@@ -16,7 +16,7 @@ export function DraggableItem(props: {
                 style={{
                     padding: 5,
                     borderRadius: 5,
-                    backgroundColor: 'white',
+                    background: 'white',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',

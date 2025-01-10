@@ -62,7 +62,7 @@ export function ConfigPropertyEditor(props: { propertyName: string }) {
             justifyContent: 'center',
             borderTopRightRadius: 0,
             borderBottomRightRadius: 0,
-            backgroundColor: isFormulaEmpty ? 'rgba(255,255,255,0.9)' : green,
+            background: isFormulaEmpty ? 'rgba(255,255,255,0.9)' : green,
             color: isFormulaEmpty ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)',
             padding: '0px 5px'
         }} onClick={updateTableConfig}><Icon.Formula style={{fontSize: 16}}/></Button>
@@ -71,7 +71,7 @@ export function ConfigPropertyEditor(props: { propertyName: string }) {
             padding: '0px 5px',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(0,0,0,0.05)',
+            background: 'rgba(0,0,0,0.05)',
             border: BORDER,
             borderTopRightRadius: 20,
             borderBottomRightRadius: 20
@@ -157,7 +157,7 @@ function EditColumnConfigFormula(props: {
         }}>
 
         <div style={{display: 'table', overflowY: 'auto', height: '100%'}}>
-            <div style={{display: 'table-row', position: 'sticky', top: 0, backgroundColor: 'white'}}>
+            <div style={{display: 'table-row', position: 'sticky', top: 0, background: 'white'}}>
                 <div style={{display: 'table-cell', padding: '0px 5px'}}>
                 </div>
                 <div style={{display: 'table-cell', padding: '10px 5px'}}>

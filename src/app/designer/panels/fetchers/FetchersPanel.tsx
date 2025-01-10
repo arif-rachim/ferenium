@@ -28,7 +28,7 @@ function RenderFetcher(props: {
         display: 'flex',
         gap: 5,
         padding: '0px 10px 2px 10px',
-        backgroundColor: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
+        background: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
     }} key={fetcher.id} onClick={() => {
         focusedItemSignal.set(fetcher.id);
         editFetcher(fetcher)

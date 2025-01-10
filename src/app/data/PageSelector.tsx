@@ -49,7 +49,7 @@ export function PageSelector(props: {
         <div style={{
             borderBottom: BORDER,
             padding: 20,
-            backgroundColor: 'rgba(0,0,0,0.05)',
+            background: 'rgba(0,0,0,0.05)',
             display: 'flex',
             alignItems: 'center',
             gap: 5
@@ -71,7 +71,7 @@ export function PageSelector(props: {
             gap: 10,
             borderTop: BORDER,
             padding: 20,
-            backgroundColor: 'rgba(0,0,0,0.05)'
+            background: 'rgba(0,0,0,0.05)'
         }}>
             <Button onClick={() => {
                 const nextPage = selectedPage.get();

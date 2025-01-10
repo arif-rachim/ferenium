@@ -101,6 +101,8 @@ export function useAppInitiator(props: LayoutBuilderProps & {
     }, [activePageIdSignal, allErrorsSignal, allPagesSignal, uiDisplayModeSignal, variableInitialValueSignal]);
 
 
+
+
     return {
         applicationSignal,
         allApplicationCallablesSignal,

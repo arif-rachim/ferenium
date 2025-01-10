@@ -49,9 +49,7 @@ export function ComponentPropertyEditor(props: {
     const isModified = useSignal<boolean>(false)
     const update = useUpdateDragContainer();
 
-    // let's find parents form
     const parentFormSchema = getParentFormSchema(selectedDragContainer, context.allContainersSignal.get())
-
     if (returnTypeZod === undefined) {
         return <></>
     }
@@ -163,6 +161,7 @@ function createNewProps(): ContainerPropertyType {
 function getParentFormSchema(selectedContainer: Container, allContainers: Container[]) {
     const container = allContainers.find(i => i.id === selectedContainer?.parent);
     if (container) {
+
         if (container.type !== 'form') {
             if (container.parent) {
                 return getParentFormSchema(container, allContainers);
@@ -171,6 +170,9 @@ function getParentFormSchema(selectedContainer: Container, allContainers: Contai
         }
         if ('schema' in container.properties && container.properties.schema && container.properties.schema.formula) {
             try {
+                if(container.properties.schema.formula.indexOf('module.exports')<0){
+                    console.log("form schema require to have `module.exports` seems you are missing it");
+                }
                 const fun = new Function('module', 'z', container.properties.schema.formula);
                 const module: { exports: ZodType | undefined } = {exports: undefined};
                 fun.apply(null, [module, z]);

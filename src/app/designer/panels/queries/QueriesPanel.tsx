@@ -103,7 +103,7 @@ export function QueriesPanel() {
                         display: 'flex',
                         gap: 5,
                         padding: '0px 10px 2px 10px',
-                        backgroundColor: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
+                        background: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
                     }} key={query.id} onClick={() => {
                         focusedItemSignal.set(query.id);
                         editQuery(query, 'page');
@@ -147,7 +147,7 @@ export function QueriesPanel() {
                         display: 'flex',
                         gap: 5,
                         padding: '0px 10px 2px 10px',
-                        backgroundColor: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
+                        background: isFocused ? 'rgba(0,0,0,0.1)' : 'unset'
                     }} key={query.id} onClick={() => {
                         focusedItemSignal.set(query.id);
                         editQuery(query, 'application');

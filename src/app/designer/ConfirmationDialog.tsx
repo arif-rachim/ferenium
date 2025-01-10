@@ -26,7 +26,7 @@ export function ConfirmationDialog(props: {
         <div style={{
             padding: '10px 20px',
             borderBottom: BORDER,
-            backgroundColor: 'rgba(0,0,0,0.05)',
+            background: 'rgba(0,0,0,0.05)',
             display: 'flex',
             gap: 5,
             alignItems: 'center'
@@ -42,7 +42,7 @@ export function ConfirmationDialog(props: {
             gap: 5,
             borderTop: BORDER,
             padding: '10px 20px',
-            backgroundColor: 'rgba(0,0,0,0.05)'
+            background: 'rgba(0,0,0,0.05)'
         }}>
             {buttons.map((button) => {
                 return <Button key={button.id} onClick={() => props.closePanel(button.id)}
