@@ -1,7 +1,7 @@
 import type {MutableRefObject} from "react";
 import {useRef} from "react";
 
-const debug:boolean = false;
+const debug:boolean = true;
 export function whichChange(params:{label: string, props: Record<string, unknown> | undefined, ref: MutableRefObject<Record<string, unknown> | undefined>}) {
     const {ref,label,props} = params;
     const previousValue = ref.current ?? {};
