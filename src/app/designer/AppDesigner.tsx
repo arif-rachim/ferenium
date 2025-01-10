@@ -22,7 +22,7 @@ import {CallablePanel} from "./panels/callable/CallablePanel.tsx";
 import {QueriesPanel} from "./panels/queries/QueriesPanel.tsx";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
-import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
+import {useAppInitiator} from "../../core/hooks/useAppInitiator.tsx";
 import {PageVariableInitialization} from "./variable-initialization/PageVariableInitialization.tsx";
 
 export type VariableType = 'state' | 'computed' | 'effect';
@@ -308,71 +308,7 @@ function ComponentTreeNode(props: { container?: Container, paddingLeft?: number 
 }
 
 function AppDesignerProvider(props: PropsWithChildren<LayoutBuilderProps>) {
-    const {
-        applicationSignal,
-        allApplicationCallablesSignal,
-        allPagesSignal,
-        allTablesSignal,
-        activePageIdSignal,
-        activeDropZoneIdSignal,
-        selectedDragContainerIdSignal,
-        hoveredDragContainerIdSignal,
-        uiDisplayModeSignal,
-        variableInitialValueSignal,
-        allApplicationVariablesSignalInstance,
-        allPageVariablesSignalInstance,
-        allErrorsSignal,
-        allApplicationVariablesSignal,
-        allPageVariablesSignal,
-        allContainersSignal,
-        allPageFetchersSignal,
-        allApplicationFetchersSignal,
-        allPageCallablesSignal,
-        allApplicationQueriesSignal,
-        allPageQueriesSignal,
-        allCallablesSignal,
-        allVariablesSignalInstance,
-        allVariablesSignal,
-        allFetchersSignal,
-        allQueriesSignal,
-        navigate
-    } = useAppInitiator(props);
-    const context: AppDesignerContext = {
-        applicationSignal,
-        allApplicationCallablesSignal,
-        allApplicationVariablesSignal,
-        allApplicationVariablesSignalInstance,
-        allApplicationFetchersSignal,
-        allApplicationQueriesSignal,
-
-        allTablesSignal,
-        allPagesSignal,
-        allContainersSignal,
-
-        activePageIdSignal,
-
-        allPageFetchersSignal,
-        allPageCallablesSignal,
-        allPageVariablesSignal,
-        variableInitialValueSignal,
-        allPageVariablesSignalInstance,
-        allPageQueriesSignal,
-
-        elements: {...DefaultElements, ...props.elements},
-        allErrorsSignal: allErrorsSignal,
-        allCallablesSignal,
-        allVariablesSignalInstance,
-        allVariablesSignal,
-        allFetchersSignal,
-        allQueriesSignal,
-
-        // designer mode
-        hoveredDragContainerIdSignal: hoveredDragContainerIdSignal,
-        selectedDragContainerIdSignal: selectedDragContainerIdSignal,
-        activeDropZoneIdSignal: activeDropZoneIdSignal,
-        uiDisplayModeSignal: uiDisplayModeSignal,
-        navigate
-    }
+    const context = useAppInitiator({...props, elements: {...DefaultElements, ...props.elements}})
     return <AppDesignerContext.Provider value={context}>
         {props.children}
     </AppDesignerContext.Provider>

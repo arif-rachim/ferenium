@@ -31,7 +31,9 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         allPageCallablesSignal,
         allPageFetchersSignal,
         variableInitialValueSignal,
-        navigate
+        navigate,
+        navigatePanel,
+        closePanel
     } = useAppContext();
 
     const alertBox = useModalBox();
@@ -79,6 +81,8 @@ export function PageVariableInitialization(props: PropsWithChildren) {
             app,
             page,
             navigate,
+            navigatePanel,
+            closePanel,
             alertBox,
             tools
         })

@@ -29,7 +29,7 @@ export function initiateEffect(props: {
         if (v.type !== 'effect') {
             continue;
         }
-        const params = ['navigate', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', `${v.functionCode}`];
+        const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', `${v.functionCode}`];
         try {
             const func = new Function(...params) as (...args: unknown[]) => void
             const destructor = effect(() => {

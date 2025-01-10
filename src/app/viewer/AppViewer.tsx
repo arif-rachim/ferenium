@@ -6,7 +6,7 @@ import {AppViewerContext} from "./context/AppViewerContext.ts";
 import {ContainerElement} from "./ContainerElement.tsx";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
 import {DefaultElements} from "../designer/DefaultElements.tsx";
-import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
+import {useAppInitiator} from "../../core/hooks/useAppInitiator.tsx";
 import {PageVariableInitialization} from "../designer/variable-initialization/PageVariableInitialization.tsx";
 import {ModalProvider} from "../../core/modal/ModalProvider.tsx";
 import {PropsWithChildren, useState} from "react";
@@ -58,8 +58,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
 }
 
 function AppViewerProvider(props: PropsWithChildren<LayoutBuilderProps & { startingPage: string }>) {
-    const appContext = useAppInitiator(props);
-    const context = {...appContext, elements: {...DefaultElements, ...props.elements}} as AppViewerContext;
+    const context = useAppInitiator({...props,elements:{...DefaultElements, ...props.elements}}) as AppViewerContext
     return <AppViewerContext.Provider value={context}>
         {props.children}
     </AppViewerContext.Provider>

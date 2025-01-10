@@ -92,6 +92,8 @@ function composeNavigation(allPages: Array<Page>) {
     return `
 type Navigate = {${type}};
 declare const navigate : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => void;
+declare const navigatePanel : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => Promise<any>;
+declare const closePanel : (payload?:any) => void;
 `
 }
 

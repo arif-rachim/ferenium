@@ -42,7 +42,9 @@ export interface AppViewerContext {
     allCallablesSignal: Signal.Computed<Array<Callable>>,
 
     elements: LayoutBuilderProps['elements'],
-    navigate: (path: string, param?: unknown) => Promise<void>
+    navigate: (path: string, param?: unknown) => Promise<void>,
+    navigatePanel : (path: string, param?: unknown) => Promise<unknown>,
+    closePanel : (payload?:unknown) => void
 }
 
 

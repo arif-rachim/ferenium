@@ -29,7 +29,9 @@ export function PropertyInitialization(props: {
         elements: elementsLib,
         allVariablesSignal,
         allVariablesSignalInstance,
-        navigate
+        navigate,
+        navigatePanel,
+        closePanel
     } = context;
 
     const alertBox = useModalBox();
@@ -63,12 +65,12 @@ export function PropertyInitialization(props: {
                 const allVariables = allVariablesSignal.get();
                 const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
 
-                const funcParams = ['module', 'navigate', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', containerProp.formula] as Array<string>;
+                const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', containerProp.formula] as Array<string>;
                 const module: { exports: unknown } = {exports: {}};
 
                 try {
                     const fun = new Function(...funcParams);
-                    const funcParamsInstance = [module, navigate, db, app, page, z, alertBox, tools, utils, formContext, ...propDependencies];
+                    const funcParamsInstance = [module, navigate, navigatePanel, closePanel, db, app, page, z, alertBox, tools, utils, formContext, ...propDependencies];
                     fun.call(null, ...funcParamsInstance);
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
                 } catch (err) {

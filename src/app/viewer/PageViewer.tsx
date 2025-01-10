@@ -6,7 +6,7 @@ import {AppViewerContext} from "./context/AppViewerContext.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
 import ErrorBoundary from "../../core/components/ErrorBoundary.tsx";
 import {ContainerElement} from "./ContainerElement.tsx";
-import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
+import {useAppInitiator} from "../../core/hooks/useAppInitiator.tsx";
 import {PageVariableInitialization} from "../designer/variable-initialization/PageVariableInitialization.tsx";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
 
@@ -15,17 +15,17 @@ export function PageViewer(props: {
     page: Page,
     appConfig: Omit<Application, 'id' | 'name'>
     value: Record<string, unknown>,
-    navigate: AppViewerContext['navigate']
+    navigate: AppViewerContext['navigate'],
+    closePanel: (payload?: unknown) => void
 }) {
 
-    const {elements, page, appConfig, value, navigate} = props;
+    const {elements, page, appConfig, value, navigate, closePanel} = props;
     const variableInitialValueSignal = useSignal<Record<string, unknown>>(value);
-
 
     const isMountedRef = useRef(false);
 
     useEffect(() => {
-        if(!isMountedRef.current){
+        if (!isMountedRef.current) {
             variableInitialValueSignal.set(value);
             isMountedRef.current = true;
         }
@@ -46,7 +46,8 @@ export function PageViewer(props: {
             // do nothing, we are not accepting changes
         },
         startingPage: page.name
-    })
+    });
+
     const parentContext = useAppContext();
 
     const context: AppViewerContext = {
@@ -74,6 +75,7 @@ export function PageViewer(props: {
         allCallablesSignal: appContext.allCallablesSignal,
         elements,
         navigate,
+        closePanel
     } as AppViewerContext;
 
     const [container, setContainer] = useState<Container | undefined>();
