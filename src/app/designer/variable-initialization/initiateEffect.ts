@@ -4,6 +4,7 @@ import {FormulaDependencyParameter} from "./AppVariableInitialization.tsx";
 import {dbSchemaInitialization} from "./dbSchemaInitialization.ts";
 import {ModalBox} from "./useModalBox.tsx";
 import {utils} from "../../../core/utils/utils.ts";
+import {createLogger} from "../../../core/utils/logger.ts";
 
 const db = dbSchemaInitialization()
 
@@ -29,26 +30,21 @@ export function initiateEffect(props: {
         if (v.type !== 'effect') {
             continue;
         }
-        const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', `${v.functionCode}`];
+        const log = createLogger(`${v.name}`);
+        const params = ['navigate', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', 'log', `${v.functionCode}`];
         try {
             const func = new Function(...params) as (...args: unknown[]) => void
             const destructor = effect(() => {
-                const instances = [navigate, db, app, page, alertBox, tools, utils]
+                const instances = [navigate, db, app, page, alertBox, tools, utils, log]
                 try {
                     func.call(null, ...instances);
                 } catch (err) {
-                    console.group('There was a problem when running the Effect. Please check the error message below');
-                    console.error(err);
-                    console.log(v.functionCode);
-                    console.groupEnd();
+                    log.error(err);
                 }
             });
             destructorCallbacks.push(destructor);
         } catch (err) {
-            console.group('There was a problem when initiating the Effect. Please check the error message below');
-            console.error(err);
-            console.log(v.functionCode);
-            console.groupEnd();
+            log.error(err);
         }
     }
     return () => {

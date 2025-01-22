@@ -46,6 +46,7 @@ ${composeDbSchema(allTables)}
 ${composeAlert()}
 ${composeTools()}
 ${composeUtils()}
+${composeLog()}
 ${composeForm(formSchema)}
 declare const app:{
     var:${composeLibrary(allApplicationVariables)},
@@ -92,8 +93,6 @@ function composeNavigation(allPages: Array<Page>) {
     return `
 type Navigate = {${type}};
 declare const navigate : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => void;
-declare const navigatePanel : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => Promise<any>;
-declare const closePanel : (payload?:any) => void;
 `
 }
 
@@ -115,6 +114,18 @@ declare const tools: {
 `
 }
 
+function composeLog(){
+    return `
+declare const log: {
+    info : (...params:any[]) => void,
+    debug : (...params:any[]) => void,
+    warn : (...params:any[]) => void,
+    error : (...params:any[]) => void,
+    setLevel : (param:'debug'|'info'|'warn'|'error') => void
+}
+    `
+}
+
 function composeUtils() {
     return `
 interface ToStringType{
@@ -124,7 +135,11 @@ interface ToStringType{
 interface ToNumberType{
     (val:unknown) : (number | undefined);
     (val:unknown, defaultVal:number) : number;
-}  
+}
+interface ToBooleanType{
+    (val:unknown) : (boolean | undefined);
+    (val:unknown, defaultVal:boolean) : boolean;
+}
 declare const utils: {
     toDate: (date: unknown) => Date | undefined,
     dateToString: (date: unknown) => string | undefined,
@@ -136,9 +151,11 @@ declare const utils: {
     ddMmmYyyyHhMm: (date?: Date | string) => string,
     toString: ToStringType,
     toNumber: ToNumberType,
+    toBoolean : ToBooleanType,
     isEmpty: (val: unknown) => boolean,
     guid: () => string,
-    uniqueNumber : () => number
+    uniqueNumber : () => number,
+    startPad : (value:number|string,length:number,char?:string) => string
 };
 `
 }

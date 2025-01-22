@@ -1,10 +1,10 @@
 import {Container} from "../../AppDesigner.tsx";
-import {CSSProperties, forwardRef, useEffect, useMemo, useRef, useState} from "react";
+import {CSSProperties, forwardRef, useEffect, useMemo, useRef} from "react";
 import {CancellableEvent, ElementProps} from "../../LayoutBuilderProps.ts";
-import {PropertyInitialization} from "./PropertyInitialization.tsx";
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {EmptyComponent} from "../../components/empty-component/EmptyComponent.tsx";
 import ErrorBoundary from "../../../../core/components/ErrorBoundary.tsx";
+import {usePropertyInitialization} from "./usePropertyInitialization.tsx";
 
 /**
  * Renders a container component with dynamically generated properties based on container properties and dependencies.
@@ -35,7 +35,8 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
         // @ts-ignore
         return forwardRef(component)
     }, [component])
-    const [componentProps, setComponentProps] = useState<Record<string, unknown>>({})
+
+    const componentProps = usePropertyInitialization({container})
 
     useEffect(() => {
         const onDragStart = (event: Event) => propsRef.current.onDragStart(event as DragEvent);
@@ -74,11 +75,10 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
             }
         }
     }, [Component]);
-    const {style, ...componentProperties} = componentProps;
+    const {style, ...componentProperties} = componentProps as {style:CSSProperties};
     const defaultStyle = (style ?? {}) as CSSProperties;
 
     return <>
-        <PropertyInitialization container={props.container} setComponentProps={setComponentProps}/>
         <ErrorBoundary container={container}>
             <Component ref={ref} key={container?.id} container={container}
                        data-element-id={elementProps["data-element-id"]} {...componentProperties}

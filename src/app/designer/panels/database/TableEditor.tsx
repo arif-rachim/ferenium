@@ -21,6 +21,7 @@ import {
 } from "../../variable-initialization/AppVariableInitialization.tsx";
 import {PageVariableInitializationContext} from "../../variable-initialization/PageVariableInitialization.tsx";
 import {utils} from "../../../../core/utils/utils.ts";
+import {createLogger} from "../../../../core/utils/logger.ts";
 
 
 async function queryTable(props: {
@@ -341,7 +342,13 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                         }
                     }} key={col}>
                         <div style={{display: 'flex', justifyContent: 'center', gap: 5}}>
-                            <div title={title} style={{width: '100%', fontSize: 'smaller', fontWeight: 'bold',textOverflow:'ellipsis',overflow:'hidden'}}>
+                            <div title={title} style={{
+                                width: '100%',
+                                fontSize: 'smaller',
+                                fontWeight: 'bold',
+                                textOverflow: 'ellipsis',
+                                overflow: 'hidden'
+                            }}>
                                 {title}
                             </div>
                             {sortable && sortIndex >= 0 &&
@@ -429,16 +436,16 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                                 rendererPageId = config.rendererPageId;
                             }
                             if (config.rendererPageDataMapperFormula) {
+                                const log = createLogger(`TableEditor:${col}`);
                                 try {
                                     const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
                                     const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
-                                    const fun = new Function('module', 'app', 'page', 'utils', config.rendererPageDataMapperFormula)
-
+                                    const fun = new Function('module', 'app', 'page', 'utils', 'log', config.rendererPageDataMapperFormula)
                                     const module: {
                                         exports: (props: unknown) => unknown
                                     } = {exports: (props: unknown) => console.log(props)};
 
-                                    fun.call(null, module, app, page, utils)
+                                    fun.call(null, module, app, page, utils, log)
                                     valueParams = module.exports({
                                         cellValue: value,
                                         rowIndex,

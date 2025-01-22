@@ -1,14 +1,10 @@
 import type {BindParams, Database, ParamsObject, SqlValue} from "sql.js";
 import {utils} from "../../../../core/utils/utils.ts";
+import {createLogger} from "../../../../core/utils/logger.ts";
 
 const defaultFileName = 'database.db';
-const debug: boolean = false;
-
-const log = (...args: unknown[]) => {
-    if (debug) {
-        console.log(...args);
-    }
-}
+const log = createLogger('sqlite');
+log.setLevel('info');
 
 interface SaveToOPFS {
     type: 'saveToFile',
@@ -86,24 +82,24 @@ async function saveToOPFS({binaryArray, fileName}: {
 }
 
 async function loadFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data?: Uint8Array }> {
-    log('[OPFS]Loading', fileName);
+    log.debug('[OPFS]Loading', fileName);
     const root = await navigator.storage.getDirectory();
     const fileHandle = await root.getFileHandle(fileName);
     const file = await fileHandle.getFile();
     const arrayBuffer = await file.arrayBuffer();
-    log('[OPFS]Succesfully loading', fileName);
+    log.debug('[OPFS]Succesfully loading', fileName);
     return {data: new Uint8Array(arrayBuffer), success: true};
 }
 
 async function deleteFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data: string }> {
-    log('[OPFS]Removing', fileName);
+    log.debug('[OPFS]Removing', fileName);
     const root = await navigator.storage.getDirectory();
     try {
-        log('[OPFS]Removing entry', fileName);
+        log.debug('[OPFS]Removing entry', fileName);
         await root.removeEntry(fileName, {recursive: true});
-        log('[OPFS]Clearing cache', fileName);
+        log.debug('[OPFS]Clearing cache', fileName);
         delete database[fileName];
-        log('[OPFS]Succesfully removing', fileName);
+        log.debug('[OPFS]Succesfully removing', fileName);
         return {data: '', success: true};
     } catch (e: unknown) {
         let message = '';
@@ -126,16 +122,16 @@ async function getDatabase(fileName: string) {
         try {
             const {data, success} = await loadFromOPFS({fileName})
             if (success) {
-                log('[DB]opening db', fileName);
+                log.debug('[DB]opening db', fileName);
                 const SQL = await initSqlJs({
                     locateFile: file => `${file}`
                 });
-                log('[DB]opening db success', fileName);
+                log.debug('[DB]opening db success', fileName);
                 db = new SQL.Database(data);
                 Object.assign(database, {[fileName]: db});
             }
         } catch (error) {
-            log(error);
+            log.error(error);
         }
     }
     return db;
@@ -149,7 +145,7 @@ async function persistDb(fileName:string){
     }
 }
 
-function cleanUpParams(params: BindParams):BindParams {
+function cleanUpParams(params?: BindParams):BindParams|undefined {
     if(Array.isArray(params)){
         return params.map((v:unknown) => {
             if(v instanceof Date){
@@ -158,18 +154,18 @@ function cleanUpParams(params: BindParams):BindParams {
             return v;
         }) as SqlValue[]
     }
-    if(typeof params === 'object'){
+    if(params !== null && params !== undefined && typeof params === 'object'){
         return Object.keys(params).reduce((result,key) => {
             if(params && key in params){
                 const v = params[key] as unknown;
                 if(v instanceof Date){
-                    result[key] = utils.dateToString(v)
+                    result[key] = utils.dateToString(v) as string
                 }else{
-                    result[key] = v;
+                    result[key] = v as SqlValue;
                 }
             }
             return result;
-        },{}) as ParamsObject;
+        },{} as ParamsObject) as ParamsObject;
     }
 
     return params;
@@ -184,22 +180,22 @@ async function executeQuery({query, params, fileName}: {
     columns: string[],
     values: SqlValue[][]
 }> {
-    log('[ExecuteQuery]', query)
+    log.debug('[ExecuteQuery]', query)
     const db = await getDatabase(fileName);
     if (db !== undefined) {
         try {
             params = cleanUpParams(params)
-            log('[ExecuteQuery] invoking ', query, params)
+            log.debug('[ExecuteQuery] invoking ', query, params)
             const result = db.exec(query, params);
             if (result.length > 0) {
                 const {columns, values} = result.pop()!;
-                log('[ExecuteQuery] result ', values.length, 'records', 'columns', columns, 'values', values);
+                log.debug('[ExecuteQuery] result ', values.length, 'records', 'columns', columns, 'values', values);
                 return {
                     columns,
                     values
                 }
             } else {
-                log('[ExecuteQuery] result ', result.length, 'records')
+                log.debug('[ExecuteQuery] result ', result.length, 'records')
             }
             return {
                 columns: [],

@@ -88,7 +88,7 @@ export const TextInput = forwardRef(function TextInput(props: {
             border: localError ? BORDER_ERROR : BORDER,
             padding: '2px 5px 3px 5px',
             borderRadius: 5,
-            background: inputDisabled ? 'rgba(0,0,0,0.05)' : 'unset',
+            background: inputDisabled ? 'rgba(0,0,0,0.03)' : 'unset',
             flexGrow: 1,
             minWidth: 0,
             textAlign: type === 'number' ? 'right' : 'left',

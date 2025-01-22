@@ -12,6 +12,8 @@ import {toString} from "./toString.ts";
 import {toNumber} from "./toNumber.ts";
 import {isEmpty} from "./isEmpty.ts";
 import {guid, uniqueNumber} from "./guid.ts";
+import {startPad} from "./startPad.ts";
+import {toBoolean} from "./toBoolean.ts";
 
 export const utils = {
     toDate: toDate,
@@ -26,5 +28,7 @@ export const utils = {
     toNumber: toNumber,
     isEmpty: isEmpty,
     guid: guid,
-    uniqueNumber: uniqueNumber
+    uniqueNumber: uniqueNumber,
+    startPad : startPad,
+    toBoolean : toBoolean
 }

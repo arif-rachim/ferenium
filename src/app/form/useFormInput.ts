@@ -1,4 +1,4 @@
-import {useCallback, useContext, useEffect, useRef, useState} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import {useSignal, useSignalEffect} from "react-hook-signal";
 import {FormContext} from "./Form.tsx";
 
@@ -91,7 +91,7 @@ export function useFormInput<T, V>(props: {
         setIsDisabled(isDisabled);
     });
 
-    const handleValueChange = useCallback((nextValue?: (T | ((current?:T) => T | undefined))) => {
+    const handleValueChange = (nextValue?: (T | ((current?:T) => T | undefined))) => {
         if (name && formContext) {
             const prevFormVal = formContext.value.get()[name] as T;
             let nextVal = nextValue as T;
@@ -132,7 +132,7 @@ export function useFormInput<T, V>(props: {
                 setLocalValue(nextValue as V);
             }
         }
-    },[]);
+    };
 
     return {
         localValue,

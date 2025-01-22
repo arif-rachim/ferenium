@@ -66,7 +66,7 @@ export function PageSelectionPropertyEditor(props: { propertyName: string }) {
                     }
                 });
             }
-        }} hidePageName={true}/>
+        }} hidePageName={true} bindWithMapper={false}/>
         <div style={{
             width: 28,
             display: 'flex',

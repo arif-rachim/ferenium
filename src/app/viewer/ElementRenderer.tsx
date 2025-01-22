@@ -3,9 +3,9 @@ import {ElementStyleProps} from "../designer/LayoutBuilderProps.ts";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {AppViewerContext} from "./context/AppViewerContext.ts";
 import {EmptyComponent} from "../designer/components/empty-component/EmptyComponent.tsx";
-import {CSSProperties, forwardRef, useEffect, useMemo, useRef, useState} from "react";
-import {PropertyInitialization} from "../designer/panels/design/PropertyInitialization.tsx";
+import {CSSProperties, forwardRef, useEffect, useMemo, useRef} from "react";
 import ErrorBoundary from "../../core/components/ErrorBoundary.tsx";
+import {usePropertyInitialization} from "../designer/panels/design/usePropertyInitialization.tsx";
 
 /**
  * Renders an element inside a container with specified props.
@@ -23,17 +23,18 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
         // @ts-ignore
         return forwardRef(component)
     }, [component])
-    const [componentProps, setComponentProps] = useState<Record<string, unknown>>({})
+    // const [componentProps, setComponentProps] = useState<Record<string, unknown>>({})
+    const componentProps = usePropertyInitialization({container:props.container})
     useEffect(() => {
         const element = ref.current;
         if (element) {
             element.setAttribute('data-element-id', propsRef.current["data-element-id"]);
         }
     }, [Component]);
-    const {style, ...componentProperties} = componentProps;
+    const {style, ...componentProperties} = componentProps as {style:CSSProperties};
     const defaultStyle = (style ?? {}) as CSSProperties;
+
     return <>
-        <PropertyInitialization container={props.container} setComponentProps={setComponentProps}/>
         <ErrorBoundary container={container}>
             <Component ref={ref} key={container?.id} container={container}
                        {...componentProperties}

@@ -1,7 +1,8 @@
 import {Table} from "../panels/database/getTables.ts";
 import sqlite from "../panels/database/sqlite.ts";
-import {BindParams, ParamsObject, SqlValue} from "sql.js";
+import {BindParams, SqlValue} from "sql.js";
 import {zodSchemaToJson} from "../../../core/utils/zodSchemaToJson.ts";
+import {createLogger} from "../../../core/utils/logger.ts";
 
 export function composeTableSchema(table: Table) {
     const schema: string[] = [];
@@ -11,7 +12,7 @@ export function composeTableSchema(table: Table) {
     }
     return `z.object({\n\t${schema.join(',\n\t')}\n})`
 }
-
+const log = createLogger('DbSchemaInitialization');
 export function composeArraySchema(data: Array<unknown>) {
     const schema: Record<string, string> = {};
 
@@ -54,14 +55,18 @@ export function composeDbSchema(allTables: Array<Table>) {
         dbSchema.push(`${table.name} : ${composeTableSchema(table)} `)
     }
     const schema = `z.object({ ${dbSchema.join(',')} })`;
+    const schemaInJson = zodSchemaToJson(schema);
     return `
-type DbSchema = ${zodSchemaToJson(schema)}
+type DbSchema = ${schemaInJson}
+type ConvertToSortOrder<T> = {
+    [K in keyof T] : 'asc'|'desc'|undefined;
+}
 type BindParams = Array<string|number|null> | Record<string, string|number|null> 
 declare const db:{
     record:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<DbSchema[N]>,
-    remove:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<DbSchema[N]>,
-    read:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<Array<DbSchema[N]>>,
-    find:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<DbSchema[N]|undefined>,
+    remove:<N extends keyof DbSchema>(name:N,filter:DbSchema[N]) => Promise<DbSchema[N]>,
+    read:<N extends keyof DbSchema>(name:N,filter:DbSchema[N],sort?:ConvertToSortOrder<DbSchema[N]>) => Promise<Array<DbSchema[N]>>,
+    find:<N extends keyof DbSchema>(name:N,filter:DbSchema[N]) => Promise<DbSchema[N]|undefined>,
     query : (query:string,params:BindParams) => Promise<Array<Record<string,string|number|null>>>,
     commit: () => Promise<void>
 };
@@ -78,32 +83,33 @@ export function dbSchemaInitialization() {
                 return readResponse[0];
             }
         }else{
-            console.error(result.errors)
+            log.error(result.errors)
         }
         return result;
     }
 
-    async function remove(tableName: string, item: Record<string, SqlValue>) {
-        const whereCondition = Object.keys(item).map(k => `${k} = ?`).join(' AND ').trim();
+    async function remove(tableName: string, filter: Record<string, SqlValue>) {
+        const whereCondition = Object.keys(filter).map(k => `${k} = ?`).join(' AND ').trim();
         const query = `DELETE FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''}`
-        const queryResult = await sqlite({type: 'executeQuery', query: query, params: Object.values(item)});
+        const queryResult = await sqlite({type: 'executeQuery', query: query, params: Object.values(filter)});
         if (queryResult.errors) {
-            console.error(queryResult.errors);
+            log.error(queryResult.errors);
             return {};
         }
         return queryResult;
     }
 
-    async function read(tableName: string, item: Record<string, SqlValue>): Promise<Array<Record<string, SqlValue>>> {
-        const whereCondition = Object.keys(item).map(k => `${k} = ?`).join(' AND ').trim();
-        const qry = `SELECT * FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''}`
-        return query(qry,Object.values(item));
+    async function read(tableName: string, filter: Record<string, SqlValue>,order?:Record<string,'asc'|'desc'|undefined>): Promise<Array<Record<string, SqlValue>>> {
+        const whereCondition = Object.keys(filter).map(k => `${k} = ?`).join(' AND ').trim();
+        const orderCondition = Object.keys({...order}).filter(i => i).map(k => `${k} ${(order ?? {})[k]}`).join(', ').trim();
+        const qry = `SELECT * FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''} ${orderCondition ? `ORDER BY ${orderCondition}`: ''}`
+        return query(qry,Object.values(filter));
     }
 
     async function query(query:string,params:BindParams): Promise<Array<Record<string, SqlValue>>> {
         const queryResult = await sqlite({type: 'executeQuery', query, params});
         if (queryResult.errors) {
-            console.error(queryResult.errors);
+            log.error(queryResult.errors);
             return [];
         }
         const {columns, values} = queryResult.value as { columns: string[], values: SqlValue[][] }
@@ -120,8 +126,8 @@ export function dbSchemaInitialization() {
         return result;
     }
 
-    async function find(tableName: string, item: Record<string, SqlValue>): Promise<Record<string, SqlValue>|undefined>{
-        const result = await read(tableName,item);
+    async function find(tableName: string, filter: Record<string, SqlValue>): Promise<Record<string, SqlValue>|undefined>{
+        const result = await read(tableName,filter);
         if(result.length > 0){
             return result[0];
         }

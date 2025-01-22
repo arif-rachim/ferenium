@@ -1,4 +1,4 @@
-import {CSSProperties, PropsWithChildren, useEffect, useState} from "react";
+import {CSSProperties, useEffect, useState} from "react";
 import {AnySignal, notifiable, useComputed, useSignal, useSignalEffect} from "react-hook-signal";
 import {AppDesignerContext} from "./AppDesignerContext.ts";
 import {LayoutBuilderProps} from "./LayoutBuilderProps.ts";
@@ -22,7 +22,7 @@ import {CallablePanel} from "./panels/callable/CallablePanel.tsx";
 import {QueriesPanel} from "./panels/queries/QueriesPanel.tsx";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
-import {useAppInitiator} from "../../core/hooks/useAppInitiator.tsx";
+import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
 import {PageVariableInitialization} from "./variable-initialization/PageVariableInitialization.tsx";
 
 export type VariableType = 'state' | 'computed' | 'effect';
@@ -108,11 +108,80 @@ export type Container = {
 
 
 export default function AppDesigner(props: LayoutBuilderProps) {
+    const {
+        applicationSignal,
+        allApplicationCallablesSignal,
+        allPagesSignal,
+        allTablesSignal,
+        activePageIdSignal,
+        activeDropZoneIdSignal,
+        selectedDragContainerIdSignal,
+        hoveredDragContainerIdSignal,
+        uiDisplayModeSignal,
+        variableInitialValueSignal,
+        allApplicationVariablesSignalInstance,
+        allPageVariablesSignalInstance,
+        allErrorsSignal,
+        allApplicationVariablesSignal,
+        allPageVariablesSignal,
+        allContainersSignal,
+        allPageFetchersSignal,
+        allApplicationFetchersSignal,
+        allPageCallablesSignal,
+        allApplicationQueriesSignal,
+        allPageQueriesSignal,
+        allCallablesSignal,
+        allVariablesSignalInstance,
+        allVariablesSignal,
+        allFetchersSignal,
+        allQueriesSignal,
+        navigate
+    } = useAppInitiator(props);
+    const context: AppDesignerContext = {
+        applicationSignal,
+        allApplicationCallablesSignal,
+        allApplicationVariablesSignal,
+        allApplicationVariablesSignalInstance,
+        allApplicationFetchersSignal,
+        allApplicationQueriesSignal,
+
+        allTablesSignal,
+        allPagesSignal,
+        allContainersSignal,
+
+        activePageIdSignal,
+
+        allPageFetchersSignal,
+        allPageCallablesSignal,
+        allPageVariablesSignal,
+        variableInitialValueSignal,
+        allPageVariablesSignalInstance,
+        allPageQueriesSignal,
+
+        elements: {...DefaultElements, ...props.elements},
+        allErrorsSignal: allErrorsSignal,
+        allCallablesSignal,
+        allVariablesSignalInstance,
+        allVariablesSignal,
+        allFetchersSignal,
+        allQueriesSignal,
+
+        // designer mode
+        hoveredDragContainerIdSignal: hoveredDragContainerIdSignal,
+        selectedDragContainerIdSignal: selectedDragContainerIdSignal,
+        activeDropZoneIdSignal: activeDropZoneIdSignal,
+        uiDisplayModeSignal: uiDisplayModeSignal,
+        navigate
+    }
+
     return <ErrorBoundary>
-        <ModalProvider>
-            <AppDesignerProvider {...props}>
+
+        <AppDesignerContext.Provider
+            value={context}>
+            <ModalProvider>
                 <AppVariableInitialization>
                     <PageVariableInitialization>
+
                         <Dashboard panels={{
                             pages: {
                                 title: 'Pages',
@@ -247,10 +316,11 @@ export default function AppDesigner(props: LayoutBuilderProps) {
                                        }, 0);
                                    }}>
                         </Dashboard>
+
                     </PageVariableInitialization>
                 </AppVariableInitialization>
-            </AppDesignerProvider>
-        </ModalProvider>
+            </ModalProvider>
+        </AppDesignerContext.Provider>
     </ErrorBoundary>
 }
 
@@ -305,11 +375,4 @@ function ComponentTreeNode(props: { container?: Container, paddingLeft?: number 
         })}
         <ComponentTreeNode/>
     </div>
-}
-
-function AppDesignerProvider(props: PropsWithChildren<LayoutBuilderProps>) {
-    const context = useAppInitiator({...props, elements: {...DefaultElements, ...props.elements}})
-    return <AppDesignerContext.Provider value={context}>
-        {props.children}
-    </AppDesignerContext.Provider>
 }

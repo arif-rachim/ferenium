@@ -19,6 +19,7 @@ import {
 } from "../../../designer/variable-initialization/PageVariableInitialization.tsx";
 import {PageViewer} from "../../../viewer/PageViewer.tsx";
 import {guid} from "../../../../core/utils/guid.ts";
+import {createLogger} from "../../../../core/utils/logger.ts";
 
 const defaultRowDataToText = (data: unknown) => {
     if (typeof data === "string") {
@@ -104,19 +105,18 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         let renderer:ReactNode|undefined = undefined;
         if (rendererPageId && rendererPageDataMapperFormula) {
             let valueParams = {value: text};
+            const log = createLogger(`SelectInput:initializingVariable`)
             try {
                 const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
                 const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
-                const fun = new Function('module', 'app', 'page', 'utils', rendererPageDataMapperFormula)
+                const fun = new Function('module', 'app', 'page', 'utils','log', rendererPageDataMapperFormula)
                 const module: {
                     exports: (props: unknown) => unknown
                 } = {exports: (props: unknown) => console.log(props)};
-                fun.call(null, module, app, page, utils)
+                fun.call(null, module, app, page, utils,log)
                 valueParams = module.exports(localValue) as unknown as typeof valueParams;
             } catch (err) {
-                console.group(`[${label}] There was problem when getting initializing the variable`)
-                console.error(err);
-                console.groupEnd();
+                log.error(err);
             }
             const page = context.allPagesSignal.get().find(p => p.id === rendererPageId);
             if (page) {

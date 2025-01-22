@@ -4,20 +4,27 @@ import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {useSignal, useSignalEffect} from "react-hook-signal";
 import {PageViewer} from "../viewer/PageViewer.tsx";
 
-export const DataRenderer = memo(forwardRef(DataRendererFC));
+export const ComponentRenderer = memo(forwardRef(ComponentRendererFC));
 
-function DataRendererFC(props: {
+function ComponentRendererFC(props: {
     component: string,
     style: CSSProperties
 }, ref: unknown) {
 
     const {style: propsStyle, component, ...properties} = props;
+    if(component === undefined){
+        debugger;
+    }
     const componentIdSignal = useSignal(component);
     const {allPagesSignal, elements, applicationSignal, navigate} = useAppContext();
     const [page, setPage] = useState<Page | undefined>(() => {
         const allPages = allPagesSignal.get();
         const componentId = componentIdSignal.get();
-        return allPages.find(p => p.id === componentId);
+        const page = allPages.find(p => p.id === componentId);
+        if(page === undefined){
+            console.log('opps cannot find pages for ',componentId);
+        }
+        return page;
     });
 
     const style: CSSProperties = {
@@ -26,10 +33,6 @@ function DataRendererFC(props: {
         minWidth: 20,
         ...propsStyle
     }
-    // Following code commented cause creating bug
-    // if (page === undefined) {
-        //style.border = '1px dashed rgba(0,0,0,0.1)'
-    // }
     useEffect(() => {
         componentIdSignal.set(component)
     }, [component, componentIdSignal]);

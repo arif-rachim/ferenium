@@ -4,7 +4,7 @@ import {createNewBlankApplication} from "../../app/designer/createNewBlankApplic
 import {Query, Table} from "../../app/designer/panels/database/getTables.ts";
 import {Signal} from "signal-polyfill";
 import {ErrorType} from "../ErrorType.ts";
-import {useCallback, useEffect, useRef} from "react";
+import {useEffect, useMemo} from "react";
 import {
     Application,
     Callable,
@@ -14,16 +14,11 @@ import {
     Variable,
     VariableInstance
 } from "../../app/designer/AppDesigner.tsx";
-import {useShowModal} from "./modal/useShowModal.ts";
-import {PageViewer} from "../../app/viewer/PageViewer.tsx";
-import {AppViewerContext} from "../../app/viewer/context/AppViewerContext.ts";
 
 export function useAppInitiator(props: LayoutBuilderProps & {
     startingPage?: string,
     displayMode?: 'design' | 'view'
 }) {
-    const showModal = useShowModal();
-    const elements = props.elements;
     const applicationSignal = useSignal(createNewBlankApplication());
 
     const allApplicationCallablesSignal = useComputed(() => applicationSignal.get().callables ?? []);
@@ -89,23 +84,26 @@ export function useAppInitiator(props: LayoutBuilderProps & {
         onChange(applicationSignal.get());
     })
 
-    const navigate = useCallback(async function navigate(path: string, param?: unknown) {
-        const page = allPagesSignal.get().find(p => p.name === path);
-        if (page === undefined) {
-            return;
+    const navigate = useMemo(() => {
+        return async function navigate(path: string, param?: unknown) {
+            const page = allPagesSignal.get().find(p => p.name === path);
+            if (page === undefined) {
+                return;
+            }
+            if (uiDisplayModeSignal && uiDisplayModeSignal.get() === 'design') {
+                alert('Please switch to view mode to navigate');
+                return;
+            }
+            allErrorsSignal.set([]);
+            variableInitialValueSignal.set(param as Record<string, unknown> ?? {});
+            activePageIdSignal.set(page.id);
         }
-        if (uiDisplayModeSignal && uiDisplayModeSignal.get() === 'design') {
-            alert('Please switch to view mode to navigate');
-            return;
-        }
-        allErrorsSignal.set([]);
-        variableInitialValueSignal.set(param as Record<string, unknown> ?? {});
-        activePageIdSignal.set(page.id);
     }, [activePageIdSignal, allErrorsSignal, allPagesSignal, uiDisplayModeSignal, variableInitialValueSignal]);
-    const closePanel = useCallback(() => {
-        console.log(`The panel doesn't open with the "navigatePanel" function, so the "closePanel" function won't work`)
-    }, []);
-    const context = {
+
+
+
+
+    return {
         applicationSignal,
         allApplicationCallablesSignal,
         allPagesSignal,
@@ -133,61 +131,30 @@ export function useAppInitiator(props: LayoutBuilderProps & {
         allFetchersSignal,
         allQueriesSignal,
         allCallablesSignal,
-        navigate,
-        closePanel,
-        elements
-    }
-    const contextRef = useRef(context);
-    contextRef.current = context;
 
-
-    const navigatePanel = useCallback(async (path: string, param?: unknown) => {
-        const page = allPagesSignal.get().find(p => p.name === path);
-        if (page === undefined) {
-            return;
-        }
-        if (uiDisplayModeSignal && uiDisplayModeSignal.get() === 'design') {
-            alert('Please switch to view mode to navigate');
-            return;
-        }
-
-        return await showModal(closePanel => {
-            return <AppViewerContext.Provider value={{...contextRef.current, navigatePanel}}>
-                <PageViewer
-                    elements={elements}
-                    page={page}
-                    appConfig={applicationSignal.get()}
-                    value={(param ?? {}) as Record<string, unknown>}
-                    navigate={navigate}
-                    closePanel={closePanel}
-                />
-            </AppViewerContext.Provider>
-        });
-
-    }, []);
-
-    return {...context, navigatePanel};
+        navigate
+    };
 }
 
-function validateAndFixAppMeta(value: Application): Application {
+function validateAndFixAppMeta(value:Application):Application{
 
     for (const p of value.pages) {
         for (const parent of p.containers) {
-            if (!parent.children) {
+            if(!parent.children){
                 p.containers.splice(p.containers.indexOf(parent), 1);
                 continue;
             }
             for (const child of parent.children) {
                 const isOrphan = p.containers.findIndex(c => c.id === child) <= 0;
-                if (isOrphan) {
+                if(isOrphan){
                     p.containers.push({
-                        type: 'title',
-                        children: [],
-                        parent: parent.id,
-                        id: child,
-                        properties: {
-                            title: {
-                                formula: 'module.exports = "Missing Component Registry"'
+                        type : 'title',
+                        children : [],
+                        parent : parent.id,
+                        id : child,
+                        properties : {
+                            title : {
+                                formula : 'module.exports = "Missing Component Registry"'
                             }
                         }
                     })

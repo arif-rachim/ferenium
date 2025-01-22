@@ -60,11 +60,12 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
                 from: (fromIsString ? dateToString(from) : from) as string,
                 to: (toIsString ? dateToString(to) : to) as string
             };
-            if(shouldTriggerChange && formContext){
+            if(shouldTriggerChange){
                 handleValueChange(val);
             }
         }
     }, [setLocalValue, formContext, localValue, name, handleValueChange]);
+
 
     const style = {
         border: error ? BORDER_ERROR : BORDER,

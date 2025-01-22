@@ -10,7 +10,7 @@ import {QueryGrid} from "../data/QueryGrid.tsx";
 import {ConfigPropertyEditor} from "./editor/ConfigPropertyEditor.tsx";
 import {IconType} from "react-icons";
 import {cssLength, cssPropertiesSchema, iconSchema} from "./cssPropertiesSchema.ts";
-import {DataRenderer} from "../data/DataRenderer.tsx";
+import {ComponentRenderer} from "../data/ComponentRenderer.tsx";
 import {faultToIconByStatusId} from "../../core/components/fault-status-icon/faultToIconByStatusId.tsx";
 import {TextInput} from "../form/input/text/TextInput.tsx";
 import {DateInput} from "../form/input/date/DateInput.tsx";
@@ -42,15 +42,20 @@ export const DefaultElements: Record<string, Element> = {
         icon: Icon.Container,
         property: {
             style: cssPropertiesSchema,
-            onClick: z.function().returns(z.void())
+            onClick: z.function().returns(z.void()),
+            onMouseDown: z.function().returns(z.void()),
+            onMouseUp: z.function().returns(z.void()),
         },
         component: (props, ref) => {
-            const {container, onClick, style} = props;
+            const {container, onClick, style, onMouseDown, onMouseUp} = props;
+
             return <LayoutContainer ref={ref}
                                     data-element-id={props["data-element-id"]}
                                     container={container}
                                     onClick={onClick}
                                     style={style}
+                                    onMouseDown={onMouseDown}
+                                    onMouseUp={onMouseUp}
             />
         }
     }),
@@ -180,8 +185,9 @@ export const DefaultElements: Record<string, Element> = {
                             fun.apply(null, [module, z]);
                             if (module.exports) {
                                 let voSchema = module.exports as ZodObject<ZodRawShape>;
-                                if( voSchema instanceof ZodOptional){
-                                    voSchema = voSchema._def.innerType as ZodObject<ZodRawShape>
+                                if (voSchema instanceof ZodOptional) {
+                                    const def = voSchema._def as {innerType:ZodObject<ZodRawShape>};
+                                    voSchema = def.innerType as ZodObject<ZodRawShape>
                                 }
                                 const shapes = Object.keys(voSchema._def.shape() as object) as Array<string>;
                                 const errorsSchema = z.object(shapes.reduce((result, key) => {
@@ -550,7 +556,10 @@ export const DefaultElements: Record<string, Element> = {
         },
         component: (props, ref) => {
             const {properties, component, style} = props;
-            return <DataRenderer style={style} component={component} ref={ref} {...properties}/>
+            if (component === undefined) {
+                debugger;
+            }
+            return <ComponentRenderer style={style} component={component} ref={ref} {...properties}/>
         },
         propertyEditor: {
             component: {
@@ -587,7 +596,7 @@ export const DefaultElements: Record<string, Element> = {
             hidden: z.boolean().optional()
         },
         component: (props, ref) => {
-            const {onClick, style, type,hidden, icon} = props;
+            const {onClick, style, type, hidden, icon} = props;
             let {label} = props;
             label = label ?? 'Add label here';
             delete style.background;
@@ -849,9 +858,11 @@ const LayoutContainer = forwardRef(function LayoutContainer(props: {
     container: Container,
     style: CSSProperties,
     onClick: () => void,
+    onMouseDown: () => void,
+    onMouseUp: () => void,
     ["data-element-id"]: string,
 }, ref) {
-    const {container, onClick, style} = props;
+    const {container, onClick, onMouseUp, onMouseDown, style} = props;
     const containerStyle = useContainerStyleHook(style);
     const {elements, displayMode} = useContainerLayoutHook(container);
     return <ContainerRendererIdContext.Provider value={props["data-element-id"]}>
@@ -859,6 +870,8 @@ const LayoutContainer = forwardRef(function LayoutContainer(props: {
              style={containerStyle}
              data-element-id={props["data-element-id"]}
              onClick={() => (displayMode.get() === 'view' && onClick ? onClick() : null)}
+             onMouseDown={() => (displayMode.get() === 'view' && onMouseDown ? onMouseDown() : null)}
+             onMouseUp={() => (displayMode.get() === 'view' && onMouseUp ? onMouseUp() : null)}
         >
             {elements}
         </div>

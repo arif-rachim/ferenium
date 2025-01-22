@@ -1,23 +1,21 @@
 import {LayoutBuilderProps} from "../designer/LayoutBuilderProps.ts";
-import {useSignalEffect} from "react-hook-signal";
+import {notifiable} from "react-hook-signal";
 import {AppVariableInitialization} from "../designer/variable-initialization/AppVariableInitialization.tsx";
 import ErrorBoundary from "../../core/components/ErrorBoundary.tsx";
 import {AppViewerContext} from "./context/AppViewerContext.ts";
 import {ContainerElement} from "./ContainerElement.tsx";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
 import {DefaultElements} from "../designer/DefaultElements.tsx";
-import {useAppInitiator} from "../../core/hooks/useAppInitiator.tsx";
+import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
 import {PageVariableInitialization} from "../designer/variable-initialization/PageVariableInitialization.tsx";
 import {ModalProvider} from "../../core/modal/ModalProvider.tsx";
-import {PropsWithChildren, useState} from "react";
-import {useAppContext} from "../../core/hooks/useAppContext.ts";
-import {Container} from "../designer/AppDesigner.tsx";
 
 /**
  * Renders the application viewer component.
  */
 export default function AppViewer(props: LayoutBuilderProps & { startingPage: string }) {
-
+    const appContext = useAppInitiator(props);
+    const context = {...appContext, elements: {...DefaultElements, ...props.elements}} as AppViewerContext;
     return <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -42,48 +40,38 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
             padding: 5
         }}>
             <ErrorBoundary>
-                <ModalProvider>
-                    <AppViewerProvider {...props}>
+                <AppViewerContext.Provider value={context}>
+                    <ModalProvider>
                         <AppVariableInitialization>
                             <PageVariableInitialization>
-                                <AppViewerRoot/>
+                                <notifiable.div style={{
+                                    flexGrow: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    overflow: 'auto',
+                                    background: 'white',
+                                    borderRadius: 15,
+                                    position: 'relative'
+                                }}>
+                                    {() => {
+                                        const container = context.allContainersSignal.get().find(item => isEmpty(item.parent));
+                                        if (container) {
+                                            return <>
+                                                <ContainerElement container={container}/>
+                                                {/*<LoadingScreen/>*/}
+                                            </>
+                                        }
+                                        return <></>
+                                    }}
+                                </notifiable.div>
+
                             </PageVariableInitialization>
                         </AppVariableInitialization>
-                    </AppViewerProvider>
-                </ModalProvider>
+                    </ModalProvider>
+                </AppViewerContext.Provider>
+
             </ErrorBoundary>
 
         </div>
-    </div>
-}
-
-function AppViewerProvider(props: PropsWithChildren<LayoutBuilderProps & { startingPage: string }>) {
-    const context = useAppInitiator({...props,elements:{...DefaultElements, ...props.elements}}) as AppViewerContext
-    return <AppViewerContext.Provider value={context}>
-        {props.children}
-    </AppViewerContext.Provider>
-}
-
-function AppViewerRoot() {
-    const context = useAppContext();
-    const [container, setContainer] = useState<Container | undefined>();
-    useSignalEffect(() => {
-        const allContainersSignal = context.allContainersSignal;
-        const containers = allContainersSignal.get();
-        const container = containers.find(item => isEmpty(item.parent));
-        if (container) {
-            setContainer(container)
-        }
-    })
-    return <div style={{
-        flexGrow: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'auto',
-        background: 'white',
-        borderRadius: 15,
-        position: 'relative'
-    }}>
-        {container && <ContainerElement container={container}/>}
     </div>
 }

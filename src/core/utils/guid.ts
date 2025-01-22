@@ -9,7 +9,10 @@ export function guid(): string {
         return v.toString(16);
     });
 }
-
+let counter = 0;
 export function uniqueNumber(): number {
-    return parseInt(guid().replace(/-/g,''),16)
+    const timeStamp = Date.now();
+    const uniquePart = (counter++ % 1000).toString().padStart(3,'0');
+    const baseNumber = (timeStamp % 1.e7).toString();
+    return parseInt(baseNumber + uniquePart,10);
 }
