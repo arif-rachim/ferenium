@@ -3,7 +3,7 @@ import {utils} from "../../../../core/utils/utils.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
 
 const defaultFileName = 'database.db';
-const log = createLogger('sqlite');
+const log = createLogger('[Utils]:Sqlite');
 log.setLevel('info');
 
 interface SaveToOPFS {
@@ -165,7 +165,7 @@ function cleanUpParams(params?: BindParams):BindParams|undefined {
                 }
             }
             return result;
-        },{} as ParamsObject) as ParamsObject;
+        },{}) as ParamsObject;
     }
 
     return params;
@@ -184,7 +184,7 @@ async function executeQuery({query, params, fileName}: {
     const db = await getDatabase(fileName);
     if (db !== undefined) {
         try {
-            params = cleanUpParams(params)
+            params = cleanUpParams(params);
             log.debug('[ExecuteQuery] invoking ', query, params)
             const result = db.exec(query, params);
             if (result.length > 0) {

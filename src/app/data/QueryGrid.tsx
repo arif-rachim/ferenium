@@ -1,5 +1,5 @@
 import {QueryType} from "../designer/variable-initialization/AppVariableInitialization.tsx";
-import {CSSProperties, forwardRef, useEffect, useRef, useState} from "react";
+import {CSSProperties, forwardRef, useCallback, useEffect, useRef, useState} from "react";
 import {ColumnsConfig, SimpleTable, SimpleTableFooter} from "../designer/panels/database/TableEditor.tsx";
 import {Container} from "../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
@@ -34,14 +34,22 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         data: Array<Record<string, SqlValue>>,
         totalPage: number,
         currentPage: number,
-        index: number
+        index: number,
+        refresh: () => void
     }) => (Promise<void> | void),
     filterable?: boolean,
     sortable?: boolean,
     pageable?: boolean,
     rowPerPage?: number,
     paginationButtonCount?: number,
-    onQueryResultChange?: (result: QueryTypeResult) => void
+    onQueryResultChange?: (result: QueryTypeResult) => void,
+    enableMultipleSelection?: boolean | ((item?: Record<string, SqlValue>) => boolean),
+    selectedRows?: Array<string | number>,
+    onMultipleSelectionChange?: (params: {
+        type: 'add' | 'remove' | 'addAll' | 'removeAll',
+        value?: string | number,
+        selectedRows: Array<string | number>
+    }) => void
 }>(function QueryGrid(props, ref) {
     const referenceRef = useForwardedRef<HTMLDivElement>(ref);
     const {
@@ -57,10 +65,12 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         pageable,
         itemToKey,
         paginationButtonCount,
-        onQueryResultChange
+        onQueryResultChange,
+        enableMultipleSelection,
+        selectedRows,
+        onMultipleSelectionChange
     } = props;
-    const propsRef = useRef({onQueryResultChange});
-    propsRef.current = {onQueryResultChange};
+
     const rowPerPage = pageable ? props.rowPerPage ? props.rowPerPage : 20 : Number.MAX_SAFE_INTEGER
     const [queryResult, setQueryResult] = useState<QueryTypeResult>({
         columns: [],
@@ -71,13 +81,11 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
     });
 
     const [focusedRow, setFocusedRow] = useState(props.focusedRow);
-    useEffect(() => {
-        setFocusedRow(props.focusedRow);
-    }, [props.focusedRow]);
+    useEffect(() => setFocusedRow(props.focusedRow), [props.focusedRow]);
     const [filter, setFilter] = useState<Record<string, SqlValue>>({});
     const [sort, setSort] = useState<Array<{ column: string, direction: 'asc' | 'desc' }>>([]);
 
-    useEffect(() => {
+    const refreshGrid = useCallback(function refreshGrid() {
         if (query) {
             (async () => {
                 const result = await query({
@@ -98,14 +106,18 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
                 });
             })();
         }
-    }, [query, refreshQueryKey, filter, sort, pageable, rowPerPage]);
+    }, [query, filter, sort, rowPerPage]);
 
-    // this is to just store them in the temporal state to be used by editor
+    const propsRef = useRef({onQueryResultChange, refreshGrid});
+    propsRef.current = {onQueryResultChange, refreshGrid};
+
+    useEffect(refreshGrid, [refreshGrid, refreshQueryKey]);
+    const containerId = container?.id;
     useEffect(() => {
         const queryGridCols = queryGridColumnsTemporalColumnsSignal.get();
-        queryGridCols[container.id] = queryResult.columns ?? [];
+        queryGridCols[containerId] = queryResult.columns ?? [];
         queryGridColumnsTemporalColumnsSignal.set({...queryGridCols});
-    }, [queryResult]);
+    }, [queryResult,containerId]);
 
     useEffect(() => {
         if (propsRef.current.onQueryResultChange) {
@@ -176,10 +188,14 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
                                      value,
                                      currentPage: queryResult.currentPage ?? 1,
                                      totalPage: queryResult.totalPage ?? 0,
-                                     index: data.indexOf(value)
+                                     index: data.indexOf(value),
+                                     refresh: () => propsRef.current.refreshGrid()
                                  });
                              }
                          }}
+                         enableMultipleSelection={enableMultipleSelection}
+                         selectedRows={selectedRows}
+                         onMultipleSelectionChange={onMultipleSelectionChange}
 
             />
         </div>

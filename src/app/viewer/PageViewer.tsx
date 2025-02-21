@@ -1,7 +1,7 @@
 import {LayoutBuilderProps} from "../designer/LayoutBuilderProps.ts";
 import {Application, Container, Page} from "../designer/AppDesigner.tsx";
 import {useSignal, useSignalEffect} from "react-hook-signal";
-import {useEffect, useRef, useState} from "react";
+import {memo, useEffect, useRef, useState} from "react";
 import {AppViewerContext} from "./context/AppViewerContext.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
 import ErrorBoundary from "../../core/components/ErrorBoundary.tsx";
@@ -9,27 +9,27 @@ import {ContainerElement} from "./ContainerElement.tsx";
 import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
 import {PageVariableInitialization} from "../designer/variable-initialization/PageVariableInitialization.tsx";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
+import {createLogger} from "../../core/utils/logger.ts";
 
-export function PageViewer(props: {
+const log = createLogger('PageViewer');
+const preventReRenderingWhenValueChanged = true;
+export const PageViewer = memo(function PageViewer(props: {
     elements: LayoutBuilderProps['elements'],
     page: Page,
     appConfig: Omit<Application, 'id' | 'name'>
     value: Record<string, unknown>,
     navigate: AppViewerContext['navigate']
 }) {
-
     const {elements, page, appConfig, value, navigate} = props;
     const variableInitialValueSignal = useSignal<Record<string, unknown>>(value);
-
-
     const isMountedRef = useRef(false);
-
     useEffect(() => {
         if(!isMountedRef.current){
             variableInitialValueSignal.set(value);
-            isMountedRef.current = true;
+            isMountedRef.current = preventReRenderingWhenValueChanged;
         }
     }, [value, variableInitialValueSignal]);
+
     const appContext = useAppInitiator({
         value: {
             pages: appConfig.pages,
@@ -48,6 +48,23 @@ export function PageViewer(props: {
         startingPage: page.name
     })
     const parentContext = useAppContext();
+    const {allPageVariablesSignal,allPageVariablesSignalInstance} = appContext;
+    useEffect(() => {
+        const pageVariables = allPageVariablesSignal.get();
+        const variablesInstance = allPageVariablesSignalInstance.get();
+        if(isMountedRef.current && pageVariables && variablesInstance){
+            Object.keys(value).forEach(key => {
+                const val = value[key];
+                const variableId = pageVariables.find(i => i.name === key)?.id;
+                const state = variablesInstance.find(i => i.id === variableId);
+                if(state && state.instance && 'set' in state.instance){
+                    if(state.instance.get() !== val){
+                        state.instance.set(val);
+                    }
+                }
+            })
+        }
+    }, [value,allPageVariablesSignal,allPageVariablesSignalInstance]);
 
     const context: AppViewerContext = {
         applicationSignal: appContext.applicationSignal,
@@ -76,15 +93,24 @@ export function PageViewer(props: {
         navigate,
     } as AppViewerContext;
 
-    const [container, setContainer] = useState<Container | undefined>();
+    const [container, setContainer] = useState<Container | undefined>(() => {
+        return context.allContainersSignal.get().find(item => isEmpty(item.parent));
+    });
 
     useSignalEffect(() => {
         const ctr = context.allContainersSignal.get().find(item => isEmpty(item.parent));
         if (ctr) {
-            setContainer(ctr);
+            setContainer(prev => {
+                if(prev !== ctr){
+                    return ctr;
+                }
+                return prev;
+            });
         }
     })
-
+    if(container === null || container === undefined){
+        log.debug('Container for ',page.name,' is null',context.allContainersSignal.get())
+    }
 
     return <AppViewerContext.Provider value={context}>
         <PageVariableInitialization>
@@ -93,4 +119,4 @@ export function PageViewer(props: {
             </ErrorBoundary>
         </PageVariableInitialization>
     </AppViewerContext.Provider>
-}
+})

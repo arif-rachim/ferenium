@@ -14,12 +14,16 @@ import {
     Variable,
     VariableInstance
 } from "../../app/designer/AppDesigner.tsx";
+import {createLogger} from "../utils/logger.ts";
 
+const log = createLogger('useAppInitiator');
+log.setLevel('warn');
+const navigationStack:Array<{path:string,param?:unknown}> = [];
 export function useAppInitiator(props: LayoutBuilderProps & {
     startingPage?: string,
     displayMode?: 'design' | 'view'
 }) {
-    const applicationSignal = useSignal(createNewBlankApplication());
+    const applicationSignal = useSignal(props.value ? props.value : createNewBlankApplication());
 
     const allApplicationCallablesSignal = useComputed(() => applicationSignal.get().callables ?? []);
     const allPagesSignal = useComputed<Array<Page>>(() => applicationSignal.get().pages ?? []);
@@ -34,8 +38,16 @@ export function useAppInitiator(props: LayoutBuilderProps & {
             })?.id ?? '';
             activePageIdSignal.set(startingPageId);
         }
-    })
-    const activePageIdSignal = useSignal<string>('');
+    });
+    const startingPage = props.startingPage;
+    const activePageId = useMemo(() => {
+        const allPages = allPagesSignal.get() ?? [];
+        const pageId = allPages.find(p => p.name === startingPage)?.id ?? '';
+        log.debug('activePageId', startingPage,' is ',pageId);
+        return pageId;
+    }, [allPagesSignal,startingPage])
+
+    const activePageIdSignal = useSignal<string>(activePageId);
     const activeDropZoneIdSignal = useSignal('');
     const selectedDragContainerIdSignal = useSignal('');
     const hoveredDragContainerIdSignal = useSignal('');
@@ -91,18 +103,24 @@ export function useAppInitiator(props: LayoutBuilderProps & {
                 return;
             }
             if (uiDisplayModeSignal && uiDisplayModeSignal.get() === 'design') {
-                alert('Please switch to view mode to navigate');
                 return;
             }
+            navigationStack.unshift({path,param});
             allErrorsSignal.set([]);
             variableInitialValueSignal.set(param as Record<string, unknown> ?? {});
             activePageIdSignal.set(page.id);
         }
     }, [activePageIdSignal, allErrorsSignal, allPagesSignal, uiDisplayModeSignal, variableInitialValueSignal]);
 
-
-
-
+    const navigateBack = useMemo(() => {
+        return async function navigateBack() {
+            navigationStack.shift(); // throw last insert
+            const prevNavigation = navigationStack.shift();
+            if(prevNavigation?.path){
+                navigate(prevNavigation.path,prevNavigation?.param);
+            }
+        }
+    }, [navigate]);
     return {
         applicationSignal,
         allApplicationCallablesSignal,
@@ -132,29 +150,30 @@ export function useAppInitiator(props: LayoutBuilderProps & {
         allQueriesSignal,
         allCallablesSignal,
 
-        navigate
+        navigate,
+        navigateBack
     };
 }
 
-function validateAndFixAppMeta(value:Application):Application{
+function validateAndFixAppMeta(value: Application): Application {
 
     for (const p of value.pages) {
         for (const parent of p.containers) {
-            if(!parent.children){
+            if (!parent.children) {
                 p.containers.splice(p.containers.indexOf(parent), 1);
                 continue;
             }
             for (const child of parent.children) {
                 const isOrphan = p.containers.findIndex(c => c.id === child) <= 0;
-                if(isOrphan){
+                if (isOrphan) {
                     p.containers.push({
-                        type : 'title',
-                        children : [],
-                        parent : parent.id,
-                        id : child,
-                        properties : {
-                            title : {
-                                formula : 'module.exports = "Missing Component Registry"'
+                        type: 'title',
+                        children: [],
+                        parent: parent.id,
+                        id: child,
+                        properties: {
+                            title: {
+                                formula: 'module.exports = "Missing Component Registry"'
                             }
                         }
                     })

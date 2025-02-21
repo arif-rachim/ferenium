@@ -7,7 +7,7 @@ import {useAppContext} from "../../../core/hooks/useAppContext.ts";
 import {callableInitialization} from "./callableSchemaInitialization.ts";
 import {fetcherInitialization} from "./fetcherSchemaInitialization.ts";
 import {queryInitialization} from "./queryInitialization.ts";
-import {createContext, PropsWithChildren} from "react";
+import {createContext, PropsWithChildren, useContext} from "react";
 import {QueryTypeResult} from "../../data/QueryGrid.tsx";
 import {SqlValue} from "sql.js";
 import {createValidator} from "./createValidator.ts";
@@ -20,6 +20,7 @@ import {QueryParamsObject} from "../panels/database/queryDb.ts";
 import {useModalBox} from "./useModalBox.tsx";
 import {useSaveSqlLite} from "../../../core/hooks/useSaveSqlLite.ts";
 import {useDeleteSqlLite} from "../../../core/hooks/useDeleteSqlLite.ts";
+import {ClosePanelContext, useNavigatePanel} from "../../../core/hooks/useNavigatePanel.ts";
 
 
 export type QueryType = (props: {
@@ -53,7 +54,7 @@ export function AppVariableInitialization(props: PropsWithChildren) {
     const alertBox = useModalBox();
     const saveSqlLite = useSaveSqlLite();
     const deleteSqlLite = useDeleteSqlLite();
-    const tools = {saveSqlLite,deleteSqlLite};
+    const tools = {saveSqlLite, deleteSqlLite};
 
     const validatorsApplicationComputed = useComputed<Array<{ variableId: string, validator: ZodType }>>(() => {
         return createValidator(allApplicationVariablesSignal.get(), errorMessage);
@@ -64,7 +65,8 @@ export function AppVariableInitialization(props: PropsWithChildren) {
         const variableValidators = validatorsApplicationComputed.get();
         validateVariables(variableInstances, variableValidators, errorMessage);
     });
-
+    const navigatePanel = useNavigatePanel();
+    const closePanel = useContext(ClosePanelContext);
     const appScopesSignal = useComputed(() => {
 
         const allApplicationVariablesInstance = allApplicationVariablesSignalInstance.get();
@@ -86,7 +88,9 @@ export function AppVariableInitialization(props: PropsWithChildren) {
             page: {},
             navigate,
             alertBox,
-            tools
+            tools,
+            closePanel,
+            navigatePanel
         })
         return app;
     });
@@ -109,7 +113,9 @@ export function AppVariableInitialization(props: PropsWithChildren) {
             navigate,
             variables,
             alertBox,
-            tools
+            tools,
+            closePanel,
+            navigatePanel
         })
     })
 

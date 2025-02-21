@@ -14,10 +14,11 @@ export function PageSchemaMapper(props: {
     closePanel: (param: string | undefined | 'cancel') => void,
     value?: string,
     pageId?: string,
-    mapperInputSchema?: string
+    mapperInputSchema?: string,
+    mapperOutputSchema?: string
 }) {
 
-    const {closePanel, pageId, mapperInputSchema} = props;
+    const {closePanel, pageId, mapperInputSchema, mapperOutputSchema: mapperOutputSchemaProps} = props;
     const {
         allPagesSignal,
         allApplicationQueriesSignal,
@@ -27,7 +28,8 @@ export function PageSchemaMapper(props: {
         allPageQueriesSignal,
         allPageVariablesSignal,
         allPageFetchersSignal,
-        allPageCallablesSignal
+        allPageCallablesSignal,
+        allTablesSignal
     } = useAppContext();
     const [value, setValue] = useState(props.value)
     const mapperOutputSchema = useMemo(() => {
@@ -40,9 +42,9 @@ export function PageSchemaMapper(props: {
         }
         return `{${type}}`;
     }, [allPagesSignal, pageId]);
-    const returnType = `(param:${mapperInputSchema}) => ${mapperOutputSchema}`;
+    const returnType = `(param:${mapperInputSchema}) => ${mapperOutputSchemaProps ? mapperOutputSchemaProps : mapperOutputSchema}`;
 
-
+    const allTables = allTablesSignal.get();
     const allApplicationQueries = allApplicationQueriesSignal.get();
     const allApplicationVariables = allApplicationVariablesSignal.get();
     const allApplicationFetchers = allApplicationFetchersSignal.get();
@@ -53,7 +55,7 @@ export function PageSchemaMapper(props: {
     const allPageFetchers = allPageFetchersSignal.get();
     const allPageCallables = allPageCallablesSignal.get();
 
-    return <div style={{display: 'flex', flexDirection: 'column', gap: 10, width: 600, height: 800}}>
+    return <div style={{display: 'flex', flexDirection: 'column', gap: 10, width: 1024, height: 800}}>
         <div style={{
             borderBottom: BORDER,
             padding: 20,
@@ -74,7 +76,7 @@ export function PageSchemaMapper(props: {
                     const dtsContent = initiateSchemaTS({
                         returnType,
                         allPages: [],
-                        allTables: [],
+                        allTables: allTables,
 
                         allApplicationQueries,
                         allApplicationVariables,
@@ -85,6 +87,7 @@ export function PageSchemaMapper(props: {
                         allPageVariables,
                         allPageFetchers,
                         allPageCallables,
+
                     })
                     monaco.languages.typescript.javascriptDefaults.addExtraLib(dtsContent, "ts:filename/validation-source.d.ts");
                 }}

@@ -175,13 +175,11 @@ export default function AppDesigner(props: LayoutBuilderProps) {
     }
 
     return <ErrorBoundary>
-
         <AppDesignerContext.Provider
             value={context}>
             <ModalProvider>
                 <AppVariableInitialization>
                     <PageVariableInitialization>
-
                         <Dashboard panels={{
                             pages: {
                                 title: 'Pages',

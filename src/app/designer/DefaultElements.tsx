@@ -25,7 +25,13 @@ import {Form} from "../form/Form.tsx";
 import {CheckboxInput} from "../form/input/checkbox/CheckboxInput.tsx";
 import {RadioInput} from "../form/input/radio/RadioInput.tsx";
 import {IconElement} from "../../core/components/icon/IconElement.tsx";
-import {MdInsertEmoticon, MdOutlineCalendarMonth, MdOutlineSubtitles, MdRadioButtonChecked} from "react-icons/md";
+import {
+    MdInsertEmoticon,
+    MdOutlineCalendarMonth,
+    MdOutlineSubtitles,
+    MdPunchClock,
+    MdRadioButtonChecked
+} from "react-icons/md";
 import {FaWpforms} from "react-icons/fa";
 import {IoCheckboxOutline} from "react-icons/io5";
 import {IoMdTime} from "react-icons/io";
@@ -33,9 +39,9 @@ import {LuCalendarRange, LuTextCursorInput} from "react-icons/lu";
 import {RxButton} from "react-icons/rx";
 import {BsMenuButtonWide} from "react-icons/bs";
 import {PageSelectionWithMapperPropertyEditor} from "../data/PageSelectionWithMapperPropertyEditor.tsx";
+import {TimeInput} from "../form/input/date/TimeInput.tsx";
 
 const ZodSqlValue = z.union([z.number(), z.string(), z.instanceof(Uint8Array), z.null()]);
-
 export const DefaultElements: Record<string, Element> = {
     container: element({
         shortName: 'Container',
@@ -45,10 +51,10 @@ export const DefaultElements: Record<string, Element> = {
             onClick: z.function().returns(z.void()),
             onMouseDown: z.function().returns(z.void()),
             onMouseUp: z.function().returns(z.void()),
+            hidden: z.boolean().optional()
         },
         component: (props, ref) => {
-            const {container, onClick, style, onMouseDown, onMouseUp} = props;
-
+            const {container, onClick, style, onMouseDown, onMouseUp, hidden} = props;
             return <LayoutContainer ref={ref}
                                     data-element-id={props["data-element-id"]}
                                     container={container}
@@ -56,6 +62,7 @@ export const DefaultElements: Record<string, Element> = {
                                     style={style}
                                     onMouseDown={onMouseDown}
                                     onMouseUp={onMouseUp}
+                                    hidden={hidden}
             />
         }
     }),
@@ -72,7 +79,8 @@ export const DefaultElements: Record<string, Element> = {
                 minWidth: cssLength,
                 maxWidth: cssLength,
                 minHeight: cssLength,
-                maxHeight: cssLength
+                maxHeight: cssLength,
+                overflow: z.enum(['auto', 'hidden']).optional()
             }),
             onClick: z.function().returns(z.void()),
             title: z.string()
@@ -100,6 +108,12 @@ export const DefaultElements: Record<string, Element> = {
             onChange: z.function().args(
                 z.record(z.unknown()),
                 z.object({
+                    value: z.object({
+                        get: z.function().args().returns(z.record(z.string())),
+                        set: z.function().args(z.record(z.string())).returns(z.void()),
+                    }),
+                    initialValue: z.record(z.string()),
+                    reset: z.function().returns(z.void()),
                     errors: z.object({
                         get: z.function().args().returns(z.record(z.string())),
                         set: z.function().args(z.record(z.string())).returns(z.void()),
@@ -186,7 +200,7 @@ export const DefaultElements: Record<string, Element> = {
                             if (module.exports) {
                                 let voSchema = module.exports as ZodObject<ZodRawShape>;
                                 if (voSchema instanceof ZodOptional) {
-                                    const def = voSchema._def as {innerType:ZodObject<ZodRawShape>};
+                                    const def = voSchema._def as { innerType: ZodObject<ZodRawShape> };
                                     voSchema = def.innerType as ZodObject<ZodRawShape>
                                 }
                                 const shapes = Object.keys(voSchema._def.shape() as object) as Array<string>;
@@ -198,7 +212,13 @@ export const DefaultElements: Record<string, Element> = {
                                     errors: z.object({
                                         set: z.function().args(errorsSchema).returns(z.void()),
                                         get: z.function().args().returns(errorsSchema)
-                                    })
+                                    }),
+                                    value: z.object({
+                                        set: z.function().args(voSchema).returns(z.void()),
+                                        get: z.function().args().returns(voSchema)
+                                    }),
+                                    initialValue: voSchema,
+                                    reset: z.function().returns(z.void())
                                 })
                                 returnTypeZod = z.function().args(module.exports, configSchema).returns(z.void())
                             }
@@ -222,13 +242,29 @@ export const DefaultElements: Record<string, Element> = {
             error: z.string().optional(),
             onChange: z.function().args(z.string().optional()).returns(z.union([z.promise(z.void()), z.void()])),
             onBlur: z.function().args(z.string()).returns(z.union([z.promise(z.void()), z.void()])),
+            valueMapper: z.function().args(z.string().optional()).returns(z.promise(z.string().optional())),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
+            type: z.enum(['text', 'number', 'password', 'textarea']).optional(),
             disabled: z.boolean().optional(),
-            type: z.enum(['text', 'number', 'password', 'textarea']).optional()
+            required: z.boolean().optional(),
+            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional()))
         },
         component: (props, ref) => {
-            const {name, onChange, onBlur, value, label, error, type, disabled, inputStyle} = props;
+            const {
+                name,
+                onChange,
+                onBlur,
+                value,
+                label,
+                error,
+                type,
+                disabled,
+                inputStyle,
+                valueMapper,
+                validator,
+                required
+            } = props;
             return <TextInput ref={ref as MutableRefObject<HTMLLabelElement>}
                               style={props.style}
                               name={name}
@@ -240,6 +276,10 @@ export const DefaultElements: Record<string, Element> = {
                               inputStyle={inputStyle as CSSProperties}
                               error={error}
                               type={type}
+                              valueToLocalValue={valueMapper}
+                              validator={validator}
+                              required={required}
+                              elementId={props.container.id}
             />
         }
     }),
@@ -252,10 +292,13 @@ export const DefaultElements: Record<string, Element> = {
             value: z.boolean().optional(),
             onChange: z.function().args(z.boolean().optional()).returns(z.union([z.promise(z.void()), z.void()])).optional(),
             error: z.string().optional(),
-            style: cssPropertiesSchema
+            style: cssPropertiesSchema,
+            disabled: z.boolean().optional(),
+            required: z.boolean().optional(),
+            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
         },
         component: (props, ref) => {
-            const {style, name, onChange, value, label, error} = props;
+            const {style, name, onChange, value, label, error, disabled, required, validator} = props;
             return <CheckboxInput ref={ref as MutableRefObject<HTMLLabelElement>}
                                   style={style}
                                   name={name}
@@ -263,6 +306,10 @@ export const DefaultElements: Record<string, Element> = {
                                   value={value}
                                   label={label}
                                   error={error}
+                                  disabled={disabled}
+                                  required={required}
+                                  validator={validator}
+                                  elementId={props.container.id}
             />
         }
     }),
@@ -317,18 +364,24 @@ export const DefaultElements: Record<string, Element> = {
             disabled: z.boolean().optional(),
             onChange: z.function().args(z.union([z.date(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
-            inputStyle: cssPropertiesSchema
+            inputStyle: cssPropertiesSchema,
+            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            required: z.boolean().optional(),
         },
         component: (props, ref) => {
-            const {inputStyle, style, label, error, name, value, disabled, onChange} = props;
-            return <DateInput ref={ref as MutableRefObject<HTMLLabelElement>} {...props}
-                              style={style as CSSProperties} inputStyle={inputStyle as CSSProperties}
+            const {inputStyle, style, label, error, name, value, disabled, onChange, validator, required} = props;
+            return <DateInput ref={ref as MutableRefObject<HTMLLabelElement>}
+                              style={style as CSSProperties} {...props} inputStyle={inputStyle as CSSProperties}
                               label={label}
                               error={error}
                               name={name}
                               value={value}
                               onChange={onChange}
                               disabled={disabled}
+                              validator={validator}
+                              required={required}
+                              elementId={props.container.id}
+
 
             />
         }
@@ -342,12 +395,14 @@ export const DefaultElements: Record<string, Element> = {
             label: z.string().optional(),
             error: z.string().optional(),
             disabled: z.boolean().optional(),
+            required: z.boolean().optional(),
+            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
             onChange: z.function().args(z.union([z.date(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema
         },
         component: (props, ref) => {
-            const {inputStyle, value, name, onChange, label, error, disabled} = props;
+            const {inputStyle, value, name, onChange, label, error, disabled, required, validator} = props;
             return <DateTimeInput ref={ref as MutableRefObject<HTMLLabelElement>}
                                   disabled={disabled}
                                   style={props.style as CSSProperties}
@@ -357,6 +412,45 @@ export const DefaultElements: Record<string, Element> = {
                                   onChange={onChange}
                                   label={label}
                                   error={error}
+                                  required={required}
+                                  validator={validator}
+                                  elementId={props.container.id}
+            />
+        }
+    }),
+    timeMinute: element({
+        shortName: 'TimeMinute',
+        icon: MdPunchClock,
+        property: {
+            name: z.string().optional(),
+            value: z.union([z.number(), z.string()]).optional(),
+            label: z.string().optional(),
+            error: z.string().optional(),
+            disabled: z.boolean().optional(),
+            required: z.boolean().optional(),
+            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            onChange: z.function().args(z.union([z.number(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
+            style: cssPropertiesSchema,
+            inputStyle: cssPropertiesSchema
+        },
+        component: (props, ref) => {
+            const {inputStyle, value, name, onChange, label, error, disabled, required, validator} = props;
+            return <TimeInput ref={ref as MutableRefObject<HTMLLabelElement>}
+                              disabled={disabled}
+                              style={props.style as CSSProperties}
+                              inputStyle={inputStyle as CSSProperties}
+                              value={value}
+                              name={name}
+                              onChange={(...args) => {
+                                  if(onChange && typeof onChange === 'function'){
+                                      onChange(...args)
+                                  }
+                              }}
+                              label={label}
+                              error={error}
+                              required={required}
+                              validator={validator}
+                              elementId={props.container.id}
             />
         }
     }),
@@ -374,10 +468,12 @@ export const DefaultElements: Record<string, Element> = {
                 to: z.union([z.date(), z.string()])
             }).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
-            inputStyle: cssPropertiesSchema
+            inputStyle: cssPropertiesSchema,
+            required: z.boolean().optional(),
+            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional()))
         },
         component: (props, ref) => {
-            const {inputStyle, style, error, label, name, value, onChange, disabled} = props;
+            const {inputStyle, style, error, label, name, value, onChange, disabled, required, validator} = props;
             return <DateRangeInput ref={ref as MutableRefObject<HTMLLabelElement>}
                                    disabled={disabled}
                                    style={style as CSSProperties}
@@ -387,6 +483,9 @@ export const DefaultElements: Record<string, Element> = {
                                    name={name}
                                    value={value}
                                    onChange={onChange}
+                                   required={required}
+                                   validator={validator}
+                                   elementId={props.container.id}
             />
         }
     }),
@@ -432,7 +531,10 @@ export const DefaultElements: Record<string, Element> = {
             sortable: z.boolean().optional(),
             pageable: z.boolean().optional(),
             disabled: z.boolean().optional(),
-            itemToKey: z.function().args(z.record(ZodSqlValue).optional()).returns(z.union([z.string(), z.number()]))
+            itemToKey: z.function().args(z.record(ZodSqlValue).optional()).returns(z.union([z.string(), z.number()])),
+            preventChange: z.function().args(z.union([z.string(), z.number()]).optional()).returns(z.promise(z.boolean())),
+            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            required: z.boolean().optional()
         },
 
         component: (props, ref) => {
@@ -457,6 +559,9 @@ export const DefaultElements: Record<string, Element> = {
                 pageable,
                 sortable,
                 disabled,
+                preventChange,
+                validator,
+                required
             } = props;
             return <SelectInput ref={ref as MutableRefObject<HTMLLabelElement>}
                                 style={style as CSSProperties}
@@ -479,6 +584,10 @@ export const DefaultElements: Record<string, Element> = {
                                 sortable={sortable !== false}
                                 pageable={pageable !== false}
                                 disabled={disabled}
+                                preventChange={preventChange}
+                                validator={validator}
+                                required={required}
+                                elementId={props.container.id}
             />
         },
         propertyEditor: {
@@ -552,13 +661,10 @@ export const DefaultElements: Record<string, Element> = {
         property: {
             properties: z.record(z.unknown()).optional(),
             component: z.string(),
-            style: cssPropertiesSchema
+            style: cssPropertiesSchema,
         },
         component: (props, ref) => {
             const {properties, component, style} = props;
-            if (component === undefined) {
-                debugger;
-            }
             return <ComponentRenderer style={style} component={component} ref={ref} {...properties}/>
         },
         propertyEditor: {
@@ -593,16 +699,19 @@ export const DefaultElements: Record<string, Element> = {
             style: cssPropertiesSchema,
             icon: iconSchema,
             type: z.enum(['button', 'submit', 'reset']).optional(),
-            hidden: z.boolean().optional()
+            hidden: z.boolean().optional(),
+            allowOnFormBusy: z.boolean().optional(),
+            allowOnFormDisabled: z.boolean().optional(),
         },
         component: (props, ref) => {
-            const {onClick, style, type, hidden, icon} = props;
+            const {onClick, style, type, hidden, icon, allowOnFormBusy, allowOnFormDisabled} = props;
             let {label} = props;
             label = label ?? 'Add label here';
             delete style.background;
 
             return <Button style={style} ref={ref as LegacyRef<HTMLButtonElement>}
-                           onClick={onClick} type={type} icon={icon} hidden={hidden}>
+                           onClick={onClick} type={type} icon={icon} hidden={hidden} allowOnFormBusy={allowOnFormBusy}
+                           allowOnFormDisabled={allowOnFormDisabled}>
                 {label}
             </Button>
         }
@@ -662,13 +771,21 @@ export const DefaultElements: Record<string, Element> = {
                 data: z.array(z.record(ZodSqlValue)),
                 totalPage: z.number(),
                 currentPage: z.number(),
-                index: z.number()
+                index: z.number(),
+                refresh: z.function().returns(z.void())
             })).returns(z.union([z.promise(z.void()), z.void()])).optional(),
             filterable: z.boolean().optional(),
             sortable: z.boolean().optional(),
             pageable: z.boolean().optional(),
             style: cssPropertiesSchema,
-            itemToKey: z.function().args(z.record(ZodSqlValue)).returns(z.union([z.string(), z.number()]))
+            itemToKey: z.function().args(z.record(ZodSqlValue)).returns(z.union([z.string(), z.number()])),
+            enableMultipleSelection: z.union([z.boolean(),z.function().args(z.record(ZodSqlValue)).returns(z.boolean())]).optional(),
+            selectedRows: z.array(z.union([z.number(), z.string()])),
+            onMultipleSelectionChange: z.function().args(z.object({
+                type: z.enum(['add', 'remove', 'addAll', 'removeAll']),
+                value: z.union([z.string(), z.number()]).optional(),
+                selectedRows: z.array(z.union([z.string(), z.number()]))
+            })).returns(z.void())
         },
         component: (props, ref) => {
             const {
@@ -683,7 +800,10 @@ export const DefaultElements: Record<string, Element> = {
                 filterable,
                 sortable,
                 pageable,
-                itemToKey
+                itemToKey,
+                enableMultipleSelection,
+                selectedRows,
+                onMultipleSelectionChange
             } = props;
             return <QueryGrid ref={ref as ForwardedRef<HTMLDivElement>} query={query} style={style}
                               columnsConfig={config}
@@ -691,7 +811,10 @@ export const DefaultElements: Record<string, Element> = {
                               focusedRow={focusedRow} container={container}
                               refreshQueryKey={refreshQueryKey} onRowDoubleClick={onRowDoubleClick}
                               filterable={filterable} sortable={sortable} pageable={pageable}
-                              itemToKey={itemToKey}/>
+                              itemToKey={itemToKey} enableMultipleSelection={enableMultipleSelection}
+                              selectedRows={selectedRows}
+                              onMultipleSelectionChange={onMultipleSelectionChange}
+            />
         },
         propertyEditor: {
             config: {
@@ -712,6 +835,24 @@ export const DefaultElements: Record<string, Element> = {
                             return result;
                         }, {} as ZodRawShape);
                         returnTypeZod = z.function().args(z.object(param)).returns(z.union([z.string(), z.number()])) as unknown as ZodFunction<ZodTuple, ZodTypeAny>;
+                    }
+                    return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
+                })
+            },
+            enableMultipleSelection:{
+                label: 'enableSelection',
+                component: createCustomPropertyEditor((props) => {
+                    const {element, gridTemporalColumns, propertyName} = props;
+                    let returnTypeZod: ZodFunction<ZodTuple, ZodTypeAny> | undefined = undefined;
+                    if (element) {
+                        returnTypeZod = element.property[propertyName] as ZodFunction<ZodTuple, ZodTypeAny>
+                    }
+                    if (gridTemporalColumns) {
+                        const param = gridTemporalColumns.reduce((result, key) => {
+                            result[key] = ZodSqlValue.optional();
+                            return result;
+                        }, {} as ZodRawShape);
+                        returnTypeZod = z.union([z.boolean(),z.function().args(z.object(param)).returns(z.boolean())]) as unknown as ZodFunction<ZodTuple, ZodTypeAny>;
                     }
                     return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
                 })
@@ -778,7 +919,8 @@ export const DefaultElements: Record<string, Element> = {
                             data: z.array(z.object(param)),
                             totalPage: z.number(),
                             currentPage: z.number(),
-                            index: z.number()
+                            index: z.number(),
+                            refresh: z.function().returns(z.void())
                         })).returns(z.union([z.promise(z.void()), z.void()])) as unknown as ZodFunction<ZodTuple, ZodTypeAny>
 
                     }
@@ -861,19 +1003,24 @@ const LayoutContainer = forwardRef(function LayoutContainer(props: {
     onMouseDown: () => void,
     onMouseUp: () => void,
     ["data-element-id"]: string,
+    hidden?: boolean
 }, ref) {
-    const {container, onClick, onMouseUp, onMouseDown, style} = props;
+    const {container, onClick, onMouseUp, onMouseDown, style, hidden} = props;
     const containerStyle = useContainerStyleHook(style);
     const {elements, displayMode} = useContainerLayoutHook(container);
+    const isHidden = hidden === true;
+    const showElement = !isHidden;
     return <ContainerRendererIdContext.Provider value={props["data-element-id"]}>
-        <div ref={ref as LegacyRef<HTMLDivElement>}
-             style={containerStyle}
-             data-element-id={props["data-element-id"]}
-             onClick={() => (displayMode.get() === 'view' && onClick ? onClick() : null)}
-             onMouseDown={() => (displayMode.get() === 'view' && onMouseDown ? onMouseDown() : null)}
-             onMouseUp={() => (displayMode.get() === 'view' && onMouseUp ? onMouseUp() : null)}
-        >
-            {elements}
-        </div>
+        {showElement &&
+            <div ref={ref as LegacyRef<HTMLDivElement>}
+                 style={containerStyle}
+                 data-element-id={props["data-element-id"]}
+                 onClick={() => (displayMode.get() === 'view' && onClick ? onClick() : null)}
+                 onMouseDown={() => (displayMode.get() === 'view' && onMouseDown ? onMouseDown() : null)}
+                 onMouseUp={() => (displayMode.get() === 'view' && onMouseUp ? onMouseUp() : null)}
+            >
+                {elements}
+            </div>
+        }
     </ContainerRendererIdContext.Provider>
 })

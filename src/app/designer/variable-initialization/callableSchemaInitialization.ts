@@ -20,11 +20,13 @@ export function callableInitialization(props: {
     allCallables: Array<Callable>,
     app: FormulaDependencyParameter,
     page: FormulaDependencyParameter,
-    navigate: (path: string, param?: unknown) => Promise<void>,
+    navigate: (path: string, param?: unknown) => void,
+    navigatePanel: (path: string, param?: unknown) => Promise<unknown>,
     alertBox: ModalBox,
+    closePanel: (params?: unknown) => void,
     tools: { deleteSqlLite: () => Promise<void>, saveSqlLite: (arrayBuffer: ArrayBuffer) => Promise<void> }
 }) {
-    const {allCallables, app, page, navigate, tools, alertBox} = props;
+    const {allCallables, app, page, navigate, tools, alertBox, navigatePanel, closePanel} = props;
 
     const call: Record<string, (...args: unknown[]) => unknown> = {};
     for (const callable of allCallables) {
@@ -33,9 +35,9 @@ export function callableInitialization(props: {
             }
         };
         try {
-            const log = createLogger(`${callable.name}`)
-            const fun = new Function('module', 'navigate', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'log', callable.functionCode);
-            fun.call(null, module, navigate, dbSchemaInitialization(), app, page, z, alertBox, tools, utils, log)
+            const log = createLogger(`[Callable]:${callable.name}:${callable.id}`)
+            const fun = new Function('module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'log', callable.functionCode);
+            fun.call(null, module, navigate, navigatePanel, closePanel, dbSchemaInitialization(), app, page, z, alertBox, tools, utils, log)
             call[callable.name] = module.exports
         } catch (err) {
             console.error(err);

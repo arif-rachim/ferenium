@@ -1,9 +1,15 @@
 import type {MutableRefObject} from "react";
 import {useRef} from "react";
+import {createLogger} from "../utils/logger.ts";
 
-const debug:boolean = false;
-export function whichChange(params:{label: string, props: Record<string, unknown> | undefined, ref: MutableRefObject<Record<string, unknown> | undefined>}) {
-    const {ref,label,props} = params;
+const log = createLogger('[Utils]:useWhichChange');
+log.setLevel('debug');
+export function whichChange(params: {
+    label: string,
+    props: Record<string, unknown> | undefined,
+    ref: MutableRefObject<Record<string, unknown> | undefined>
+}) {
+    const {ref, label, props} = params;
     const previousValue = ref.current ?? {};
     if (props === previousValue) {
         return;
@@ -22,12 +28,12 @@ export function whichChange(params:{label: string, props: Record<string, unknown
     })
 
     ref.current = props;
-    if (difference && debug) {
-        console.log('[whichChange]',label, difference);
+    if (difference) {
+        log.debug(label, difference);
     }
 }
 
 export function useWhichChange(label: string, props?: Record<string, unknown>) {
     const ref = useRef<Record<string, unknown> | undefined>();
-    whichChange({label,ref,props});
+    whichChange({label, ref, props});
 }

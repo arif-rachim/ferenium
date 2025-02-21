@@ -24,25 +24,40 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
     label?: string,
     error?: string,
     disabled?: boolean,
+    required?: boolean,
     style?: CSSProperties,
     inputStyle?: CSSProperties,
+    validator?: (value?: unknown) => Promise<string | undefined>,
+    elementId?: string
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style: defaultStyle, error, label, onChange, value, name, disabled} = props;
-    const {handleValueChange, localValue, setLocalValue, localError, formContext} = useFormInput<RangeInput, {from?:string,to?:string}>({
+    const {inputStyle, style: defaultStyle, error, label, onChange, value, name, disabled, validator, required,elementId} = props;
+    const {
+        handleValueChange,
+        localValue,
+        setLocalValue,
+        localError,
+        formContext,
+        isBusy,
+        isDisabled
+    } = useFormInput<RangeInput, { from?: string, to?: string }>({
         name,
         value,
         error,
         valueToLocalValue: value => {
-            return {from:format_ddMMMyyyy(value?.from),to:format_ddMMMyyyy(value?.to)}
+            return {from: format_ddMMMyyyy(value?.from), to: format_ddMMMyyyy(value?.to)}
         },
-        onChange
+        onChange,
+        disabled,
+        required,
+        validator,
+        label,
+        elementId
     });
     const context = useAppContext();
     const isDesignMode = 'uiDisplayModeSignal' in context && context.uiDisplayModeSignal.get() === 'design';
     const propsRef = useRef({onChange, value});
     propsRef.current = {onChange, value};
-
 
     useEffect(() => {
         const value = propsRef.current.value;
@@ -60,8 +75,8 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
                 from: (fromIsString ? dateToString(from) : from) as string,
                 to: (toIsString ? dateToString(to) : to) as string
             };
-            if(shouldTriggerChange){
-                handleValueChange(val);
+            if (shouldTriggerChange) {
+                handleValueChange(val).then();
             }
         }
     }, [setLocalValue, formContext, localValue, name, handleValueChange]);
@@ -107,25 +122,25 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
         if (newDate === false) {
             return;
         }
-        setLocalValue({from:format_ddMMMyyyy(newDate.from),to:format_ddMMMyyyy(newDate.to)})
+        setLocalValue({from: format_ddMMMyyyy(newDate.from), to: format_ddMMMyyyy(newDate.to)})
     }
     return <Label label={label} ref={ref} style={defaultStyle}>
         <div style={{display: 'flex', gap: 10}}>
             <TextInput
-                disabled={disabled}
+                disabled={isDisabled || isBusy}
                 value={localValue?.from}
                 onChange={val => {
-                    setLocalValue(old => ({...old,from:val}))
+                    setLocalValue(old => ({...old, from: val}))
                 }}
                 inputStyle={style}
                 onFocus={onFocus}
 
             />
             <TextInput
-                disabled={disabled}
+                disabled={isDisabled || isBusy}
                 value={localValue?.to}
                 onChange={val => {
-                    setLocalValue(old => ({...old,to:val}))
+                    setLocalValue(old => ({...old, to: val}))
                 }}
                 inputStyle={style}
                 onFocus={onFocus}

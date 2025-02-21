@@ -19,10 +19,8 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     const propsRef = useRef(elementProps);
     propsRef.current = elementProps;
 
-    const Component = useMemo(() => {
-        // @ts-ignore
-        return forwardRef(component)
-    }, [component])
+    const Component = useMemo(() => forwardRef(component), [component])
+
     // const [componentProps, setComponentProps] = useState<Record<string, unknown>>({})
     const componentProps = usePropertyInitialization({container:props.container})
     useEffect(() => {
@@ -33,12 +31,9 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     }, [Component]);
     const {style, ...componentProperties} = componentProps as {style:CSSProperties};
     const defaultStyle = (style ?? {}) as CSSProperties;
-
-    return <>
-        <ErrorBoundary container={container}>
+    return <ErrorBoundary container={container}>
             <Component ref={ref} key={container?.id} container={container}
                        {...componentProperties}
                        style={{...elementProps.style, ...defaultStyle}}/>
         </ErrorBoundary>
-    </>
 }

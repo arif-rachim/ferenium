@@ -9,9 +9,12 @@ import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useDeleteSqlLite} from "../../../../core/hooks/useDeleteSqlLite.ts";
 import {useSaveSqlLite} from "../../../../core/hooks/useSaveSqlLite.ts";
 import {useDownloadSqlLite} from "../../../../core/hooks/useDownloadSqlLite.ts";
+import {TextInput} from "../../../form/input/text/TextInput.tsx";
+import {BORDER} from "../../../../core/style/Border.ts";
 
 export function DatabasePanel() {
     const focusedItemSignal = useSignal<string>('');
+    const filterSignal = useSignal<string>('');
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const {applicationSignal} = useAppContext();
     const tablesSignal = useComputed<Table[]>(() => {
@@ -28,6 +31,7 @@ export function DatabasePanel() {
     const deleteSqlLite = useDeleteSqlLite();
     const saveSqlLite = useSaveSqlLite();
     const downloadSqlLite = useDownloadSqlLite();
+
     async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const files = e.target.files;
         if (files === null || files.length === 0) {
@@ -55,73 +59,92 @@ export function DatabasePanel() {
     }
 
     return <div style={{display: 'flex', flexDirection: 'column'}}>
-        <div style={{display: 'flex', padding: 10}}>
-            <Button
-                style={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    justifyContent: 'center',
-                    padding: '0px 10px 2px 10px',
-                    background: 'rgba(0,0,0,0.0)',
-                    border: '1px solid rgba(0,0,0,0.2)',
-                    borderTopRightRadius: 0,
-                    borderBottomRightRadius: 0,
-                    borderRight: 'unset',
-                    color: '#333',
+        <div style={{display:'flex',flexDirection:'row',gap:10,padding:10,position:'sticky',top:0,backgroundColor:'white',borderBottom:BORDER}}>
+            <div style={{display: 'flex'}}>
+                <Button
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        justifyContent: 'center',
+                        padding: '0px 10px 2px 10px',
+                        background: 'rgba(0,0,0,0.0)',
+                        border: '1px solid rgba(0,0,0,0.2)',
+                        borderTopRightRadius: 0,
+                        borderBottomRightRadius: 0,
+                        borderRight: 'unset',
+                        color: '#333',
+                    }}
+                    onClick={() => addSqlLite()}
+                    icon={'IoIosCloudUpload'}>{''}</Button>
+                <Button
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        justifyContent: 'center',
+                        padding: '0px 10px 2px 10px',
+                        background: 'rgba(0,0,0,0.0)',
+                        border: '1px solid rgba(0,0,0,0.2)',
+                        borderTopRightRadius: 0,
+                        borderBottomRightRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        borderTopLeftRadius: 0,
+                        borderRight: 'unset',
+                        color: '#333',
+                    }}
+                    onClick={() => downloadSqlLite()}
+                    icon={'IoMdDownload'}>{''}</Button>
+                <Button
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        justifyContent: 'center',
+                        padding: '0px 10px 2px 10px',
+                        background: 'rgba(0,0,0,0.0)',
+                        border: '1px solid rgba(0,0,0,0.2)',
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        color: '#333',
+                    }}
+                    onClick={() => deleteSqlLite()} icon={'IoMdRemove'}
+                >
+                    {''}
+                </Button>
+            </div>
+            <input type={'file'}
+                   ref={fileInputRef}
+                   accept={".sqlite,.db"}
+                   style={{padding: 10, display: 'none'}}
+                   onChange={handleFileChange}
+            />
+            <notifiable.div style={{display: 'flex', flexDirection: 'column',flexGrow:1}}>
+                {() => {
+                    const value = filterSignal.get();
+                    return <TextInput type={'text'} value={value} onChange={val => {
+                        if (val) {
+                            filterSignal.set(val);
+                        } else {
+                            filterSignal.set('');
+                        }
+                    }} placeholder={'Search'}/>
                 }}
-                onClick={() => addSqlLite()}
-                icon={'IoIosCloudUpload'}>{'Load'}</Button>
-            <Button
-                style={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    justifyContent: 'center',
-                    padding: '0px 10px 2px 10px',
-                    background: 'rgba(0,0,0,0.0)',
-                    border: '1px solid rgba(0,0,0,0.2)',
-                    borderTopRightRadius: 0,
-                    borderBottomRightRadius: 0,
-                    borderBottomLeftRadius : 0,
-                    borderTopLeftRadius : 0,
-                    borderRight: 'unset',
-                    color: '#333',
-                }}
-                onClick={() => downloadSqlLite()}
-                icon={'IoMdDownload'}>{'Download'}</Button>
-            <Button
-                style={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    justifyContent: 'center',
-                    padding: '0px 10px 2px 10px',
-                    background: 'rgba(0,0,0,0.0)',
-                    border: '1px solid rgba(0,0,0,0.2)',
-                    borderTopLeftRadius: 0,
-                    borderBottomLeftRadius: 0,
-                    color: '#333',
-                }}
-                onClick={() => deleteSqlLite()} icon={'IoMdRemove'}
-            >
-                {'Delete'}
-            </Button>
+            </notifiable.div>
         </div>
-        <input type={'file'}
-               ref={fileInputRef}
-               accept={".sqlite,.db"}
-               style={{padding: 10, display: 'none'}}
-               onChange={handleFileChange}
-        />
+
+
         <notifiable.div style={{display: 'flex', flexDirection: 'column'}}>
             {() => {
                 const tables = tablesSignal.get() ?? [];
+                const filter = filterSignal.get();
                 const focusedItem = focusedItemSignal.get();
-                return tables.map(table => {
+                return tables.filter(table => {
+                    if (filter) {
+                        return table.tblName.indexOf(filter) >= 0
+                    }
+                    return true;
+                }).map(table => {
                     const isFocused = focusedItem === table.tblName;
                     return <div style={{
                         display: 'flex',

@@ -8,6 +8,7 @@ import {
     useContext,
     useEffect,
     useMemo,
+    useRef,
     useState
 } from "react";
 import {BORDER, BORDER_NONE} from "../../core/style/Border.ts";
@@ -21,15 +22,35 @@ import {useSignalEffect} from "react-hook-signal";
  * A custom Button component.
  */
 export const Button = forwardRef(function Button(props: DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> & {
-    icon?: IconType
+    icon?: IconType,
+    allowOnFormBusy?: boolean,
+    allowOnFormDisabled?: boolean
 }, ref) {
-    const {style, type: typeProps, onClick, icon, disabled, hidden, ...properties} = props;
+    const {
+        style,
+        type: typeProps,
+        onClick,
+        icon,
+        disabled,
+        hidden,
+        allowOnFormBusy,
+        allowOnFormDisabled,
+        ...properties
+    } = props;
+    const propsRef = useRef({allowOnFormBusy, allowOnFormDisabled});
+    propsRef.current = {allowOnFormBusy, allowOnFormDisabled};
+
     const Icon = icon && icon in Io ? Io[icon] : undefined;
     const type = typeProps ?? 'button';
+    // this is default behaviour of button
+    if (propsRef.current.allowOnFormDisabled === undefined && type === "button") {
+        propsRef.current.allowOnFormDisabled = true;
+    }
     const {ref: localRef, isHovered, isOnPress} = useHoveredOnPress(ref as RefObject<HTMLElement>);
     const [isBusy, setIsBusy] = useState<boolean>(false);
     const [isDisabled, setIsDisabled] = useState<boolean>(disabled === true);
     const formContext = useContext(FormContext);
+
     const buttonDisabled = isDisabled || isBusy;
 
     useEffect(() => {
@@ -39,12 +60,18 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
     useSignalEffect(() => {
         const isBusy = formContext !== undefined && formContext.isBusy.get();
         const isDisabled = formContext !== undefined && formContext.isDisabled.get();
-        setIsBusy(isBusy);
-        setIsDisabled(isDisabled);
+        const allowEvenIfDisabled = propsRef.current.allowOnFormDisabled === true;
+        const allowEvenIfBusy = propsRef.current.allowOnFormBusy === true;
+        if (!allowEvenIfDisabled) {
+            setIsDisabled(isDisabled);
+        }
+        if (!allowEvenIfBusy) {
+            setIsBusy(isBusy);
+        }
     })
     const buttonStyle: CSSProperties = useMemo(() => {
         const defaultStyle: CSSProperties = {
-            opacity: buttonDisabled ? 0.8 : 1,
+            opacity: buttonDisabled ? 0.3 : 1,
             border: type === 'submit' ? BORDER_NONE : BORDER,
             background: type === 'submit' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
             color: type === 'submit' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
@@ -62,7 +89,7 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
             gap: 5
         };
         return defaultStyle;
-    }, [buttonDisabled, type, isOnPress, isHovered, style]);
+    }, [buttonDisabled, type, isOnPress, isHovered, style, hidden]);
 
     return <button ref={localRef as LegacyRef<HTMLButtonElement>} style={buttonStyle} type={type} onClick={(event) => {
         if (type === 'reset' && formContext) {

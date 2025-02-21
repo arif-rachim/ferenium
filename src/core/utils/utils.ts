@@ -14,6 +14,7 @@ import {isEmpty} from "./isEmpty.ts";
 import {guid, uniqueNumber} from "./guid.ts";
 import {startPad} from "./startPad.ts";
 import {toBoolean} from "./toBoolean.ts";
+import {arrayToQueryResult} from "./arrayToQueryResult.ts";
 
 export const utils = {
     toDate: toDate,
@@ -30,5 +31,6 @@ export const utils = {
     guid: guid,
     uniqueNumber: uniqueNumber,
     startPad : startPad,
-    toBoolean : toBoolean
+    toBoolean : toBoolean,
+    arrayToQueryResult : arrayToQueryResult
 }

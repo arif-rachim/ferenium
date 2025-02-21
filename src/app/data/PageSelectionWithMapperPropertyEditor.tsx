@@ -11,7 +11,7 @@ import {queryGridColumnsTemporalColumnsSignal} from "../designer/editor/queryGri
 const green = 'green';
 const red = 'red';
 
-export function PageSelectionWithMapperPropertyEditor(props: { propertyName: string }) {
+export function PageSelectionWithMapperPropertyEditor(props: { propertyName: string, mapperInputSchema?: string }) {
     const {containerSignal, propertyName, hasError, isFormulaEmpty} = usePropertyEditorInitialHook(props);
 
     const update = useUpdateDragContainer();
@@ -20,12 +20,12 @@ export function PageSelectionWithMapperPropertyEditor(props: { propertyName: str
         rendererPageDataMapperFormula?: string
     } | undefined>();
 
-    const [mapperInputSchema, setMapperInputSchema] = useState<string>('');
+    const [mapperInputSchema, setMapperInputSchema] = useState<string>(props.mapperInputSchema ?? '');
 
     useSignalEffect(() => {
         const container = containerSignal.get();
         const queryGridColumnsTemporalColumns = queryGridColumnsTemporalColumnsSignal.get();
-        if(container){
+        if (container) {
             let columns: string[] | undefined = undefined;
             if (container.id in queryGridColumnsTemporalColumns && queryGridColumnsTemporalColumns[container.id].length > 0) {
                 columns = queryGridColumnsTemporalColumns[container.id] as string[];
@@ -47,7 +47,7 @@ export function PageSelectionWithMapperPropertyEditor(props: { propertyName: str
             } catch (err) {
                 console.error(err);
             }
-        }else{
+        } else {
             setValue(undefined);
         }
 
@@ -74,13 +74,18 @@ export function PageSelectionWithMapperPropertyEditor(props: { propertyName: str
             style={style}
             hidePageName={true}
             chipColor={'rgba(0,0,0,0)'}
-            onChange={(rendererPageId,rendererPageDataMapperFormula) => {
+            onChange={(rendererPageId, rendererPageDataMapperFormula) => {
                 const containerId = containerSignal.get()?.id;
                 if (containerId) {
                     update(containerId, (selectedContainer: Container) => {
                         if (rendererPageId) {
                             selectedContainer.properties = {...selectedContainer.properties}
-                            selectedContainer.properties[propertyName] = {formula: `module.exports = ${JSON.stringify({rendererPageDataMapperFormula,rendererPageId})}`}
+                            selectedContainer.properties[propertyName] = {
+                                formula: `module.exports = ${JSON.stringify({
+                                    rendererPageDataMapperFormula,
+                                    rendererPageId
+                                })}`
+                            }
                             return selectedContainer;
                         } else {
                             selectedContainer.properties = {...selectedContainer.properties};

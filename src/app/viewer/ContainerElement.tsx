@@ -6,6 +6,7 @@ import {useSignal, useSignalEffect} from "react-hook-signal";
 import {ElementStyleProps} from "../designer/LayoutBuilderProps.ts";
 import {ElementRenderer} from "./ElementRenderer.tsx";
 import {EmptyComponent} from "../designer/components/empty-component/EmptyComponent.tsx";
+import {isEmpty} from "../../core/utils/isEmpty.ts";
 
 /**
  * The ContainerElement component renders a container element based on the provided props.
@@ -13,24 +14,34 @@ import {EmptyComponent} from "../designer/components/empty-component/EmptyCompon
 export function ContainerElement(props: { container: Container }) {
     const {elements} = useAppContext<AppViewerContext>();
     const {container} = props;
-    const [computedStyle, setComputedStyle] = useState<CSSProperties>({})
+
     const containerSignal = useSignal(container);
-
-    useEffect(() => {
-        containerSignal.set(container);
-    }, [containerSignal, container]);
-
-    useSignalEffect(() => {
+    const initiateStyle = () => {
         const container: Container | undefined = containerSignal.get();
-        const isRoot = container?.parent === '';
-        const styleFromSignal = {display: 'flex', position: 'relative', ...container?.properties?.defaultStyle}
+
+        const isRoot = isEmpty(container?.parent);
+        const styleFromSignal = {display: 'flex',  ...container?.properties?.defaultStyle}
+
         if (isRoot) {
+            if(!isEmpty(container?.properties?.style?.formula)){
+                const formula = container?.properties?.style?.formula ?? '';
+                const module = {exports:undefined};
+                (new Function('module',formula)).call(null,module);
+            }
             styleFromSignal['width'] = styleFromSignal['width'] ?? '100%';
             styleFromSignal['height'] = styleFromSignal['height'] ?? '100%';
         }
         styleFromSignal['flexDirection'] = styleFromSignal['flexDirection'] ?? 'column';
-        setComputedStyle(styleFromSignal as CSSProperties)
-    });
+
+        return styleFromSignal as CSSProperties
+    }
+    const [computedStyle, setComputedStyle] = useState<CSSProperties>(initiateStyle)
+    useEffect(() => {
+        if(container !== containerSignal.get()){
+            containerSignal.set(container);
+        }
+    }, [containerSignal, container]);
+    useSignalEffect(() => setComputedStyle(initiateStyle()));
 
     const elementProps: ElementStyleProps = {
         style: computedStyle,
@@ -38,9 +49,7 @@ export function ContainerElement(props: { container: Container }) {
         container: container
     };
 
-
-
-    if (elements && elements[container?.type]) {
+    if (container && elements && elements[container?.type]) {
         return <ElementRenderer container={container} elementProps={elementProps}/>
     }
     return <EmptyComponent />

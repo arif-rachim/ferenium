@@ -1,4 +1,5 @@
 import {utils} from "./utils.ts";
+import {useMemo} from "react";
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 const globalContext:{activeName?:string} = {activeName:undefined};
@@ -11,7 +12,7 @@ export function createLogger(name:string,initialLevel: LogLevel = 'debug') {
         error: 4
     };
     let currentLevel = initialLevel;
-    let currentName = name;
+    const currentName = name;
     const shouldLog = (level: LogLevel): boolean => {
         return levels[level] >= levels[currentLevel];
     }
@@ -19,17 +20,17 @@ export function createLogger(name:string,initialLevel: LogLevel = 'debug') {
         currentLevel = level;
     }
 
-    const log = (level: LogLevel,...optionalParams:any[]): void => {
+    const log = (level: LogLevel,...optionalParams:unknown[]): void => {
         if(shouldLog(level)){
             const timeStamp = utils.hhMmSs(new Date());
             const prefix = `(${timeStamp}) [${level}]`;
             if(globalContext.activeName === undefined){
                 globalContext.activeName = currentName;
-                console.group(currentName);
+                console.groupCollapsed(currentName);
             }else if (globalContext.activeName !== currentName){
                 globalContext.activeName = currentName;
                 console.groupEnd();
-                console.group(currentName);
+                console.groupCollapsed(currentName);
             }
             console.info(`${prefix}`,...optionalParams);
         }
@@ -37,17 +38,21 @@ export function createLogger(name:string,initialLevel: LogLevel = 'debug') {
 
     return {
         setLevel,
-        debug: (...optionalParams:any[]): void => {
+        debug: (...optionalParams:unknown[]): void => {
             log('debug',...optionalParams);
         },
-        info: (...optionalParams:any[]): void => {
+        info: (...optionalParams:unknown[]): void => {
             log('info',...optionalParams);
         },
-        warn: (...optionalParams:any[]): void => {
+        warn: (...optionalParams:unknown[]): void => {
             log('warn',...optionalParams);
         },
-        error: (...optionalParams:any[]): void => {
+        error: (...optionalParams:unknown[]): void => {
             log('error',...optionalParams);
         }
     }
+}
+
+export function useLogger(name:string){
+    return useMemo(() => createLogger(name),[name])
 }

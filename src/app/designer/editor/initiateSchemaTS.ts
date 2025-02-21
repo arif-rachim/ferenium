@@ -93,6 +93,8 @@ function composeNavigation(allPages: Array<Page>) {
     return `
 type Navigate = {${type}};
 declare const navigate : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => void;
+declare const navigatePanel : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => Promise<unknown>;
+declare const closePanel : (param?:unknown) => void;
 `
 }
 
@@ -140,6 +142,7 @@ interface ToBooleanType{
     (val:unknown) : (boolean | undefined);
     (val:unknown, defaultVal:boolean) : boolean;
 }
+    
 declare const utils: {
     toDate: (date: unknown) => Date | undefined,
     dateToString: (date: unknown) => string | undefined,
@@ -155,14 +158,15 @@ declare const utils: {
     isEmpty: (val: unknown) => boolean,
     guid: () => string,
     uniqueNumber : () => number,
-    startPad : (value:number|string,length:number,char?:string) => string
+    startPad : (value:number|string,length:number,char?:string) => string,
+    arrayToQueryResult : (array:Record,config:{params?: Record,page?: number,filter?: Record,sort?: Array<{ column: string, direction: 'asc' | 'desc' }>,rowPerPage?: number},columns:string[]) => {error?: string,data?: Record[],columns?: string[],totalPage?: number,currentPage?: number} 
 };
 `
 }
 
 function composeForm(formSchema?: string) {
-    if (formSchema && formSchema.length > 0) {
-        formSchema = formSchema || `Record<string, unknown>`;
+    // if (formSchema && formSchema.length > 0) {
+    //     formSchema = formSchema || `Record<string, unknown>`;
         return `
             declare const formContext : {
                 value: Signal.State<${formSchema}>,
@@ -175,7 +179,6 @@ function composeForm(formSchema?: string) {
                 isBusy: Signal.State<boolean>,
                 isDisabled: Signal.State<boolean>
             }`
-    }
-    return '';
-
+    // }
+    // return '';
 }

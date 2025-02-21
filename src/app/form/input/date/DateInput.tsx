@@ -16,19 +16,27 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
     value?: T,
     onChange?: (value?: T) => void,
     disabled?: boolean,
+    required?: boolean,
     label?: string,
     error?: string,
     style?: CSSProperties,
     inputStyle?: CSSProperties,
+    validator?:(value?:unknown) => Promise<string|undefined>,
+    elementId?:string
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style, error, label, onChange, value, disabled, name} = props;
-    const {localValue, localError, handleValueChange} = useFormInput<typeof value, Date>({
+    const {inputStyle, style, error, label, onChange, value, disabled, validator, name , required, elementId} = props;
+    const {localValue, localError, handleValueChange,isDisabled,isBusy} = useFormInput<typeof value, Date>({
         name,
         value,
         error,
         valueToLocalValue: param => toDate(param),
-        onChange
+        onChange,
+        validator,
+        required,
+        disabled,
+        elementId,
+        label
     });
     const context = useAppContext();
     const isDesignMode = 'uiDisplayModeSignal' in context && context.uiDisplayModeSignal.get() === 'design';
@@ -38,7 +46,7 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
     return <TextInput ref={ref}
                       inputStyle={{width: 90, textAlign: 'center', ...inputStyle}}
                       style={style}
-                      disabled={disabled}
+                      disabled={isDisabled || isBusy}
                       error={localError}
                       label={label}
                       value={text}
@@ -70,16 +78,16 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
                           }
                           const typeIsString = typeof value === 'string';
                           const val = typeIsString ? format_ddMMMyyyy(newDate) : newDate;
-                          handleValueChange(val as T)
+                          await handleValueChange(val as T)
                       }}
-                      onBlur={(newVal) => {
+                      onBlur={async (newVal) => {
                           if (propsRef.current.userIsChangingData) {
                               propsRef.current.userIsChangingData = false;
                               const date = toDate(newVal);
                               if (isDate(date)) {
                                   const typeIsString = typeof value === 'string';
                                   const val = typeIsString ? format_ddMMMyyyy(date) : date;
-                                  handleValueChange(val as T)
+                                  await handleValueChange(val as T)
                               }
                           }
                       }}

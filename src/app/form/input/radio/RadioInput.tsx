@@ -21,8 +21,8 @@ export const RadioInput = forwardRef(function RadioInput(props: {
 
     const isSelected = valueMatcher === localValue;
     return <label ref={ref} style={{display: 'flex', flexDirection: 'column', ...style}}
-                  onClick={() => {
-                      handleValueChange(valueMatcher);
+                  onClick={async () => {
+                      await handleValueChange(valueMatcher);
                   }}>
         <div style={{display: 'flex', alignItems: 'center', gap: 5}}>
             <div style={{
@@ -31,9 +31,9 @@ export const RadioInput = forwardRef(function RadioInput(props: {
                 justifyContent: 'center',
                 color: localError ? 'red' : '#333'
             }} tabIndex={0}
-                 onKeyDown={(key) => {
+                 onKeyDown={async (key) => {
                      if (key.code.toUpperCase() === 'ENTER') {
-                         handleValueChange(valueMatcher);
+                         await handleValueChange(valueMatcher);
                      }
                  }}>
                 {isSelected && <IoIosRadioButtonOn style={{fontSize: 18, color: 'rgba(0,0,0,0.7)'}}/>}

@@ -14,6 +14,7 @@ import {AppDesignerContext} from "../AppDesignerContext.ts";
 import {MdOutlineCheckBox, MdOutlineCheckBoxOutlineBlank} from "react-icons/md";
 import {IoMdCheckbox} from "react-icons/io";
 import {queryGridColumnsTemporalColumnsSignal} from "./queryGridColumnsTemporalColumnsSignal.ts";
+import {ValueMapperSelector} from "../../data/ValueMapperSelector.tsx";
 
 const green = 'green';
 const red = 'red';
@@ -173,7 +174,10 @@ function EditColumnConfigFormula(props: {
                 <div style={{display: 'table-cell', padding: '0px 5px'}}>
                     Max Width
                 </div>
-                <div style={{display: 'table-cell', padding: '0px 5px', width: 300}}>
+                <div style={{display: 'table-cell', padding: '0px 5px', width: 120}}>
+                    Cell Mapper
+                </div>
+                <div style={{display: 'table-cell', padding: '0px 5px', width: 200,maxWidth:200}}>
                     Renderer
                 </div>
                 <div style={{display: 'table-cell', padding: '0px 5px'}}>
@@ -195,7 +199,8 @@ function EditColumnConfigFormula(props: {
                 }} onDrop={e => {
                     const {col: sourceCol} = JSON.parse(e.dataTransfer.getData('text'));
                     const columnsNew = columns.filter(i => i !== sourceCol);
-                    columnsNew.splice(columnsNew.indexOf(col) + 1, 0, sourceCol);
+                    //columnsNew.splice(columnsNew.indexOf(col) + 1, 0, sourceCol);
+                    columnsNew.splice(columnsNew.indexOf(col), 0, sourceCol);
                     setConfig(oldConfig => {
                         if (columns) {
                             const clone = {...oldConfig};
@@ -286,6 +291,31 @@ function EditColumnConfigFormula(props: {
                         />
                     </div>
                     <div style={{display: 'table-cell', verticalAlign: 'middle'}}>
+                        <ValueMapperSelector style={{
+                            padding: '0px 5px',
+                            borderRadius: 0,
+                            height: 23,
+                            borderBottom: isLastIndex ? '1px solid rgba(0,0,0,0.1)' : 'unset',
+                            borderRight: 'unset',
+                            width: '100%',
+                        }}
+                                             value={conf.cellValueMapper}
+                                             mapperInputSchema={composeMapperInputSchema(columns)}
+                                             onChange={(value) => {
+                                                 setConfig(old => {
+                                                     const clone = {...old};
+                                                     clone[col] = {...clone[col]}
+                                                     if (value === undefined) {
+                                                         delete clone[col].cellValueMapper;
+                                                     } else {
+                                                         clone[col].cellValueMapper = value;
+                                                     }
+                                                     return clone;
+                                                 })
+                                             }}/>
+
+                    </div>
+                    <div style={{display: 'table-cell', verticalAlign: 'middle', width: 200,maxWidth:200}}>
                         <PageInputSelector style={{
                             borderRadius: 0,
                             height: 23,
@@ -294,7 +324,7 @@ function EditColumnConfigFormula(props: {
                             borderBottom: isLastIndex ? BORDER : 'unset',
                         }}
                                            chipColor={'rgba(0,0,0,0)'}
-                                           onChange={(pageId,mapperFormula) => {
+                                           onChange={(pageId, mapperFormula) => {
                                                setConfig(old => {
                                                    const clone = {...old};
                                                    clone[col] = {...clone[col]}

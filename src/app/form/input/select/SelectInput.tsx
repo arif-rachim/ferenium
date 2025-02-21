@@ -20,6 +20,7 @@ import {
 import {PageViewer} from "../../../viewer/PageViewer.tsx";
 import {guid} from "../../../../core/utils/guid.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
+import {dbSchemaInitialization} from "../../../designer/variable-initialization/dbSchemaInitialization.ts";
 
 const defaultRowDataToText = (data: unknown) => {
     if (typeof data === "string") {
@@ -27,10 +28,15 @@ const defaultRowDataToText = (data: unknown) => {
     }
     return JSON.stringify(data)
 }
+
+const db = dbSchemaInitialization();
+
+
 export const SelectInput = forwardRef(function SelectInput(props: {
     name?: string,
     value?: string | number,
     onChange?: (data?: string | number) => void,
+    preventChange?: (data?: string | number) => Promise<boolean>,
     label?: string,
     query: QueryType,
     config: ColumnsConfig,
@@ -47,7 +53,10 @@ export const SelectInput = forwardRef(function SelectInput(props: {
     filterable?: boolean,
     pageable?: boolean,
     sortable?: boolean,
-    disabled?: boolean
+    disabled?: boolean,
+    required?: boolean,
+    validator?: (value: unknown) => Promise<string | undefined>,
+    elementId?: string
 }, ref: ForwardedRef<HTMLLabelElement>) {
     const {
         inputStyle,
@@ -69,8 +78,14 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         filterable,
         sortable,
         pageable,
-        disabled
+        disabled,
+        preventChange,
+        validator,
+        required,
+        elementId
     } = props;
+    const log = useMemo(() => createLogger(`SelectInput:${label}`), [label]);
+    log.setLevel('warn');
     const {
         localValue,
         localError,
@@ -85,13 +100,18 @@ export const SelectInput = forwardRef(function SelectInput(props: {
             if (valueToRowData) {
                 return await valueToRowData(params)
             }
-        }
+        },
+        preventChange,
+        validator,
+        required,
+        label,
+        elementId
     });
 
     const context = useAppContext();
     const appSignal = useContext(AppVariableInitializationContext);
     const pageSignal = useContext(PageVariableInitializationContext);
-
+    const {allPagesSignal, applicationSignal, elements, navigate} = context;
     const isDesignMode = 'uiDisplayModeSignal' in context && context.uiDisplayModeSignal.get() === 'design';
     const propsRef = useRef({valueToRowData, rowDataToText, rowDataToValue});
     propsRef.current = {valueToRowData, rowDataToText, rowDataToValue}
@@ -100,39 +120,43 @@ export const SelectInput = forwardRef(function SelectInput(props: {
     const rendererPageId = rowDataToRenderer?.rendererPageId ?? '';
     const rendererPageDataMapperFormula = rowDataToRenderer?.rendererPageDataMapperFormula ?? '';
     const localValueString = localValue ? JSON.stringify(localValue) : undefined;
-    const renderer:ReactNode|undefined = useMemo(() => {
+    const renderer: ReactNode | undefined = useMemo(() => {
         const localValue = localValueString ? JSON.parse(localValueString) : undefined;
-        let renderer:ReactNode|undefined = undefined;
+        let renderer: ReactNode | undefined = undefined;
         if (rendererPageId && rendererPageDataMapperFormula) {
             let valueParams = {value: text};
-            const log = createLogger(`SelectInput:initializingVariable`)
+            const log = createLogger(['[Component]', 'SelectInput', 'rowDataToRenderer', name].filter(i => i).join(':'));
+            log.setLevel('warn');
             try {
                 const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
                 const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
-                const fun = new Function('module', 'app', 'page', 'utils','log', rendererPageDataMapperFormula)
+                const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', rendererPageDataMapperFormula)
                 const module: {
                     exports: (props: unknown) => unknown
-                } = {exports: (props: unknown) => console.log(props)};
-                fun.call(null, module, app, page, utils,log)
+                } = {};
+                fun.call(null, module, app, page, utils, log, db)
                 valueParams = module.exports(localValue) as unknown as typeof valueParams;
             } catch (err) {
                 log.error(err);
             }
-            const page = context.allPagesSignal.get().find(p => p.id === rendererPageId);
+            const page = allPagesSignal.get().find(p => p.id === rendererPageId);
             if (page) {
                 renderer = <PageViewer
-                    elements={context.elements}
+                    elements={elements}
                     page={page!}
-                    appConfig={context.applicationSignal.get()}
+                    appConfig={applicationSignal.get()}
                     value={valueParams}
-                    navigate={context.navigate}
+                    navigate={navigate}
                     key={guid()}
                 />
             }
         }
         return renderer;
-    },[rendererPageId,rendererPageDataMapperFormula,localValueString]);
+    }, [rendererPageId, rendererPageDataMapperFormula, localValueString, appSignal, pageSignal, allPagesSignal, applicationSignal, elements, navigate, name, text]);
 
+    if (label === 'User ID') {
+        log.debug('LocaleError', localError, 'localValue', localValue);
+    }
     return <TextInput ref={ref}
                       inputStyle={inputStyle}
                       style={style}
@@ -141,6 +165,8 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                       value={text}
                       disabled={disabled}
                       overlayElement={renderer}
+                      enableClearIcon={!utils.isEmpty(localValue)}
+                      onClearIconClicked={() => handleValueChange(null)}
                       onFocus={async () => {
                           if (disabled) {
                               return;
@@ -164,7 +190,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                                             onFocusedRowChange={closePanel}
                                             style={{
                                                 boxShadow: '0px 10px 8px -8px rgba(0,0,0,0.5)',
-                                                paddingBottom: filterable ? 0 : 15,
+                                                paddingBottom: pageable ? 0 : 10,
                                                 borderBottomLeftRadius: 10,
                                                 borderBottomRightRadius: 10,
                                                 borderLeft: '1px solid rgba(0,0,0,0.1)',
@@ -184,7 +210,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                               return;
                           }
                           if (propsRef.current.rowDataToValue) {
-                              handleValueChange(propsRef.current.rowDataToValue(props.value));
+                              await handleValueChange(propsRef.current.rowDataToValue(props.value));
                           }
                       }}
     />

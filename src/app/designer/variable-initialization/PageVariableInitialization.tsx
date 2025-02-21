@@ -18,6 +18,7 @@ import {useModalBox} from "./useModalBox.tsx";
 import {useSaveSqlLite} from "../../../core/hooks/useSaveSqlLite.ts";
 import {useDeleteSqlLite} from "../../../core/hooks/useDeleteSqlLite.ts";
 import {whichChange} from "../../../core/hooks/useWhichChange.ts";
+import {ClosePanelContext, useNavigatePanel} from "../../../core/hooks/useNavigatePanel.ts";
 
 export function PageVariableInitialization(props: PropsWithChildren) {
 
@@ -31,13 +32,15 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         allPageCallablesSignal,
         allPageFetchersSignal,
         variableInitialValueSignal,
-        navigate
+        navigate,
+        activePageIdSignal
     } = useAppContext();
-
+    const navigatePanel = useNavigatePanel();
+    const closePanel = useContext(ClosePanelContext);
     const alertBox = useModalBox();
     const saveSqlLite = useSaveSqlLite();
     const deleteSqlLite = useDeleteSqlLite();
-    const tools = {saveSqlLite,deleteSqlLite};
+    const tools = {saveSqlLite, deleteSqlLite};
 
     const validatorsComputed = useComputed<Array<{ variableId: string, validator: ZodType }>>(() => {
         return createValidator(allPageVariablesSignal.get(), errorMessage);
@@ -50,23 +53,21 @@ export function PageVariableInitialization(props: PropsWithChildren) {
     });
 
     const appScopesSignal = useContext(AppVariableInitializationContext);
-    //const ref = useRef();
     const pageScopesSignal = useComputed(() => {
-
+        const pageId = activePageIdSignal.get();
         const app = appScopesSignal.get();
         const allPageVariablesInstance = allPageVariablesSignalInstance.get();
         const allPageVariables = allPageVariablesSignal.get();
         const allPageQueries = allPageQueriesSignal.get();
         const allFetchers = allPageFetchersSignal.get();
         const allCallables = allPageCallablesSignal.get();
-        // this is kept here for future references why this page scopes is getting rebuild
-        //whichChange({label:'pagesRecreated',props:{allPageVariablesInstance,allPageVariables,allPageQueries,allFetchers,allCallables},ref})
         const pageVar = variablesInstanceToDictionary(allPageVariablesInstance, allPageVariables);
         const pageQueries = queryInitialization(allPageQueries);
 
-        const page: FormulaDependencyParameter = {
+        const page: FormulaDependencyParameter & { pageId: string } = {
             var: pageVar,
-            query: pageQueries
+            query: pageQueries,
+            pageId
         }
 
         page.fetch = fetcherInitialization({
@@ -80,7 +81,9 @@ export function PageVariableInitialization(props: PropsWithChildren) {
             page,
             navigate,
             alertBox,
-            tools
+            tools,
+            closePanel,
+            navigatePanel
         })
         return page;
     });
@@ -97,7 +100,11 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         }, {
             var: variablesInstanceToDictionary(stateInstances, variables),
         }));
-        whichChange({ref:ref2,label:'allPageVariablesSignalInstance.set',props:{applicationVariables,applicationVariablesInstance,variableInitialValue,variables}})
+        whichChange({
+            ref: ref2,
+            label: 'allPageVariablesSignalInstance.set',
+            props: {applicationVariables, applicationVariablesInstance, variableInitialValue, variables}
+        })
         allPageVariablesSignalInstance.set([...stateInstances, ...computedInstance]);
     });
 
@@ -112,7 +119,9 @@ export function PageVariableInitialization(props: PropsWithChildren) {
             navigate,
             variables,
             alertBox,
-            tools
+            tools,
+            navigatePanel,
+            closePanel
         })
     })
     return <PageVariableInitializationContext.Provider value={pageScopesSignal}>
@@ -120,7 +129,9 @@ export function PageVariableInitialization(props: PropsWithChildren) {
     </PageVariableInitializationContext.Provider>
 }
 
-export const PageVariableInitializationContext = createContext<AnySignal<FormulaDependencyParameter>>(new Signal.State({}));
+export const PageVariableInitializationContext = createContext<AnySignal<FormulaDependencyParameter & {
+    pageId?: string
+}>>(new Signal.State({}));
 
 function variablesInstanceToDictionary(variableInstances: Array<VariableInstance>, variables: Array<Variable>): Record<string, AnySignal<unknown>> {
     return variableInstances.reduce((res, variableInstance) => {

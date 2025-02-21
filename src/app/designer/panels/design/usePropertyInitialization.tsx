@@ -15,6 +15,7 @@ import {FormContext} from "../../../form/Form.tsx";
 import sqlite from "../database/sqlite.ts";
 import {utils} from "../../../../core/utils/utils.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
+import {ClosePanelContext, useNavigatePanel} from "../../../../core/hooks/useNavigatePanel.ts";
 
 const db = dbSchemaInitialization();
 
@@ -43,24 +44,25 @@ export function usePropertyInitialization(props: { container: Container }) {
     const property = elementsLib ? elementsLib[container.type].property as ZodRawShape : undefined;
     const errorMessage = useRecordErrorMessage();
     const propertiesSignal = useSignal(container.properties);
+    const navigatePanel = useNavigatePanel();
+    const closePanel = useContext(ClosePanelContext);
     const [componentProps, setComponentProps] = useState(() => {
         const containerProperties = propertiesSignal.get();
         const app = appSignal.get();
         const page = pageSignal.get();
-        const result:Record<string,unknown> = {};
+        const result: Record<string, unknown> = {};
         for (const containerPropKey of Object.keys(containerProperties)) {
             const containerProp = containerProperties[containerPropKey];
             const returnType = property ? property[containerPropKey] : undefined;
             const allVariablesInstance = allVariablesSignalInstance.get();
             const allVariables = allVariablesSignal.get();
             const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
-            const log = createLogger(`${container.type}:${containerPropKey}`);
-            const funcParams = ['module', 'navigate', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
+            const log = createLogger(`[Props]:${container.type}:${containerPropKey}:${container.id}`);
+            const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
             const module: { exports: unknown } = {exports: {}};
-
             try {
                 const fun = new Function(...funcParams);
-                const funcParamsInstance = [module, navigate, db, app, page, z, alertBox, tools, utils, formContext, log, ...propDependencies];
+                const funcParamsInstance = [module, navigate, navigatePanel, closePanel, db, app, page, z, alertBox, tools, utils, formContext, log, ...propDependencies];
                 fun.call(null, ...funcParamsInstance);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
             } catch (err) {
@@ -86,7 +88,7 @@ export function usePropertyInitialization(props: { container: Container }) {
             }
             if (typeof module.exports === 'function') {
                 const originalFunction = module.exports as (...args: unknown[]) => unknown
-                const wrapper = (...args: unknown[]) => {
+                result[containerPropKey] = (...args: unknown[]) => {
                     try {
                         const result = originalFunction.call(null, ...args);
                         errorMessage.propertyInvocation({
@@ -102,7 +104,6 @@ export function usePropertyInitialization(props: { container: Container }) {
                         })
                     }
                 }
-                result[containerPropKey] = wrapper;
             } else {
                 if (JSON.stringify(module.exports) !== '{}') {
                     result[containerPropKey] = module.exports;
@@ -115,11 +116,14 @@ export function usePropertyInitialization(props: { container: Container }) {
     useEffect(() => {
         propertiesSignal.set(container.properties)
     }, [container.properties, propertiesSignal]);
-
+    const pageId = context.activePageIdSignal.get()
     useSignalEffect(() => {
         const containerProperties = propertiesSignal.get();
         const app = appSignal.get();
         const page = pageSignal.get();
+        if (pageId !== context.activePageIdSignal.get()) {
+            return;
+        }
         const destroyerCallbacks: Array<() => void> = [];
         for (const containerPropKey of Object.keys(containerProperties)) {
             const containerProp = containerProperties[containerPropKey];
@@ -128,17 +132,20 @@ export function usePropertyInitialization(props: { container: Container }) {
                 const allVariablesInstance = allVariablesSignalInstance.get();
                 const allVariables = allVariablesSignal.get();
                 const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
-                const log = createLogger(`${container.type}:${containerPropKey}`);
-                const funcParams = ['module', 'navigate', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
+                const log = createLogger(`[Props]:${container.type}:${containerPropKey}:${container.id}`);
+                const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
                 const module: { exports: unknown } = {exports: {}};
-
                 try {
+                    if (pageId !== context.activePageIdSignal.get()) {
+                        return;
+                    }
                     const fun = new Function(...funcParams);
-                    const funcParamsInstance = [module, navigate, db, app, page, z, alertBox, tools, utils, formContext, log, ...propDependencies];
+                    const funcParamsInstance = [module, navigate, navigatePanel, closePanel, db, app, page, z, alertBox, tools, utils, formContext, log, ...propDependencies];
                     fun.call(null, ...funcParamsInstance);
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
                 } catch (err) {
                     log.error(err);
+                    log.debug('We have pageId', pageId, 'activePageId', context.activePageIdSignal.get());
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
                 }
                 if (returnType) {

@@ -9,6 +9,7 @@ import {DefaultElements} from "../designer/DefaultElements.tsx";
 import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
 import {PageVariableInitialization} from "../designer/variable-initialization/PageVariableInitialization.tsx";
 import {ModalProvider} from "../../core/modal/ModalProvider.tsx";
+import {ClosePanelContext} from "../../core/hooks/useNavigatePanel.ts";
 
 /**
  * Renders the application viewer component.
@@ -44,27 +45,25 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                     <ModalProvider>
                         <AppVariableInitialization>
                             <PageVariableInitialization>
-                                <notifiable.div style={{
-                                    flexGrow: 1,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    overflow: 'auto',
-                                    background: 'white',
-                                    borderRadius: 15,
-                                    position: 'relative'
-                                }}>
-                                    {() => {
-                                        const container = context.allContainersSignal.get().find(item => isEmpty(item.parent));
-                                        if (container) {
-                                            return <>
-                                                <ContainerElement container={container}/>
-                                                {/*<LoadingScreen/>*/}
-                                            </>
-                                        }
-                                        return <></>
-                                    }}
-                                </notifiable.div>
-
+                                <ClosePanelContext.Provider value={context.navigateBack}>
+                                    <notifiable.div style={{
+                                        flexGrow: 1,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        overflow: 'auto',
+                                        background: 'white',
+                                        borderRadius: 15,
+                                        position: 'relative'
+                                    }}>
+                                        {() => {
+                                            const container = context.allContainersSignal.get().find(item => isEmpty(item.parent));
+                                            if (container) {
+                                                return <ContainerElement container={container}/>
+                                            }
+                                            return <></>
+                                        }}
+                                    </notifiable.div>
+                                </ClosePanelContext.Provider>
                             </PageVariableInitialization>
                         </AppVariableInitialization>
                     </ModalProvider>

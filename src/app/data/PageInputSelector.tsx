@@ -6,6 +6,7 @@ import {PageSelector} from "./PageSelector.tsx";
 import {CSSProperties} from "react";
 import {PageSchemaMapper} from "./PageSchemaMapper.tsx";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
+import {Icon} from "../../core/components/icon/Icon.ts";
 
 export function PageInputSelector(props: {
     value?: string,
@@ -23,7 +24,6 @@ export function PageInputSelector(props: {
     const {allPagesSignal} = context;
     const {value, onChange, bindWithMapper, mapperInputSchema, mapperValue} = props;
     const page = allPagesSignal.get().find(p => p.id === value);
-
     async function showPageSelector() {
         const result = await showModal<string | undefined | 'cancel'>(closePanel => {
             return <AppDesignerContext.Provider value={context}>
@@ -69,14 +69,21 @@ export function PageInputSelector(props: {
             ...props.style
         }}
         onClick={showPageSelector}>
+        {props.hidePageName === true && <Icon.Formula style={{fontSize: 16}}/>}
         {page && props.hidePageName !== true &&
             <div style={{
                 background: props.chipColor ? props.chipColor : 'rgba(0,0,0,0.1)',
+                display:'block',
                 borderRadius: 5,
                 borderBottom: 'unset',
                 flexGrow: 1,
-                padding: '0px 5px'
-            }}>
+                padding: '0px 5px',
+                overflow: 'hidden',
+                textOverflow : 'ellipsis',
+                whiteSpace : 'nowrap',
+                direction : 'rtl',
+                textAlign : 'left'
+            }} title={page?.name}>
                 {page?.name}
             </div>
         }

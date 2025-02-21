@@ -9,7 +9,9 @@ import {createLogger} from "../../../core/utils/logger.ts";
 const db = dbSchemaInitialization()
 
 export function initiateEffect(props: {
-    navigate: (path: string, param?: unknown) => Promise<void>,
+    navigate: (path: string, param?: unknown) => void,
+    navigatePanel: (path: string, param?: unknown) => Promise<unknown>,
+    closePanel: (param?: unknown) => void,
     variables: Array<Variable>,
     app: FormulaDependencyParameter,
     page: FormulaDependencyParameter,
@@ -22,7 +24,9 @@ export function initiateEffect(props: {
         app,
         page,
         alertBox,
-        tools
+        tools,
+        navigatePanel,
+        closePanel
     } = props;
 
     const destructorCallbacks: Array<() => void> = [];
@@ -30,12 +34,14 @@ export function initiateEffect(props: {
         if (v.type !== 'effect') {
             continue;
         }
-        const log = createLogger(`${v.name}`);
-        const params = ['navigate', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', 'log', `${v.functionCode}`];
+
+        const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', 'log', wrapWithTryCatch(v.functionCode)];
+        const log = createLogger(`[Effect]:${v?.name}:${v?.id}`);
+        log.setLevel('warn');
         try {
             const func = new Function(...params) as (...args: unknown[]) => void
             const destructor = effect(() => {
-                const instances = [navigate, db, app, page, alertBox, tools, utils, log]
+                const instances = [navigate, navigatePanel, closePanel, db, app, page, alertBox, tools, utils, log]
                 try {
                     func.call(null, ...instances);
                 } catch (err) {
@@ -50,4 +56,8 @@ export function initiateEffect(props: {
     return () => {
         destructorCallbacks.forEach(d => d());
     }
+}
+
+function wrapWithTryCatch(code){
+    return `try{${code}}catch(err){log.error(err)}`
 }

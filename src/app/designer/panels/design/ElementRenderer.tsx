@@ -32,7 +32,6 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     propsRef.current = elementProps;
 
     const Component = useMemo(() => {
-        // @ts-ignore
         return forwardRef(component)
     }, [component])
 

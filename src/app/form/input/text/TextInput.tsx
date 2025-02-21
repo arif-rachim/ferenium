@@ -13,6 +13,7 @@ import {
 import {Label} from "../../Label.tsx";
 import {guid} from "../../../../core/utils/guid.ts";
 import {useFormInput} from "../../useFormInput.ts";
+import {MdCancel} from "react-icons/md";
 
 export const TextInput = forwardRef(function TextInput(props: {
         name?: string,
@@ -29,11 +30,19 @@ export const TextInput = forwardRef(function TextInput(props: {
         inputStyle?: CSSProperties,
         maxLength?: number,
         disabled?: boolean,
+        required?: boolean,
         type?: 'text' | 'number' | 'password' | 'textarea',
         allCaps?: boolean,
         inputRef?: MutableRefObject<HTMLInputElement | undefined>,
-        overlayElement?: ReactNode
+        overlayElement?: ReactNode,
+        valueToLocalValue?: (val?: string) => (Promise<string | undefined> | string | undefined),
+        validator?: (value: unknown) => Promise<string | undefined>,
+        elementId?: string,
+        placeholder?: string,
+        enableClearIcon?: boolean,
+        onClearIconClicked?: () => void
     }, ref: ForwardedRef<HTMLLabelElement>) {
+
         const {
             value,
             onChange,
@@ -51,7 +60,14 @@ export const TextInput = forwardRef(function TextInput(props: {
             type,
             allCaps,
             disabled,
-            overlayElement
+            overlayElement,
+            valueToLocalValue,
+            validator,
+            required,
+            elementId,
+            placeholder,
+            enableClearIcon,
+            onClearIconClicked
         } = props;
 
         const {
@@ -65,7 +81,12 @@ export const TextInput = forwardRef(function TextInput(props: {
             value,
             error,
             disabled,
-            onChange
+            onChange,
+            valueToLocalValue,
+            validator,
+            required,
+            elementId,
+            label
         });
 
         const [cursorLoc, setCursorLoc] = useState<null | number>(null);
@@ -74,6 +95,7 @@ export const TextInput = forwardRef(function TextInput(props: {
         const inputRef = props.inputRef ? props.inputRef : localRef;
 
         const inputDisabled = isDisabled || isBusy;
+
         const propsRef = useRef({onChange});
         propsRef.current = {onChange};
 
@@ -93,8 +115,8 @@ export const TextInput = forwardRef(function TextInput(props: {
             minWidth: 0,
             textAlign: type === 'number' ? 'right' : 'left',
             ...inputStyle,
-        } as CSSProperties
-        const handleChange = (e:ChangeEvent<HTMLInputElement>) => {
+        } as CSSProperties;
+        const handleChange = (e?: ChangeEvent<HTMLInputElement>) => {
             if (inputDisabled) {
                 return;
             }
@@ -103,8 +125,11 @@ export const TextInput = forwardRef(function TextInput(props: {
             if (allCaps !== false && type !== 'password') {
                 val = val.toUpperCase();
             }
-            setCursorLoc(e.target.selectionStart);
-            handleValueChange(val);
+            if (e?.target.selectionStart) {
+                setCursorLoc(e.target.selectionStart);
+            }
+
+            handleValueChange(val).then();
         };
         const handleFocus = () => {
             if (onFocus) {
@@ -113,19 +138,19 @@ export const TextInput = forwardRef(function TextInput(props: {
                 inputRef.current?.select()
             }
         };
-        const handleBlur = (e:ChangeEvent<HTMLInputElement>) => {
+        const handleBlur = (e: ChangeEvent<HTMLInputElement>) => {
             const val = e.target.value;
             if (onBlur) {
                 onBlur(val);
             }
         }
-        const handleKeyDown = (e:ChangeEvent<HTMLInputElement>) => {
+        const handleKeyDown = (e: ChangeEvent<HTMLInputElement>) => {
             const val = getValue(e) ?? '';
             if (onKeyDown) {
                 onKeyDown(val)
             }
         }
-        const handleKeyUp = (e:ChangeEvent<HTMLInputElement>) => {
+        const handleKeyUp = (e: ChangeEvent<HTMLInputElement>) => {
             const val = getValue(e) ?? '';
             if (onKeyUp) {
                 onKeyUp(val)
@@ -137,23 +162,31 @@ export const TextInput = forwardRef(function TextInput(props: {
             }
         }
 
-        const input = createElement(type === 'textarea' ? 'textarea' : 'input',{
-            ref : inputRef as MutableRefObject<HTMLInputElement>,
-            name : name,
-            disabled : inputDisabled,
-            value : overlayElement ? '' : localValue ?? '',
+        const input = createElement(type === 'textarea' ? 'textarea' : 'input', {
+            ref: inputRef as MutableRefObject<HTMLInputElement>,
+            name: name,
+            disabled: inputDisabled,
+            value: overlayElement ? '' : localValue ?? '',
             maxLength,
             type,
-            onChange : handleChange,
-            onFocus : handleFocus,
-            onBlur : handleBlur,
-            onKeyDown : handleKeyDown,
-            onKeyUp : handleKeyUp,
-            onMouseDown : handleMouseDown,
-            style : style,
-            autoComplete : guid()
+            onChange: handleChange,
+            onFocus: handleFocus,
+            onBlur: handleBlur,
+            onKeyDown: handleKeyDown,
+            onKeyUp: handleKeyUp,
+            onMouseDown: handleMouseDown,
+            style: style,
+            autoComplete: guid(),
+            placeholder: placeholder
         })
-        return <Label label={label} ref={ref} style={{minWidth: 0, ...defaultStyle}}>
+
+        const [mouseOver, setMouseOver] = useState(false)
+        return <Label errorMessage={localError} label={label} ref={ref} style={{minWidth: 0, ...defaultStyle}}
+                      onMouseLeave={(e) => {
+                          if (!inputRef.current?.contains(e.relatedTarget)) {
+                              setMouseOver(false)
+                          }
+                      }} onMouseEnter={() => setMouseOver(true)}>
             {input}
             {overlayElement &&
                 <div style={{
@@ -161,17 +194,25 @@ export const TextInput = forwardRef(function TextInput(props: {
                     bottom: 5,
                     width: '100%',
                     display: 'flex',
-                    flexDirection:'column'
+                    flexDirection: 'column'
                 }}>{overlayElement}</div>
             }
-
-            {localError && <div style={{
-                padding: '0 5px',
-                fontSize: 'small',
-                lineHeight: 1,
-                color: '#C00000',
-                textAlign: 'right'
-            }}>{localError}</div>}
+            <div style={{
+                position: 'absolute',
+                bottom: 5,
+                right: 3,
+                display: enableClearIcon && mouseOver && !inputDisabled ? 'flex' : 'none',
+                flexDirection: 'column',
+                color: '#BBB',
+                background : 'white'
+            }} onClick={(e) => {
+                e.preventDefault();
+                if(onClearIconClicked) {
+                    onClearIconClicked()
+                }
+            }}>
+                <MdCancel fontSize={18}/>
+            </div>
         </Label>
     }
 );
