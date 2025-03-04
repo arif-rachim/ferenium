@@ -1,6 +1,7 @@
 import AppDesigner, {Application} from "./app/designer/AppDesigner.tsx";
 import {useEffect, useState} from "react";
 import AppViewer from "./app/viewer/AppViewer.tsx";
+import {openDevTools} from "./core/utils/electronApi.ts";
 
 export function App() {
     const [value, setValue] = useState<Application>(() => {
@@ -37,9 +38,7 @@ export function App() {
             if(event.code === 'F12'){
                 event.preventDefault();
                 event.stopPropagation();
-                if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'openDevTools' in window.electronAPI && window.electronAPI.openDevTools && typeof window.electronAPI.openDevTools === 'function') {
-                    await window.electronAPI.openDevTools();
-                }
+                await openDevTools()
             }
         }
 

@@ -1,6 +1,7 @@
 import type {BindParams, Database, ParamsObject, SqlValue} from "sql.js";
 import {utils} from "../../../../core/utils/utils.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
+import {deleteFile, loadFromFile, saveToFile} from "../../../../core/utils/electronApi.ts";
 
 const defaultFileName = 'database.db';
 const log = createLogger('[Utils]:Sqlite');
@@ -79,17 +80,15 @@ async function saveToOPFS({binaryArray, fileName}: {
     const writeableStream = await fileHandle.createWritable();
     await writeableStream.write(binaryArray);
     await writeableStream.close();
-    if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'saveToFile' in window.electronAPI && window.electronAPI.saveToFile && typeof window.electronAPI.saveToFile === 'function') {
-        await window.electronAPI.saveToFile(fileName, binaryArray);
-    }
+    await saveToFile(fileName,binaryArray)
     return {success: true}
 }
 
 async function loadFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data?: Uint8Array }> {
     log.debug('[OPFS]Loading', fileName);
-    if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'loadFromFile' in window.electronAPI && window.electronAPI.loadFromFile && typeof window.electronAPI.loadFromFile === 'function') {
-        const arrayBuffer = await window.electronAPI.loadFromFile(fileName) as ArrayBuffer;
-        return {data: new Uint8Array(arrayBuffer), success: true};
+    const buffer = await loadFromFile(fileName);
+    if(buffer){
+        return {data: new Uint8Array(buffer), success: true};
     }
     const root = await navigator.storage.getDirectory();
     const fileHandle = await root.getFileHandle(fileName);
@@ -103,9 +102,7 @@ async function deleteFromOPFS({fileName}: { fileName: string }): Promise<{ succe
     log.debug('[OPFS]Removing', fileName);
     const root = await navigator.storage.getDirectory();
     try {
-        if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'deleteFile' in window.electronAPI && window.electronAPI.deleteFile && typeof window.electronAPI.deleteFile === 'function') {
-            await window.electronAPI.deleteFile(fileName);
-        }
+        await deleteFile(fileName);
         log.debug('[OPFS]Removing entry', fileName);
         await root.removeEntry(fileName, {recursive: true});
         log.debug('[OPFS]Clearing cache', fileName);

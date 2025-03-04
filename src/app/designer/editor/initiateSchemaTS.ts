@@ -160,6 +160,10 @@ declare const utils: {
     uniqueNumber : () => number,
     startPad : (value:number|string,length:number,char?:string) => string,
     arrayToQueryResult : (array:Record,config:{params?: Record,page?: number,filter?: Record,sort?: Array<{ column: string, direction: 'asc' | 'desc' }>,rowPerPage?: number},columns:string[]) => {error?: string,data?: Record[],columns?: string[],totalPage?: number,currentPage?: number} 
+    setItem: (key: string, value: string | number | null | Record<string, unknown>) => Promise<void>,
+    getItem: (key:string) => unknown,
+    removeItem: (key:string) => Promise<void>,
+    clearStorage: () => Promise<void>
 };
 `
 }
