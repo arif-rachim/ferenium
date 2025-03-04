@@ -1,6 +1,6 @@
 import {deleteFile, loadFromFile, saveToFile} from "./electronApi.ts";
 
-const FILE = 'appStorage.json';
+const FILE = 'app-storage.json';
 
 let config: Record<string, unknown> = {};
 loadConfig().then(cnf => {
