@@ -18,16 +18,38 @@ export function App() {
     });
     const [designMode, setDesignMode] = useState(false);
     useEffect(() => {
-        function onF11(event:KeyboardEvent) {
+        function onF10(event:KeyboardEvent) {
             if(event.code === 'F10'){
                 event.preventDefault();
                 event.stopPropagation();
                 setDesignMode(!designMode);
             }
         }
-        window.addEventListener('keydown',onF11)
+        function onF5(event:KeyboardEvent) {
+            if(event.code === 'F5'){
+                event.preventDefault();
+                event.stopPropagation();
+                location.reload();
+            }
+        }
+
+        async function onF12(event:KeyboardEvent) {
+            if(event.code === 'F12'){
+                event.preventDefault();
+                event.stopPropagation();
+                if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'openDevTools' in window.electronAPI && window.electronAPI.openDevTools && typeof window.electronAPI.openDevTools === 'function') {
+                    await window.electronAPI.openDevTools();
+                }
+            }
+        }
+
+        window.addEventListener('keydown',onF10)
+        window.addEventListener('keydown',onF12)
+        window.addEventListener('keydown',onF5)
         return () => {
-            window.removeEventListener('keydown',onF11);
+            window.removeEventListener('keydown',onF10)
+            window.removeEventListener('keydown',onF12)
+            window.removeEventListener('keydown',onF5)
         }
     }, [designMode]);
     return <div style={{display: 'flex', width: '100%', height: '100%', flexDirection: 'column'}}>
