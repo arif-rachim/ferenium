@@ -1,7 +1,7 @@
 import {RefObject, useEffect, useRef, useState} from "react";
 
 export function useHoveredOnPress(refProp?: RefObject<HTMLElement>) {
-    const _ref = useRef<HTMLElement>(null);
+    const _ref = useRef<HTMLElement|null>(null);
     const ref = refProp ?? _ref;
     const [isHovered, setIsHovered] = useState<boolean>(false);
     const [isOnPress, setIsOnPress] = useState<boolean>(false)

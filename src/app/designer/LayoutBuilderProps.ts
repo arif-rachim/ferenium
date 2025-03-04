@@ -21,7 +21,7 @@ export type BasicDragEvent = CancellableEvent & { dataTransfer: DataTransfer | n
 
 export interface ElementStyleProps {
     style: CSSProperties,
-    ['data-element-id']: string,
+    dataElementId:string,
     container: Container
 }
 

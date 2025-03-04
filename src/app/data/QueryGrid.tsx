@@ -124,7 +124,7 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
             propsRef.current.onQueryResultChange(queryResult);
         }
     }, [queryResult]);
-    const dataIsNotEmpty = (queryResult.data as Array<Record<string, SqlValue>>).length > 0;
+    const dataIsNotEmpty = ((queryResult.data ?? []) as Array<Record<string, SqlValue>>).length > 0;
     return <div ref={referenceRef}
                 style={{
                     overflow: 'auto',

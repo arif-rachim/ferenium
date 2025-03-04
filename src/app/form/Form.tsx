@@ -9,7 +9,7 @@ import {guid} from "../../core/utils/guid.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
 
 type Validator = (params: unknown) => Promise<string | undefined>;
-
+const focusedElementId = new Signal.State<string | undefined>(undefined);
 export const Form = forwardRef(function Form(props: {
     value?: Record<string, unknown>,
     onChange?: (value: Record<string, unknown>, config: {
@@ -17,12 +17,12 @@ export const Form = forwardRef(function Form(props: {
         reset: () => void,
         initialValue?: Record<string, unknown>,
         value: Signal.State<Record<string, unknown>>,
-    }) => Promise<void> | void,
+    }) => (Promise<void> | void),
     container: Container,
     decorator?: (newValue?: Record<string, unknown>, prevValue?: Record<string, unknown>) => Promise<Record<string, unknown>>,
     style: CSSProperties,
     disabled?: boolean,
-    ["data-element-id"]: string
+    dataElementId: string
 }, ref: ForwardedRef<HTMLFormElement>) {
 
     const {value, onChange, container, disabled, style, decorator} = props;
@@ -35,7 +35,12 @@ export const Form = forwardRef(function Form(props: {
     const localValue = useSignal<Record<string, unknown>>(structuredClone(value ?? {}));
 
     const errors = useSignal<Record<string, string>>({});
-    const validators = useSignal<Array<{ name: string, elementId: string, validator: Validator }>>([]);
+    const validators = useSignal<Array<{
+        name: string,
+        elementId: string,
+        validator: Validator,
+        disabled?: boolean
+    }>>([]);
     const isChanged = useSignal<boolean>(false);
     const isBusy = useSignal<boolean>(false);
     const isDisabled = useSignal<boolean>(disabled === true);
@@ -91,6 +96,15 @@ export const Form = forwardRef(function Form(props: {
         return Object.keys(errorsValue).length === 0;
     }
 
+    const focusNext = (forward?: boolean) => {
+        const currentFocusedElementId = focusedElementId.get();
+        const elements = validators.get();
+        const index = elements.findIndex(i => i.elementId === currentFocusedElementId);
+        const nextIndex = forward === false ? index - 1 : index + 1;
+        const nextElementToBeFocused = nextIndex >= 0 && elements.length > nextIndex ? elements[nextIndex] : undefined;
+        focusedElementId.set(nextElementToBeFocused?.elementId)
+    }
+
     useEffect(() => {
         isDisabled.set(disabled === true);
     }, [disabled, isDisabled]);
@@ -114,10 +128,10 @@ export const Form = forwardRef(function Form(props: {
         })();
     })
 
-    return <ContainerRendererIdContext.Provider value={props["data-element-id"]}>
+    return <ContainerRendererIdContext.Provider value={props.dataElementId}>
         <form ref={ref as LegacyRef<HTMLFormElement>}
               style={containerStyle}
-              data-element-id={props["data-element-id"]}
+              data-element-id={props.dataElementId}
               onSubmit={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -140,7 +154,9 @@ export const Form = forwardRef(function Form(props: {
                 formIsValid,
                 validateValue,
                 isBusy,
-                isDisabled
+                isDisabled,
+                focusedElementId,
+                focusNext
             }}>
                 {elements}
             </FormContext.Provider>
@@ -152,12 +168,19 @@ export type FormContextType = {
     initialValue: Record<string, unknown>,
     errors: Signal.State<Record<string, string>>,
     isChanged: Signal.State<boolean>,
-    validators: Signal.State<Array<{ name: string, elementId: string, validator: Validator }>>,
+    validators: Signal.State<Array<{
+        name: string,
+        elementId: string,
+        validator: Validator,
+        disabled?: boolean
+    }>>,
+    focusedElementId: Signal.State<string | undefined>,
     reset: () => void,
     submit: () => Promise<void>,
     formIsValid: () => Promise<boolean>
     validateValue: (params: { key: string, value: unknown }) => Promise<string | undefined> | undefined,
     isBusy: Signal.State<boolean>,
-    isDisabled: Signal.State<boolean>
+    isDisabled: Signal.State<boolean>,
+    focusNext: (forward?: boolean) => void
 }
 export const FormContext = createContext<FormContextType | undefined>(undefined)

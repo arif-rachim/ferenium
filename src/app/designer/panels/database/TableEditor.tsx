@@ -24,7 +24,6 @@ import {QueryTypeResult} from "../../../data/QueryGrid.tsx";
 import {MdArrowDownward, MdArrowUpward, MdDone, MdDoneAll} from "react-icons/md";
 import {queryPagination} from "../../queryPagination.ts";
 import {QueryParamsObject} from "./queryDb.ts";
-import {guid} from "../../../../core/utils/guid.ts";
 import {
     AppVariableInitializationContext,
     FormulaDependencyParameter
@@ -34,6 +33,8 @@ import {utils} from "../../../../core/utils/utils.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
 import {isPromise} from "../../../../core/utils/isPromise.ts";
 import {notifiable, useSignal} from "react-hook-signal";
+import {useModalBox} from "../../variable-initialization/useModalBox.tsx";
+import {TextInput} from "../../../form/input/text/TextInput.tsx";
 
 async function queryTable(props: {
     table: Table,
@@ -179,7 +180,7 @@ export function SimpleTableFooter(props: {
     }
 
     return <div
-        style={{display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', borderTop: BORDER, padding: 5}}>
+        style={{display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', borderTop: BORDER, padding: 5,background: '#F2F2F2',}}>
         <Button style={{
             padding: 0,
             paddingBottom: 2,
@@ -265,7 +266,7 @@ function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, co
             hide = config.hidden;
         }
     }
-    return {minWidth, maxWidth, hide};
+    return {minWidth, maxWidth, hide, col};
 }
 
 const defaultItemToKey = (item: unknown) => {
@@ -339,11 +340,13 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
         selectedRows,
         onMultipleSelectionChange,
     } = props;
+
     const hasMultipleSelection = typeof enableMultipleSelection === 'function' ? true : enableMultipleSelection === true;
-    const keyMapper = itemToKey ?? defaultItemToKey;
+    const keyMapper = (itemToKey ?? defaultItemToKey) as (item:T) => string | number;
     const dataIsEmpty = (data ?? []).length === 0;
     const [focusedRow, setFocusedRow] = useState<T | undefined>(focusedRowProps);
     useEffect(() => setFocusedRow(focusedRowProps), [focusedRowProps]);
+    const alertBox = useModalBox();
     const {allPagesSignal, elements, applicationSignal, navigate} = useAppContext();
     const appSignal = useContext(AppVariableInitializationContext);
     const pageSignal = useContext(PageVariableInitializationContext);
@@ -358,9 +361,9 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
 
     const selectedRowsSignal = useSignal<Array<string | number>>(selectedRows ?? []);
     const multipleSelectionType = useSignal<'all' | 'some' | 'none'>("none");
-    const propsRef = useRef({dataKeys:[], keyMapper, multipleSelectionType, selectedRowsSignal});
+    const propsRef = useRef({dataKeys: [] as Array<string | number>, keyMapper, multipleSelectionType, selectedRowsSignal});
     const {dataKeys, restrictedKeys} = useMemo(() => {
-        return data.reduce((result, item, index) => {
+        return (data ?? []).reduce((result, item, index) => {
             const keyMapper = propsRef.current.keyMapper;
             const key = keyMapper(item) ? keyMapper(item) : index;
             if (typeof enableMultipleSelection === 'function' && !enableMultipleSelection(item)) {
@@ -369,13 +372,13 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                 result.dataKeys.push(key)
             }
             return result;
-        }, {dataKeys: [], restrictedKeys: []})
+        }, {dataKeys: [] as Array<string | number>, restrictedKeys: [] as Array<string | number>})
     }, [data, enableMultipleSelection]);
 
-    const restrictedKeysSignal = useSignal(restrictedKeys);
+    const restrictedKeysSignal = useSignal<Array<string | number>>(restrictedKeys);
     useEffect(() => {
         restrictedKeysSignal.set(restrictedKeys);
-    }, [restrictedKeys,restrictedKeysSignal]);
+    }, [restrictedKeys, restrictedKeysSignal]);
 
     propsRef.current = {dataKeys, keyMapper, multipleSelectionType, selectedRowsSignal};
     useEffect(() => {
@@ -390,8 +393,8 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
     const selectedRowsString = JSON.stringify(selectedRows ?? []);
 
     useEffect(() => {
-        const {multipleSelectionType, selectedRowsSignal,dataKeys} = propsRef.current;
-        const selectedRows = JSON.parse(selectedRowsString);
+        const {multipleSelectionType, selectedRowsSignal, dataKeys} = propsRef.current;
+        const selectedRows = JSON.parse(selectedRowsString) as Array<string | number>;
         selectedRowsSignal.set(selectedRows);
         const filteredRows = selectedRows.filter(i => dataKeys.includes(i));
         const allSelected = filteredRows.length === dataKeys.length;
@@ -436,8 +439,11 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                     const multipleSelection = multipleSelectionType.get();
                     return <ThreeStateCheckbox value={multipleSelection}/>
                 }}</notifiable.div>}
-                {columns.map(col => {
-                    const {minWidth, maxWidth, hide} = extractWidthAndHiddenField(columnsConfig, col);
+                {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col))).filter(i => !i.hide).map(({
+                                                                                                                      col,
+                                                                                                                      minWidth,
+                                                                                                                      maxWidth
+                                                                                                                  }) => {
                     let title = col;
                     if (columnsConfig && typeof columnsConfig === 'object' && col in columnsConfig) {
                         const config = columnsConfig[col];
@@ -454,7 +460,7 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                         }
                     }
                     return <div style={{
-                        display: hide ? 'none' : 'table-cell',
+                        display: 'table-cell',
                         borderBottom: BORDER,
                         background: '#F2F2F2',
                         color: "black",
@@ -509,9 +515,12 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                         background: '#F2F2F2',
                         color: "black",
                     }}></div>}
-                    {columns.map((col, index, source) => {
+                    {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col))).filter(i => !i.hide).map(({
+                                                                                                                          col,
+                                                                                                                          minWidth,
+                                                                                                                          maxWidth
+                                                                                                                      }, index, source) => {
                         const lastIndex = (source.length - 1) === index
-                        const {minWidth, maxWidth, hide} = extractWidthAndHiddenField(columnsConfig, col);
                         let value = '';
                         if (filter && col in filter) {
                             const val = filter[col];
@@ -522,36 +531,52 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                             }
                         }
                         return <div style={{
-                            display: hide ? 'none' : 'table-cell',
+                            display: 'table-cell',
                             borderBottom: BORDER,
                             background: '#F2F2F2',
                             color: "black",
                             minWidth,
                             maxWidth
-                        }} key={`filter-${col}`}><input style={{
+                        }} key={`filter-${col}`}><TextInput style={{
                             border: 'unset',
                             borderRight: lastIndex ? 'unset' : BORDER,
                             width: '100%',
                             padding: '5px 10px'
-                        }} value={value} onChange={(e) => {
-                            const val = e.target.value;
+                        }} autoFocus={index === 0} value={value} onChange={(e) => {
                             if (onFilterChange) {
                                 onFilterChange({
                                     column: col,
-                                    value: val,
+                                    value: e,
                                     oldValue: value
                                 });
                             }
-                        }} autoComplete={guid()}/></div>
+                        }}/></div>
                     })}
                 </div>
             }
-            {data.map((item, rowIndex) => {
+            {(data ?? []).map((item, rowIndex, data) => {
                 const key = keyMapper(item) ? keyMapper(item) : rowIndex;
                 const focusedKey = focusedRow && keyMapper(focusedRow) ? keyMapper(focusedRow) : -1;
                 const isFocused = key === focusedKey;
-                return <div style={{display: 'table-row', background: isFocused ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0)'}}
-                            key={`${key}`} onClick={() => {
+                const tableRowStyle = {display: 'table-row'} as CSSProperties
+                if (isFocused) {
+                    tableRowStyle.background = 'rgba(0,0,0,0.1)'
+                }
+                const lastRow = rowIndex === data.length - 1;
+                return <div className={'table-row'} style={tableRowStyle}
+                            key={`${key}`} tabIndex={0} onKeyDown={(e) => {
+                    const sibling = e.code === 'ArrowUp' ? e.currentTarget.previousElementSibling : e.code === 'ArrowDown' ? e.currentTarget.nextElementSibling : null;
+                    if (sibling && sibling.classList.contains('table-row')) {
+                        (sibling as HTMLDivElement).focus();
+                    }
+                    if (e.code === 'Enter') {
+                        if (onFocusedRowChange) {
+                            onFocusedRowChange(item)
+                        } else {
+                            setFocusedRow(item)
+                        }
+                    }
+                }} onClick={() => {
                     if (onFocusedRowChange) {
                         onFocusedRowChange(item)
                     } else {
@@ -607,13 +632,16 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                         const disabled = restrictedKeysSignal.get().includes(key)
                         return <ThreeStateCheckbox value={selected ? 'some' : 'none'} disabled={disabled}/>
                     }}</notifiable.div>}
-                    {columns.map((col, colIndex) => {
+                    {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col))).filter(i => !i.hide).map(({
+                                                                                                                          col,
+                                                                                                                          minWidth,
+                                                                                                                          maxWidth
+                                                                                                                      }, colIndex,filteredColumns) => {
                         let rendererPageId: string | undefined = undefined;
                         const value = item[col] as ReactNode;
                         let mappedValue: ReactNode | Promise<ReactNode> | undefined = value;
                         let valueParams = {value};
-                        const lastIndex = colIndex === (columns.length - 1);
-                        const {minWidth, maxWidth, hide} = extractWidthAndHiddenField(columnsConfig, col);
+                        const lastIndex = colIndex === (filteredColumns.length - 1);
                         if (columnsConfig !== undefined && columnsConfig !== null && typeof columnsConfig === 'object' && col in columnsConfig) {
                             const config = columnsConfig[col];
                             const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
@@ -621,12 +649,12 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                             if (config.cellValueMapper) {
                                 const log = createLogger(`TableEditor:${col}:cellValueMapper`);
                                 try {
-                                    const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', config.cellValueMapper)
+                                    const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', config.cellValueMapper)
                                     const module: {
                                         exports: (props: unknown) => unknown
-                                    } = {};
+                                    } = {exports:() => {}};
 
-                                    fun.call(null, module, app, page, utils, log, db)
+                                    fun.call(null, module, app, page, utils, log, db, alertBox)
 
                                     mappedValue = module.exports({
                                         cellValue: value,
@@ -647,12 +675,10 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                             if (config.rendererPageDataMapperFormula) {
                                 const log = createLogger(`TableEditor:${col}:rendererMapper`);
                                 try {
-                                    const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', config.rendererPageDataMapperFormula)
-                                    const module: {
-                                        exports: (props: unknown) => unknown
-                                    } = {};
+                                    const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', config.rendererPageDataMapperFormula)
+                                    const module: {exports: (props: unknown) => unknown} = {exports:() => {}};
 
-                                    fun.call(null, module, app, page, utils, log, db)
+                                    fun.call(null, module, app, page, utils, log, db, alertBox)
                                     valueParams = module.exports({
                                         cellValue: value,
                                         rowIndex,
@@ -680,9 +706,9 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                             }
                         }
                         return <div style={{
-                            display: hide ? 'none' : 'table-cell',
+                            display: 'table-cell',
                             verticalAlign: 'middle',
-                            borderBottom: BORDER,
+                            borderBottom: lastRow ? BORDER : BORDER,
                             borderRight: lastIndex ? 'unset' : BORDER,
                             overflow: 'hidden',
                             minWidth,
@@ -693,7 +719,6 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                     })}
                 </div>
             })}
-
         </div>
         {dataIsEmpty &&
             <div style={{

@@ -9,8 +9,8 @@ import {createLogger} from "../../../core/utils/logger.ts";
 const db = dbSchemaInitialization()
 
 export function initiateEffect(props: {
-    navigate: (path: string, param?: unknown) => void,
-    navigatePanel: (path: string, param?: unknown) => Promise<unknown>,
+    navigate: (path: string, param?: Record<string, any>) => void,
+    navigatePanel: (path: string, param?: Record<string, unknown>) => Promise<unknown>,
     closePanel: (param?: unknown) => void,
     variables: Array<Variable>,
     app: FormulaDependencyParameter,
@@ -58,6 +58,6 @@ export function initiateEffect(props: {
     }
 }
 
-function wrapWithTryCatch(code){
+function wrapWithTryCatch(code:string){
     return `try{${code}}catch(err){log.error(err)}`
 }

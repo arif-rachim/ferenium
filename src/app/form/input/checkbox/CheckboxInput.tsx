@@ -13,9 +13,8 @@ export const CheckboxInput = forwardRef(function CheckboxInput(props: {
     disabled?: boolean,
     required?: boolean,
     validator?: (value?: unknown) => Promise<string | undefined>,
-    elementId?: string
 }, ref: ForwardedRef<HTMLLabelElement>) {
-    const {name, value, onChange, error, label, style, required, validator, disabled, elementId} = props;
+    const {name, value, onChange, error, label, style, required, validator, disabled} = props;
     const {localValue, localError, handleValueChange, isDisabled, isBusy} = useFormInput<typeof value, typeof value>({
         name,
         value,
@@ -24,30 +23,33 @@ export const CheckboxInput = forwardRef(function CheckboxInput(props: {
         disabled,
         required,
         validator,
-        label,
-        elementId
+        label
     });
     const inputDisabled = isDisabled || isBusy;
+    const checkboxStyle = {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: localError ? 'red' : '#333',
+        border: BORDER,
+        width: 15, height: 15,
+        borderRadius: 3
+    } as CSSProperties;
+
+    if (inputDisabled) {
+        style.background = 'rgba(0,0,0,0.05)';
+    }
     return <label ref={ref} style={{display: 'flex', flexDirection: 'column', ...style}}
                   onClick={async () => {
-                      if(inputDisabled) {
+                      if (inputDisabled) {
                           return;
                       }
                       await handleValueChange(!localValue);
                   }}>
         <div style={{display: 'flex', alignItems: 'center', gap: 5}}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: localError ? 'red' : '#333',
-                border: BORDER,
-                background: inputDisabled ? 'rgba(0,0,0,0.05)' : 'unset',
-                width: 15, height: 15,
-                borderRadius: 3
-            }} tabIndex={0}
+            <div style={checkboxStyle} tabIndex={0}
                  onKeyDown={async (key) => {
-                     if(inputDisabled) {
+                     if (inputDisabled) {
                          return;
                      }
                      if (key.code.toUpperCase() === 'ENTER') {

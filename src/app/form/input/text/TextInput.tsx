@@ -37,12 +37,11 @@ export const TextInput = forwardRef(function TextInput(props: {
         overlayElement?: ReactNode,
         valueToLocalValue?: (val?: string) => (Promise<string | undefined> | string | undefined),
         validator?: (value: unknown) => Promise<string | undefined>,
-        elementId?: string,
         placeholder?: string,
         enableClearIcon?: boolean,
-        onClearIconClicked?: () => void
+        onClearIconClicked?: () => void,
+        autoFocus?: boolean
     }, ref: ForwardedRef<HTMLLabelElement>) {
-
         const {
             value,
             onChange,
@@ -64,10 +63,11 @@ export const TextInput = forwardRef(function TextInput(props: {
             valueToLocalValue,
             validator,
             required,
-            elementId,
             placeholder,
             enableClearIcon,
-            onClearIconClicked
+            onClearIconClicked,
+            autoFocus,
+
         } = props;
 
         const {
@@ -75,7 +75,8 @@ export const TextInput = forwardRef(function TextInput(props: {
             localError,
             isDisabled,
             isBusy,
-            handleValueChange
+            handleValueChange,
+            handleOnFocus
         } = useFormInput<typeof value, typeof value>({
             name,
             value,
@@ -85,8 +86,8 @@ export const TextInput = forwardRef(function TextInput(props: {
             valueToLocalValue,
             validator,
             required,
-            elementId,
-            label
+            label,
+            onFocus
         });
 
         const [cursorLoc, setCursorLoc] = useState<null | number>(null);
@@ -110,12 +111,15 @@ export const TextInput = forwardRef(function TextInput(props: {
             border: localError ? BORDER_ERROR : BORDER,
             padding: '2px 5px 3px 5px',
             borderRadius: 5,
-            background: inputDisabled ? 'rgba(0,0,0,0.03)' : 'unset',
             flexGrow: 1,
             minWidth: 0,
             textAlign: type === 'number' ? 'right' : 'left',
             ...inputStyle,
         } as CSSProperties;
+
+        if (inputDisabled) {
+            style.background = 'rgba(0,0,0,0.03)';
+        }
         const handleChange = (e?: ChangeEvent<HTMLInputElement>) => {
             if (inputDisabled) {
                 return;
@@ -132,9 +136,8 @@ export const TextInput = forwardRef(function TextInput(props: {
             handleValueChange(val).then();
         };
         const handleFocus = () => {
-            if (onFocus) {
-                onFocus()
-            } else {
+            const hasOnFocus = handleOnFocus();
+            if (!hasOnFocus) {
                 inputRef.current?.select()
             }
         };
@@ -177,13 +180,15 @@ export const TextInput = forwardRef(function TextInput(props: {
             onMouseDown: handleMouseDown,
             style: style,
             autoComplete: guid(),
-            placeholder: placeholder
+            placeholder: placeholder,
+            autoFocus: autoFocus
         })
 
         const [mouseOver, setMouseOver] = useState(false)
         return <Label errorMessage={localError} label={label} ref={ref} style={{minWidth: 0, ...defaultStyle}}
                       onMouseLeave={(e) => {
-                          if (!inputRef.current?.contains(e.relatedTarget)) {
+                          const containsElement = e.relatedTarget && inputRef.current ? inputRef.current.contains(e.relatedTarget as Node) : false;
+                          if (!containsElement) {
                               setMouseOver(false)
                           }
                       }} onMouseEnter={() => setMouseOver(true)}>
@@ -204,10 +209,10 @@ export const TextInput = forwardRef(function TextInput(props: {
                 display: enableClearIcon && mouseOver && !inputDisabled ? 'flex' : 'none',
                 flexDirection: 'column',
                 color: '#BBB',
-                background : 'white'
+                background: 'white'
             }} onClick={(e) => {
                 e.preventDefault();
-                if(onClearIconClicked) {
+                if (onClearIconClicked) {
                     onClearIconClicked()
                 }
             }}>

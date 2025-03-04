@@ -20,8 +20,8 @@ export function callableInitialization(props: {
     allCallables: Array<Callable>,
     app: FormulaDependencyParameter,
     page: FormulaDependencyParameter,
-    navigate: (path: string, param?: unknown) => void,
-    navigatePanel: (path: string, param?: unknown) => Promise<unknown>,
+    navigate: (path: string, param?: Record<string, unknown>) => void,
+    navigatePanel: (path: string, param?: Record<string, unknown>) => Promise<unknown>,
     alertBox: ModalBox,
     closePanel: (params?: unknown) => void,
     tools: { deleteSqlLite: () => Promise<void>, saveSqlLite: (arrayBuffer: ArrayBuffer) => Promise<void> }

@@ -17,15 +17,15 @@ export const PageViewer = memo(function PageViewer(props: {
     elements: LayoutBuilderProps['elements'],
     page: Page,
     appConfig: Omit<Application, 'id' | 'name'>
-    value: Record<string, unknown>,
+    value?: Record<string, unknown>,
     navigate: AppViewerContext['navigate']
 }) {
     const {elements, page, appConfig, value, navigate} = props;
-    const variableInitialValueSignal = useSignal<Record<string, unknown>>(value);
+    const variableInitialValueSignal = useSignal<Record<string, unknown>>(value ?? {});
     const isMountedRef = useRef(false);
     useEffect(() => {
         if(!isMountedRef.current){
-            variableInitialValueSignal.set(value);
+            variableInitialValueSignal.set(value ?? {});
             isMountedRef.current = preventReRenderingWhenValueChanged;
         }
     }, [value, variableInitialValueSignal]);
@@ -52,13 +52,14 @@ export const PageViewer = memo(function PageViewer(props: {
     useEffect(() => {
         const pageVariables = allPageVariablesSignal.get();
         const variablesInstance = allPageVariablesSignalInstance.get();
-        if(isMountedRef.current && pageVariables && variablesInstance){
+        if(value && isMountedRef.current && pageVariables && variablesInstance){
             Object.keys(value).forEach(key => {
                 const val = value[key];
                 const variableId = pageVariables.find(i => i.name === key)?.id;
                 const state = variablesInstance.find(i => i.id === variableId);
                 if(state && state.instance && 'set' in state.instance){
                     if(state.instance.get() !== val){
+                        //@ts-ignore
                         state.instance.set(val);
                     }
                 }

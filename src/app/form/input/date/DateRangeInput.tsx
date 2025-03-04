@@ -1,4 +1,4 @@
-import {CSSProperties, ForwardedRef, forwardRef, useEffect, useRef} from "react";
+import {CSSProperties, ForwardedRef, forwardRef, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {dateToString, format_ddMMMyyyy, toDate} from "../../../../core/utils/dateFormat.ts";
 import {DateRangePicker} from "./DateRangePicker.tsx";
 import {Label} from "../../Label.tsx";
@@ -10,6 +10,8 @@ import {useForwardedRef} from "../../../../core/hooks/useForwardedRef.ts";
 import {DivWithClickOutside} from "../../../designer/components/DivWithClickOutside.tsx"
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useFormInput} from "../../useFormInput.ts";
+import {useSignalEffect} from "react-hook-signal";
+import {colors} from "../../../../core/style/colors.ts";
 
 type RangeInput = { from: Date | string, to: Date | string };
 
@@ -28,10 +30,9 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
     style?: CSSProperties,
     inputStyle?: CSSProperties,
     validator?: (value?: unknown) => Promise<string | undefined>,
-    elementId?: string
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style: defaultStyle, error, label, onChange, value, name, disabled, validator, required,elementId} = props;
+    const {inputStyle, style: defaultStyle, error, label, onChange, value, name, disabled, validator, required} = props;
     const {
         handleValueChange,
         localValue,
@@ -39,7 +40,9 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
         localError,
         formContext,
         isBusy,
-        isDisabled
+        isDisabled,
+        handleOnFocus,
+        elementId
     } = useFormInput<RangeInput, { from?: string, to?: string }>({
         name,
         value,
@@ -51,8 +54,7 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
         disabled,
         required,
         validator,
-        label,
-        elementId
+        label
     });
     const context = useAppContext();
     const isDesignMode = 'uiDisplayModeSignal' in context && context.uiDisplayModeSignal.get() === 'design';
@@ -82,23 +84,19 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
     }, [setLocalValue, formContext, localValue, name, handleValueChange]);
 
 
-    const style = {
-        border: error ? BORDER_ERROR : BORDER,
-        padding: '0px 5px',
-        borderRadius: 5,
-        width: 90,
-        textAlign: 'center',
-        ...inputStyle
-    } as CSSProperties
-    if (style?.border === 'unset') {
-        style.border = BORDER
-    }
-
     const showPopup = useShowPopUp();
-    const onFocus = async () => {
+    const popupVisibleRef = useRef(false);
+    const localValueTo = localValue?.to;
+    const localValueFrom = localValue?.from;
+    const onFocus = useCallback(async function onFocus() {
+        if (popupVisibleRef.current) {
+            return;
+        }
         if (isDesignMode) {
             return;
         }
+        popupVisibleRef.current = true;
+        handleOnFocus();
         const newDate = await showPopup<{
             from: Date,
             to: Date
@@ -116,14 +114,37 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
                 boxShadow: '0px 10px 5px -3px rgba(0,0,0,0.5)'
             }} onClickOutside={() => closePanel(false)}>
                 <DateRangePicker onChange={closePanel}
-                                 value={{from: toDate(localValue?.from) as Date, to: toDate(localValue?.to) as Date}}/>
+                                 value={{from: toDate(localValueFrom) as Date, to: toDate(localValueTo) as Date}}/>
             </DivWithClickOutside>
         });
+        popupVisibleRef.current = false;
         if (newDate === false) {
             return;
         }
         setLocalValue({from: format_ddMMMyyyy(newDate.from), to: format_ddMMMyyyy(newDate.to)})
-    }
+    }, [handleOnFocus, isDesignMode, localValueFrom, localValueTo, ref, setLocalValue, showPopup]);
+    const [isFocused, setIsFocused] = useState(false);
+
+    useSignalEffect(() => {
+        setIsFocused(formContext?.focusedElementId.get() === elementId)
+    })
+    const iStyle = useMemo(() => {
+        const style = {
+            border: error ? BORDER_ERROR : BORDER,
+            padding: '0px 5px',
+            borderRadius: 5,
+            width: 90,
+            textAlign: 'center',
+            ...inputStyle
+        } as CSSProperties
+        if (style?.border === 'unset') {
+            style.border = BORDER
+        }
+        if (isFocused) {
+            style.background = colors.lightYellow
+        }
+        return style;
+    }, [inputStyle, isFocused, error]);
     return <Label label={label} ref={ref} style={defaultStyle}>
         <div style={{display: 'flex', gap: 10}}>
             <TextInput
@@ -132,7 +153,7 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
                 onChange={val => {
                     setLocalValue(old => ({...old, from: val}))
                 }}
-                inputStyle={style}
+                inputStyle={iStyle}
                 onFocus={onFocus}
 
             />
@@ -142,7 +163,7 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
                 onChange={val => {
                     setLocalValue(old => ({...old, to: val}))
                 }}
-                inputStyle={style}
+                inputStyle={iStyle}
                 onFocus={onFocus}
             />
         </div>

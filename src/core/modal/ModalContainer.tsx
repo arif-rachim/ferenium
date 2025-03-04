@@ -1,10 +1,9 @@
 import {ModalParameter} from "../hooks/modal/useModal.ts";
 import {HTMLProps, useEffect, useRef} from "react";
-import {AnimatePresence, motion} from "framer-motion";
 
 export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
     const modalPanels = props.modalPanels;
-    return <AnimatePresence>
+    return <>
         {modalPanels.map(p => {
             const position = p.config?.position;
             const isPlain = p.config?.plainPanel === true
@@ -17,7 +16,7 @@ export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    overflow : 'hidden'
+                    overflow: 'hidden'
                 }} key={p.id}>{p.element}</AutoFocusDiv>
             }
             return <AutoFocusDiv style={{
@@ -33,17 +32,19 @@ export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
                 alignItems: 'center',
                 justifyContent: justifyContent,
             }} key={p.id}>
-                <motion.div initial={{scale:0.9}} animate={{scale:1}} exit={{scale:0.9,opacity:0}} style={{
+                <div style={{
                     background: '#FFF',
                     borderRadius: borderRadius,
                     boxShadow: '0 0px 10px -3px rgba(0,0,0,0.3),0 10px 10px 0px rgba(0,0,0,0.2)',
                     overflow: "hidden",
                     margin: '0 1rem',
+                    maxWidth : '80%',
+                    maxHeight: '80%',
                     ...animate(p.config)
-                }}>{p.element}</motion.div>
+                }}>{p.element}</div>
             </AutoFocusDiv>
         })}
-    </AnimatePresence>
+    </>
 }
 
 
@@ -68,12 +69,12 @@ const animate = (config?: {
     return {};
 }
 
-function AutoFocusDiv(props:HTMLProps<HTMLDivElement>){
-    const divRef = useRef<HTMLDivElement|null>(null);
+function AutoFocusDiv(props: HTMLProps<HTMLDivElement>) {
+    const divRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
-        if(divRef.current){
+        if (divRef.current) {
             divRef.current.focus();
         }
     }, []);
-    return <motion.div ref={divRef} exit={{opacity:0}} tabIndex={-1} {...props}/>;
+    return <div ref={divRef} tabIndex={-1} {...props}/>;
 }

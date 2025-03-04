@@ -135,7 +135,8 @@ export default function AppDesigner(props: LayoutBuilderProps) {
         allVariablesSignal,
         allFetchersSignal,
         allQueriesSignal,
-        navigate
+        navigate,
+        navigateBack
     } = useAppInitiator(props);
     const context: AppDesignerContext = {
         applicationSignal,
@@ -171,7 +172,8 @@ export default function AppDesigner(props: LayoutBuilderProps) {
         selectedDragContainerIdSignal: selectedDragContainerIdSignal,
         activeDropZoneIdSignal: activeDropZoneIdSignal,
         uiDisplayModeSignal: uiDisplayModeSignal,
-        navigate
+        navigate,
+        navigateBack
     }
 
     return <ErrorBoundary>

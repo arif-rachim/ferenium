@@ -1,4 +1,4 @@
-import {CSSProperties, ForwardedRef, forwardRef, useEffect, useRef} from "react";
+import {CSSProperties, ForwardedRef, forwardRef, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {TextInput} from "../text/TextInput.tsx";
 import {dateToString, format_ddMMMyyyy, format_hhmm, toDate} from "../../../../core/utils/dateFormat.ts";
 import {DatePicker} from "./DatePicker.tsx";
@@ -10,6 +10,8 @@ import {DivWithClickOutside} from "../../../designer/components/DivWithClickOuts
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useFormInput} from "../../useFormInput.ts";
 import {utils} from "../../../../core/utils/utils.ts";
+import {useSignalEffect} from "react-hook-signal";
+import {colors} from "../../../../core/style/colors.ts";
 
 const ERROR_COLOR = '#C00000';
 
@@ -24,11 +26,10 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
     inputStyle?: CSSProperties,
     required?: boolean,
     validator?: (value?: unknown) => Promise<string | undefined>,
-    elementId?: string
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
 
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style, error, label, onChange, value, name, disabled, validator, required, elementId} = props;
+    const {inputStyle, style, error, label, onChange, value, name, disabled, validator, required} = props;
     const {
         localValue,
         setLocalValue,
@@ -36,7 +37,9 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
         formContext,
         handleValueChange,
         isDisabled,
-        isBusy
+        isBusy,
+        handleOnFocus,
+        elementId
     } = useFormInput<typeof value, {
         date?: string,
         hour?: string,
@@ -59,7 +62,6 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
         required,
         disabled,
         label,
-        elementId,
         onChange
     });
     const context = useAppContext();
@@ -90,17 +92,71 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
     const firstSegmentTimeRef = useRef<HTMLInputElement | undefined>();
     const secondSegmentTimeRef = useRef<HTMLInputElement | undefined>();
     const trapHowManyTimesUserTypeKeyDown = useRef(0);
+    const [isFocused, setIsFocused] = useState(false);
+    useSignalEffect(() => {
+        setIsFocused(formContext?.focusedElementId.get() === elementId)
+    })
+    const iStyle = useMemo(() => {
+        const style = {
+            width: 90,
+            textAlign: 'center',
+            borderColor: localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)',
+            ...inputStyle
+        } as CSSProperties
+        if (isFocused) {
+            style.background = colors.lightYellow
+        }
+        return style;
+    }, [inputStyle, isFocused, localError]);
+    const popupVisibleRef = useRef(false);
+    const localValueDate = localValue?.date;
+    const onFocus = useCallback(async function onFocus(){
+        if (popupVisibleRef.current) {
+            return
+        }
+        if (isDesignMode) {
+            return
+        }
+        popupVisibleRef.current = true;
+        handleOnFocus();
+        const newDate = await showPopup<Date | false | undefined, HTMLLabelElement>(ref, (closePanel, commitLayout) => {
+            commitLayout();
+            return <DivWithClickOutside style={{
+                display: 'flex',
+                flexDirection: 'column',
+                background: 'white',
+                padding: 10,
+                marginTop: 1,
+                borderBottomRightRadius: 5,
+                borderBottomLeftRadius: 5,
+                width: 270,
+                boxShadow: '0px 10px 5px -3px rgba(0,0,0,0.5)'
+            }} onMouseDown={(e) => {
+                e.preventDefault()
+            }} onClickOutside={() => closePanel(false)}><DatePicker onChange={closePanel}
+                                                                    value={toDate(localValueDate)}/></DivWithClickOutside>
+        });
+        popupVisibleRef.current = false;
+        if (newDate === false) {
+            return;
+        }
+        setLocalValue(prev => {
+            const next = ({...prev, date: format_ddMMMyyyy(newDate)});
+            if (next.date !== prev?.date) {
+                return next
+            }
+            return prev
+        })
+        if (firstSegmentTimeRef.current) {
+            firstSegmentTimeRef.current.focus();
+        }
+    },[handleOnFocus, isDesignMode, localValueDate, ref, setLocalValue,showPopup]);
     return <Label ref={ref} label={label} style={{...style, flexDirection: 'column'}}>
         <div style={{display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'flex-end'}}>
             <TextInput
                 disabled={isDisabled || isBusy}
                 error={localError}
-                inputStyle={{
-                    width: 90,
-                    textAlign: 'center',
-                    borderColor: localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)',
-                    ...inputStyle
-                }}
+                inputStyle={iStyle}
                 enableClearIcon={!utils.isEmpty(localValue?.date)}
                 onClearIconClicked={async () => {
                     await handleValueChange(undefined);
@@ -116,41 +172,7 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                         return prev;
                     });
                 }}
-                onFocus={async () => {
-                    if (isDesignMode) {
-                        return
-                    }
-                    const newDate = await showPopup<Date | false | undefined, HTMLLabelElement>(ref, (closePanel, commitLayout) => {
-                        commitLayout();
-                        return <DivWithClickOutside style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            background: 'white',
-                            padding: 10,
-                            marginTop: 1,
-                            borderBottomRightRadius: 5,
-                            borderBottomLeftRadius: 5,
-                            width: 270,
-                            boxShadow: '0px 10px 5px -3px rgba(0,0,0,0.5)'
-                        }} onMouseDown={(e) => {
-                            e.preventDefault()
-                        }} onClickOutside={() => closePanel(false)}><DatePicker onChange={closePanel}
-                                                                                value={toDate(localValue?.date)}/></DivWithClickOutside>
-                    });
-                    if (newDate === false) {
-                        return;
-                    }
-                    setLocalValue(prev => {
-                        const next = ({...prev, date: format_ddMMMyyyy(newDate)});
-                        if (next.date !== prev?.date) {
-                            return next
-                        }
-                        return prev
-                    })
-                    if (firstSegmentTimeRef.current) {
-                        firstSegmentTimeRef.current.focus();
-                    }
-                }}
+                onFocus={onFocus}
             />
             <div style={{display: 'flex', flexDirection: 'row', position: 'relative'}}>
                 <TextInput
@@ -184,9 +206,11 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                     }}
                 />
                 <div style={{
-                    position: 'absolute',
-                    left: 29,
-                    bottom: 5
+                    borderTop: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
+                    borderBottom: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
+                    bottom: 5,
+                    background: disabled ? 'rgba(0,0,0,0.03)' : 'unset',
+                    ...inputStyle
                 }}>
                     {':'}
                 </div>

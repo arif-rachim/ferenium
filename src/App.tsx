@@ -1,7 +1,6 @@
 import AppDesigner, {Application} from "./app/designer/AppDesigner.tsx";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import AppViewer from "./app/viewer/AppViewer.tsx";
-import {Button} from "./app/button/Button.tsx";
 
 export function App() {
     const [value, setValue] = useState<Application>(() => {
@@ -18,7 +17,19 @@ export function App() {
         return {} as Application;
     });
     const [designMode, setDesignMode] = useState(false);
-
+    useEffect(() => {
+        function onF11(event:KeyboardEvent) {
+            if(event.code === 'F10'){
+                event.preventDefault();
+                event.stopPropagation();
+                setDesignMode(!designMode);
+            }
+        }
+        window.addEventListener('keydown',onF11)
+        return () => {
+            window.removeEventListener('keydown',onF11);
+        }
+    }, [designMode]);
     return <div style={{display: 'flex', width: '100%', height: '100%', flexDirection: 'column'}}>
         {designMode && <AppDesigner value={value} onChange={(val) => {
             localStorage.setItem('app-designer', JSON.stringify(val));
@@ -28,8 +39,6 @@ export function App() {
             localStorage.setItem('app-designer', JSON.stringify(val));
             setValue(val);
         }} startingPage={'adm/home/landing-page'}/>}
-        <Button style={{position: 'absolute', bottom: 5, right: 5}} onClick={() => {
-            setDesignMode(!designMode)
-        }}>{designMode ? 'App' : 'Dev'}</Button>
+        {/*<Button style={{position: 'absolute', bottom: 2, right: 2}} onClick={() => setDesignMode(!designMode)} icon={'IoMdSettings'}></Button>*/}
     </div>
 }

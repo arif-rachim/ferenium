@@ -18,7 +18,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
 
     const propsRef = useRef(elementProps);
     propsRef.current = elementProps;
-
+    //@ts-ignore
     const Component = useMemo(() => forwardRef(component), [component])
 
     // const [componentProps, setComponentProps] = useState<Record<string, unknown>>({})
@@ -26,7 +26,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     useEffect(() => {
         const element = ref.current;
         if (element) {
-            element.setAttribute('data-element-id', propsRef.current["data-element-id"]);
+            element.setAttribute('data-element-id', propsRef.current.dataElementId);
         }
     }, [Component]);
     const {style, ...componentProperties} = componentProps as {style:CSSProperties};

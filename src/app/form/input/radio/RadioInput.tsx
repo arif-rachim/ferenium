@@ -10,9 +10,10 @@ export const RadioInput = forwardRef(function RadioInput(props: {
     onChange?: (params?: string) => void,
     style: CSSProperties,
     error?: string,
+
 }, ref: ForwardedRef<HTMLLabelElement>) {
     const {name, value, onChange, valueMatcher, error, label, style} = props;
-    const {localValue,  localError, handleValueChange} = useFormInput({
+    const {localValue, localError, handleValueChange, handleOnFocus} = useFormInput({
         name,
         value,
         error,
@@ -35,7 +36,7 @@ export const RadioInput = forwardRef(function RadioInput(props: {
                      if (key.code.toUpperCase() === 'ENTER') {
                          await handleValueChange(valueMatcher);
                      }
-                 }}>
+                 }} onFocus={handleOnFocus}>
                 {isSelected && <IoIosRadioButtonOn style={{fontSize: 18, color: 'rgba(0,0,0,0.7)'}}/>}
                 {!isSelected && <IoIosRadioButtonOff style={{fontSize: 18, color: 'rgba(0,0,0,0.7)'}}/>}
             </div>

@@ -1,4 +1,4 @@
-import {CSSProperties, ForwardedRef, forwardRef, useRef} from "react";
+import {CSSProperties, ForwardedRef, forwardRef, useEffect, useMemo, useRef, useState} from "react";
 import {TextInput} from "../text/TextInput.tsx";
 import {format_ddMMMyyyy, toDate} from "../../../../core/utils/dateFormat.ts";
 import {DatePicker} from "./DatePicker.tsx";
@@ -8,6 +8,8 @@ import {useForwardedRef} from "../../../../core/hooks/useForwardedRef.ts";
 import {DivWithClickOutside} from "../../../designer/components/DivWithClickOutside.tsx"
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useFormInput} from "../../useFormInput.ts";
+import {useSignalEffect} from "react-hook-signal";
+import {colors} from "../../../../core/style/colors.ts";
 
 type DateOrString = Date | string
 
@@ -22,11 +24,10 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
     style?: CSSProperties,
     inputStyle?: CSSProperties,
     validator?:(value?:unknown) => Promise<string|undefined>,
-    elementId?:string
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style, error, label, onChange, value, disabled, validator, name , required, elementId} = props;
-    const {localValue, localError, handleValueChange,isDisabled,isBusy} = useFormInput<typeof value, Date>({
+    const {inputStyle, style, error, label, onChange, value, disabled, validator, name , required} = props;
+    const {localValue, localError, handleValueChange,isDisabled,isBusy,handleOnFocus,formContext,elementId} = useFormInput<typeof value, Date>({
         name,
         value,
         error,
@@ -35,7 +36,6 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
         validator,
         required,
         disabled,
-        elementId,
         label
     });
     const context = useAppContext();
@@ -43,43 +43,73 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
     const propsRef = useRef({userIsChangingData: false});
     const text = format_ddMMMyyyy(localValue);
     const showPopup = useShowPopUp();
+    const [isFocused,setIsFocused] = useState(false);
+    useSignalEffect(() => {
+        setIsFocused(formContext?.focusedElementId.get() === elementId)
+    })
+    const iStyle = useMemo(() => {
+        const style = {width: 90, textAlign: 'center',...inputStyle} as CSSProperties;
+        if(isFocused){
+            style.background = colors.lightYellow
+        }
+        return style;
+    }, [inputStyle,isFocused]);
+    const popupVisibleRef = useRef(false);
+    async function onFocus(){
+        if(popupVisibleRef.current){
+            return;
+        }
+        if (isDesignMode) {
+            return;
+        }
+        popupVisibleRef.current = true;
+        handleOnFocus();
+        const newDate = await showPopup<Date | false, HTMLLabelElement>(ref, (closePanel, commitLayout) => {
+            commitLayout();
+            return <DivWithClickOutside style={{
+                display: 'flex',
+                flexDirection: 'column',
+                background: 'white',
+                padding: 10,
+                marginTop: 1,
+                borderBottomRightRadius: 5,
+                borderBottomLeftRadius: 5,
+                width: 270,
+                boxShadow: '0px 10px 5px -3px rgba(0,0,0,0.5)'
+            }} onMouseDown={(e) => {
+                e.preventDefault()
+            }} onClickOutside={() => {
+                closePanel(false);
+            }}><DatePicker onChange={(newDate) => closePanel(newDate)}
+                           value={localValue}/></DivWithClickOutside>
+        })
+        popupVisibleRef.current = false;
+        if (newDate === false) {
+            formContext?.focusedElementId.set(undefined);
+            return;
+        }
+        const typeIsString = typeof value === 'string';
+        const val = typeIsString ? format_ddMMMyyyy(newDate) : newDate;
+        await handleValueChange(val as T)
+        if(formContext?.focusNext){
+            formContext?.focusNext()
+        }
+    }
+    const onFocusRef = useRef(onFocus);
+    onFocusRef.current = onFocus;
+    useEffect(() => {
+        if (isFocused) {
+            onFocusRef.current().then()
+        }
+    }, [isFocused]);
     return <TextInput ref={ref}
-                      inputStyle={{width: 90, textAlign: 'center', ...inputStyle}}
+                      inputStyle={iStyle}
                       style={style}
                       disabled={isDisabled || isBusy}
                       error={localError}
                       label={label}
                       value={text}
-                      onFocus={async () => {
-                          if (isDesignMode) {
-                              return;
-                          }
-                          const newDate = await showPopup<Date | false, HTMLLabelElement>(ref, (closePanel, commitLayout) => {
-                              commitLayout();
-                              return <DivWithClickOutside style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  background: 'white',
-                                  padding: 10,
-                                  marginTop: 1,
-                                  borderBottomRightRadius: 5,
-                                  borderBottomLeftRadius: 5,
-                                  width: 270,
-                                  boxShadow: '0px 10px 5px -3px rgba(0,0,0,0.5)'
-                              }} onMouseDown={(e) => {
-                                  e.preventDefault()
-                              }} onClickOutside={() => {
-                                  closePanel(false);
-                              }}><DatePicker onChange={(newDate) => closePanel(newDate)}
-                                             value={localValue}/></DivWithClickOutside>
-                          })
-                          if (newDate === false) {
-                              return;
-                          }
-                          const typeIsString = typeof value === 'string';
-                          const val = typeIsString ? format_ddMMMyyyy(newDate) : newDate;
-                          await handleValueChange(val as T)
-                      }}
+                      onFocus={onFocus}
                       onBlur={async (newVal) => {
                           if (propsRef.current.userIsChangingData) {
                               propsRef.current.userIsChangingData = false;

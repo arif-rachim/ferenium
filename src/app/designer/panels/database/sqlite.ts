@@ -42,6 +42,7 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
             binaryArray: payload.binaryArray,
             fileName: payload.fileName ?? defaultFileName
         });
+
         return {value: undefined, errors: result.success ? undefined : 'Unable to save file'}
     }
     if (payload.type === 'loadFromFile') {
@@ -78,11 +79,18 @@ async function saveToOPFS({binaryArray, fileName}: {
     const writeableStream = await fileHandle.createWritable();
     await writeableStream.write(binaryArray);
     await writeableStream.close();
+    if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'saveToFile' in window.electronAPI && window.electronAPI.saveToFile && typeof window.electronAPI.saveToFile === 'function') {
+        await window.electronAPI.saveToFile(fileName, binaryArray);
+    }
     return {success: true}
 }
 
 async function loadFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data?: Uint8Array }> {
     log.debug('[OPFS]Loading', fileName);
+    if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'loadFromFile' in window.electronAPI && window.electronAPI.loadFromFile && typeof window.electronAPI.loadFromFile === 'function') {
+        const arrayBuffer = await window.electronAPI.loadFromFile(fileName) as ArrayBuffer;
+        return {data: new Uint8Array(arrayBuffer), success: true};
+    }
     const root = await navigator.storage.getDirectory();
     const fileHandle = await root.getFileHandle(fileName);
     const file = await fileHandle.getFile();
@@ -95,6 +103,9 @@ async function deleteFromOPFS({fileName}: { fileName: string }): Promise<{ succe
     log.debug('[OPFS]Removing', fileName);
     const root = await navigator.storage.getDirectory();
     try {
+        if('electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'deleteFile' in window.electronAPI && window.electronAPI.deleteFile && typeof window.electronAPI.deleteFile === 'function') {
+            await window.electronAPI.deleteFile(fileName);
+        }
         log.debug('[OPFS]Removing entry', fileName);
         await root.removeEntry(fileName, {recursive: true});
         log.debug('[OPFS]Clearing cache', fileName);
@@ -137,35 +148,35 @@ async function getDatabase(fileName: string) {
     return db;
 }
 
-async function persistDb(fileName:string){
+async function persistDb(fileName: string) {
     const db = await getDatabase(fileName);
-    if(db){
+    if (db) {
         const binaryArray = db.export();
-        await saveToOPFS({binaryArray,fileName})
+        await saveToOPFS({binaryArray, fileName})
     }
 }
 
-function cleanUpParams(params?: BindParams):BindParams|undefined {
-    if(Array.isArray(params)){
-        return params.map((v:unknown) => {
-            if(v instanceof Date){
+function cleanUpParams(params?: BindParams): BindParams | undefined {
+    if (Array.isArray(params)) {
+        return params.map((v: unknown) => {
+            if (v instanceof Date) {
                 return utils.dateToString(v)
             }
             return v;
         }) as SqlValue[]
     }
-    if(params !== null && params !== undefined && typeof params === 'object'){
-        return Object.keys(params).reduce((result,key) => {
-            if(params && key in params){
+    if (params !== null && params !== undefined && typeof params === 'object') {
+        return Object.keys(params).reduce((result, key) => {
+            if (params && key in params) {
                 const v = params[key] as unknown;
-                if(v instanceof Date){
+                if (v instanceof Date) {
                     result[key] = utils.dateToString(v) as string
-                }else{
+                } else {
                     result[key] = v as SqlValue;
                 }
             }
             return result;
-        },{}) as ParamsObject;
+        }, {} as Record<string, SqlValue>) as ParamsObject;
     }
 
     return params;

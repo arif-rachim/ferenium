@@ -32,6 +32,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     propsRef.current = elementProps;
 
     const Component = useMemo(() => {
+        //@ts-ignore
         return forwardRef(component)
     }, [component])
 
@@ -53,7 +54,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
                 element.addEventListener('dragend', onDragEnd);
                 element.addEventListener('mouseover', onMouseOver);
                 element.addEventListener('click', onClick);
-                element.setAttribute('data-element-id', propsRef.current["data-element-id"]);
+                element.setAttribute('data-element-id', propsRef.current.dataElementId);
                 element.setAttribute('draggable', propsRef.current.draggable.toString());
             } catch (err) {
                 console.error(err)
@@ -80,7 +81,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     return <>
         <ErrorBoundary container={container}>
             <Component ref={ref} key={container?.id} container={container}
-                       data-element-id={elementProps["data-element-id"]} {...componentProperties}
+                       dataElementId={elementProps.dataElementId} {...componentProperties}
                        style={{...elementProps.style, ...defaultStyle}}/>
         </ErrorBoundary>
     </>

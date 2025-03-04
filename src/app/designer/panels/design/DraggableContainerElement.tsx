@@ -213,7 +213,7 @@ export function DraggableContainerElement(props: { container: Container }) {
         onMouseOver,
         onClick: onSelected,
         container: props.container,
-        ['data-element-id']: props.container?.id
+        dataElementId: props.container?.id
     };
     return <ElementRenderer container={containerProp} elementProps={elementProps}/>
 }

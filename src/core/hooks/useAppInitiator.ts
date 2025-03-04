@@ -156,8 +156,8 @@ export function useAppInitiator(props: LayoutBuilderProps & {
 }
 
 function validateAndFixAppMeta(value: Application): Application {
-
-    for (const p of value.pages) {
+    const pages = value?.pages ?? []
+    for (const p of pages) {
         for (const parent of p.containers) {
             if (!parent.children) {
                 p.containers.splice(p.containers.indexOf(parent), 1);

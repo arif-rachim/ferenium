@@ -51,12 +51,13 @@ export const DefaultElements: Record<string, Element> = {
             onClick: z.function().returns(z.void()),
             onMouseDown: z.function().returns(z.void()),
             onMouseUp: z.function().returns(z.void()),
-            hidden: z.boolean().optional()
+            hidden: z.boolean().optional(),
+            dataElementId:z.string()
         },
         component: (props, ref) => {
             const {container, onClick, style, onMouseDown, onMouseUp, hidden} = props;
             return <LayoutContainer ref={ref}
-                                    data-element-id={props["data-element-id"]}
+                                    dataElementId={props.dataElementId}
                                     container={container}
                                     onClick={onClick}
                                     style={style}
@@ -93,7 +94,7 @@ export const DefaultElements: Record<string, Element> = {
                              title={title}
                              container={container}
                              dimension={dimension}
-                             data-element-id={props['data-element-id']}
+                             dataElementId={props.dataElementId}
             />
         }
     }),
@@ -108,16 +109,16 @@ export const DefaultElements: Record<string, Element> = {
             onChange: z.function().args(
                 z.record(z.unknown()),
                 z.object({
-                    value: z.object({
-                        get: z.function().args().returns(z.record(z.string())),
-                        set: z.function().args(z.record(z.string())).returns(z.void()),
-                    }),
-                    initialValue: z.record(z.string()),
-                    reset: z.function().returns(z.void()),
                     errors: z.object({
                         get: z.function().args().returns(z.record(z.string())),
                         set: z.function().args(z.record(z.string())).returns(z.void()),
-                    })
+                    }),
+                    value: z.object({
+                        get: z.function().args().returns(z.record(z.unknown())),
+                        set: z.function().args(z.record(z.unknown())).returns(z.void()),
+                    }),
+                    initialValue: z.record(z.unknown()).optional(),
+                    reset: z.function().returns(z.void())
                 })
             ).returns(z.union([z.promise(z.void()), z.void()])).optional(),
             schema: z.any()
@@ -128,7 +129,7 @@ export const DefaultElements: Record<string, Element> = {
                          disabled={disabled}
                          style={props.style as CSSProperties}
                          container={container}
-                         data-element-id={props["data-element-id"]}
+                         dataElementId={props.dataElementId}
                          onChange={onChange}
                          decorator={decorator}
                          value={value}
@@ -248,7 +249,7 @@ export const DefaultElements: Record<string, Element> = {
             type: z.enum(['text', 'number', 'password', 'textarea']).optional(),
             disabled: z.boolean().optional(),
             required: z.boolean().optional(),
-            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional()))
+            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional()))
         },
         component: (props, ref) => {
             const {
@@ -279,7 +280,6 @@ export const DefaultElements: Record<string, Element> = {
                               valueToLocalValue={valueMapper}
                               validator={validator}
                               required={required}
-                              elementId={props.container.id}
             />
         }
     }),
@@ -295,7 +295,7 @@ export const DefaultElements: Record<string, Element> = {
             style: cssPropertiesSchema,
             disabled: z.boolean().optional(),
             required: z.boolean().optional(),
-            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())),
         },
         component: (props, ref) => {
             const {style, name, onChange, value, label, error, disabled, required, validator} = props;
@@ -309,7 +309,6 @@ export const DefaultElements: Record<string, Element> = {
                                   disabled={disabled}
                                   required={required}
                                   validator={validator}
-                                  elementId={props.container.id}
             />
         }
     }),
@@ -365,13 +364,14 @@ export const DefaultElements: Record<string, Element> = {
             onChange: z.function().args(z.union([z.date(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
-            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())),
             required: z.boolean().optional(),
         },
         component: (props, ref) => {
             const {inputStyle, style, label, error, name, value, disabled, onChange, validator, required} = props;
             return <DateInput ref={ref as MutableRefObject<HTMLLabelElement>}
-                              style={style as CSSProperties} {...props} inputStyle={inputStyle as CSSProperties}
+                              style={style as CSSProperties}
+                              inputStyle={inputStyle as CSSProperties}
                               label={label}
                               error={error}
                               name={name}
@@ -380,9 +380,6 @@ export const DefaultElements: Record<string, Element> = {
                               disabled={disabled}
                               validator={validator}
                               required={required}
-                              elementId={props.container.id}
-
-
             />
         }
     }),
@@ -396,7 +393,7 @@ export const DefaultElements: Record<string, Element> = {
             error: z.string().optional(),
             disabled: z.boolean().optional(),
             required: z.boolean().optional(),
-            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())),
             onChange: z.function().args(z.union([z.date(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema
@@ -414,7 +411,6 @@ export const DefaultElements: Record<string, Element> = {
                                   error={error}
                                   required={required}
                                   validator={validator}
-                                  elementId={props.container.id}
             />
         }
     }),
@@ -428,7 +424,7 @@ export const DefaultElements: Record<string, Element> = {
             error: z.string().optional(),
             disabled: z.boolean().optional(),
             required: z.boolean().optional(),
-            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())),
             onChange: z.function().args(z.union([z.number(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema
@@ -450,7 +446,6 @@ export const DefaultElements: Record<string, Element> = {
                               error={error}
                               required={required}
                               validator={validator}
-                              elementId={props.container.id}
             />
         }
     }),
@@ -470,7 +465,7 @@ export const DefaultElements: Record<string, Element> = {
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
             required: z.boolean().optional(),
-            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional()))
+            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())).optional()
         },
         component: (props, ref) => {
             const {inputStyle, style, error, label, name, value, onChange, disabled, required, validator} = props;
@@ -485,7 +480,6 @@ export const DefaultElements: Record<string, Element> = {
                                    onChange={onChange}
                                    required={required}
                                    validator={validator}
-                                   elementId={props.container.id}
             />
         }
     }),
@@ -497,7 +491,7 @@ export const DefaultElements: Record<string, Element> = {
             value: z.union([z.string(), z.number()]).optional(),
             label: z.string().optional(),
             error: z.string().optional(),
-            onChange: z.function().args(z.union([z.string(), z.number()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
+            onChange: z.function().args(z.union([z.string(), z.number(),z.null()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
             popupStyle: cssPropertiesSchema,
@@ -520,7 +514,7 @@ export const DefaultElements: Record<string, Element> = {
                 rendererPageId: z.string().optional(),
                 title: z.string().optional()
             })),
-            valueToRowData: z.function().args(z.union([z.string(), z.number()]).optional()).returns(z.promise(z.record(z.union([z.number(), z.string()])))),
+            valueToRowData: z.function().args(ZodSqlValue.optional()).returns(z.promise(z.record(ZodSqlValue))).optional(),
             rowDataToText: z.function().args(z.record(ZodSqlValue).optional()).returns(z.string()),
             rowDataToRenderer: z.object({
                 rendererPageId: z.string().optional(),
@@ -532,8 +526,8 @@ export const DefaultElements: Record<string, Element> = {
             pageable: z.boolean().optional(),
             disabled: z.boolean().optional(),
             itemToKey: z.function().args(z.record(ZodSqlValue).optional()).returns(z.union([z.string(), z.number()])),
-            preventChange: z.function().args(z.union([z.string(), z.number()]).optional()).returns(z.promise(z.boolean())),
-            validator: z.function().args(ZodSqlValue).returns(z.promise(z.string().optional())),
+            preventChange: z.function().args(ZodSqlValue.optional()).returns(z.promise(z.boolean())).optional(),
+            validator: z.function().args(ZodSqlValue.optional()).returns(z.promise(z.string().optional())).optional(),
             required: z.boolean().optional()
         },
 
@@ -587,7 +581,6 @@ export const DefaultElements: Record<string, Element> = {
                                 preventChange={preventChange}
                                 validator={validator}
                                 required={required}
-                                elementId={props.container.id}
             />
         },
         propertyEditor: {
@@ -779,13 +772,13 @@ export const DefaultElements: Record<string, Element> = {
             pageable: z.boolean().optional(),
             style: cssPropertiesSchema,
             itemToKey: z.function().args(z.record(ZodSqlValue)).returns(z.union([z.string(), z.number()])),
-            enableMultipleSelection: z.union([z.boolean(),z.function().args(z.record(ZodSqlValue)).returns(z.boolean())]).optional(),
             selectedRows: z.array(z.union([z.number(), z.string()])),
             onMultipleSelectionChange: z.function().args(z.object({
                 type: z.enum(['add', 'remove', 'addAll', 'removeAll']),
                 value: z.union([z.string(), z.number()]).optional(),
                 selectedRows: z.array(z.union([z.string(), z.number()]))
-            })).returns(z.void())
+            })).returns(z.void()),
+            enableMultipleSelection: z.union([z.boolean(),z.function().args(z.record(ZodSqlValue).optional()).returns(z.boolean())]).optional(),
         },
         component: (props, ref) => {
             const {
@@ -949,15 +942,14 @@ const TitleBox = forwardRef(function TitleBox(props: {
     style: CSSProperties,
     onClick: () => void,
     title: string,
-    ["data-element-id"]: string,
+    dataElementId: string,
     dimension: Pick<CSSProperties, 'width' | 'height' | 'flexGrow' | 'flexShrink' | 'minWidth' | 'minHeight' | 'maxHeight' | 'maxWidth'>
 }, ref) {
 
     const {container, onClick, style, title} = props;
     const containerStyle = useContainerStyleHook(style);
     const {elements, displayMode} = useContainerLayoutHook(container);
-
-    return <ContainerRendererIdContext.Provider value={props["data-element-id"]}>
+    return <ContainerRendererIdContext.Provider value={props.dataElementId}>
         <div style={{display: 'flex', flexDirection: 'column-reverse', ...props.dimension}}>
             <div ref={ref as LegacyRef<HTMLDivElement>}
                  style={{
@@ -968,7 +960,7 @@ const TitleBox = forwardRef(function TitleBox(props: {
                      border: '1px solid rgba(0,0,0,0.1)',
                      borderRadius: 5
                  }}
-                 data-element-id={props["data-element-id"]}
+                 data-element-id={props.dataElementId}
                  onClick={() => (displayMode.get() === 'view' && onClick ? onClick() : null)}
             >
                 {elements}
@@ -1002,7 +994,7 @@ const LayoutContainer = forwardRef(function LayoutContainer(props: {
     onClick: () => void,
     onMouseDown: () => void,
     onMouseUp: () => void,
-    ["data-element-id"]: string,
+    dataElementId: string,
     hidden?: boolean
 }, ref) {
     const {container, onClick, onMouseUp, onMouseDown, style, hidden} = props;
@@ -1010,11 +1002,11 @@ const LayoutContainer = forwardRef(function LayoutContainer(props: {
     const {elements, displayMode} = useContainerLayoutHook(container);
     const isHidden = hidden === true;
     const showElement = !isHidden;
-    return <ContainerRendererIdContext.Provider value={props["data-element-id"]}>
+    return <ContainerRendererIdContext.Provider value={props.dataElementId}>
         {showElement &&
             <div ref={ref as LegacyRef<HTMLDivElement>}
                  style={containerStyle}
-                 data-element-id={props["data-element-id"]}
+                 data-element-id={props.dataElementId}
                  onClick={() => (displayMode.get() === 'view' && onClick ? onClick() : null)}
                  onMouseDown={() => (displayMode.get() === 'view' && onMouseDown ? onMouseDown() : null)}
                  onMouseUp={() => (displayMode.get() === 'view' && onMouseUp ? onMouseUp() : null)}

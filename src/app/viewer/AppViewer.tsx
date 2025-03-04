@@ -24,21 +24,21 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
         justifyContent: 'center',
         height: '100%',
         width: '100%',
-        padding: 10,
         background: 'linear-gradient(0deg,#666,#555)'
     }}>
         <div style={{
+            // maxWidth: 1200,
+            // maxHeight: 800,
+            // borderRadius: 20,
+            // padding: 5,
             background: '#444',
-            borderRadius: 20,
             boxShadow: '0px 15px 20px -4px rgba(0,0,0,0.5)',
-            maxWidth: 1200,
-            maxHeight: 800,
             display: 'flex',
             width: '100%',
             height: '100%',
             flexDirection: 'column',
             overflow: 'auto',
-            padding: 5
+            position:'relative'
         }}>
             <ErrorBoundary>
                 <AppViewerContext.Provider value={context}>
@@ -47,12 +47,12 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                             <PageVariableInitialization>
                                 <ClosePanelContext.Provider value={context.navigateBack}>
                                     <notifiable.div style={{
+                                        // borderRadius: 15,
                                         flexGrow: 1,
                                         display: 'flex',
                                         flexDirection: 'column',
                                         overflow: 'auto',
                                         background: 'white',
-                                        borderRadius: 15,
                                         position: 'relative'
                                     }}>
                                         {() => {

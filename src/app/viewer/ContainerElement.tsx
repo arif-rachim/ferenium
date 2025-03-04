@@ -1,7 +1,7 @@
 import {Container} from "../designer/AppDesigner.tsx";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {AppViewerContext} from "./context/AppViewerContext.ts";
-import {CSSProperties, useEffect, useState} from "react";
+import {CSSProperties, useEffect, useMemo, useState} from "react";
 import {useSignal, useSignalEffect} from "react-hook-signal";
 import {ElementStyleProps} from "../designer/LayoutBuilderProps.ts";
 import {ElementRenderer} from "./ElementRenderer.tsx";
@@ -42,10 +42,14 @@ export function ContainerElement(props: { container: Container }) {
         }
     }, [containerSignal, container]);
     useSignalEffect(() => setComputedStyle(initiateStyle()));
+    const computedStyleString = JSON.stringify(computedStyle);
+    const memoizedComputedStyle = useMemo(() => {
+        return JSON.parse(computedStyleString);
+    },[computedStyleString]) as CSSProperties;
 
     const elementProps: ElementStyleProps = {
-        style: computedStyle,
-        ['data-element-id']: container?.id ?? '',
+        style: memoizedComputedStyle,
+        dataElementId: container?.id ?? '',
         container: container
     };
 

@@ -1,10 +1,9 @@
-import {Dispatch, SetStateAction, useCallback, useContext, useEffect, useRef, useState, useTransition} from "react";
+import {Dispatch, SetStateAction, useCallback, useContext, useEffect, useId, useRef, useState} from "react";
 import {useSignal, useSignalEffect} from "react-hook-signal";
-import {FormContext, FormContextType} from "./Form.tsx";
+import {FormContext} from "./Form.tsx";
 import {useLogger} from "../../core/utils/logger.ts";
 import {isPromise} from "../../core/utils/isPromise.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
-import {Signal} from "signal-polyfill";
 
 
 export function useFormInput<T, V>(props: {
@@ -19,20 +18,8 @@ export function useFormInput<T, V>(props: {
     validator?: (value?: T) => Promise<string | unknown>,
     required?: boolean,
     label?: string,
-    elementId?: string
-}): {
-    localValue?: V,
-    setLocalValue: Dispatch<SetStateAction<V>>,
-    localError?: string,
-    setLocalError: Dispatch<SetStateAction<string | undefined>>,
-    nameSignal: Signal.State<string | undefined>,
-    isDisabled?: boolean,
-    setIsDisabled: Dispatch<SetStateAction<boolean>>,
-    isBusy?: boolean,
-    setIsBusy: Dispatch<SetStateAction<boolean>>,
-    formContext?: FormContextType,
-    handleValueChange: (param: SetStateAction<T>) => Promise<void>
-} {
+    onFocus?: () => void
+}) {
     const {
         name,
         value,
@@ -44,22 +31,23 @@ export function useFormInput<T, V>(props: {
         validator: propsValidator,
         required,
         label,
-        elementId
+        onFocus
     } = props;
+    const elementId = useId();
     const log = useLogger(`useFormInput:${label}`);
     log.setLevel('warn');
     const nameSignal = useSignal(name);
     const disabledPropsSignal = useSignal(disabledProps);
-    const validator = useCallback(async (value?: T) => {
+    const validator = useCallback(async (value: unknown) => {
         log.debug('value', value, 'required', required, 'propsValidator', propsValidator);
         if (required && isEmpty(value)) {
             return 'Value is required';
         }
         if (propsValidator) {
-            return await propsValidator(value)
+            return await propsValidator(value as T)
         }
         return undefined;
-    }, [propsValidator, required, log]);
+    }, [propsValidator, required, log]) as (params?:unknown) => Promise<string|undefined>;
 
     const [localValue, _setLocalValue] = useState<V | undefined>(() => {
         if (valueToLocalValue) {
@@ -88,7 +76,7 @@ export function useFormInput<T, V>(props: {
     useEffect(() => {
         if (formContext && elementId && name) {
             const validators = [...formContext.validators.get()];
-            validators.push({elementId, name, validator});
+            validators.push({elementId, name, validator, disabled: isDisabled});
             formContext.validators.set(validators);
         }
         return () => {
@@ -98,15 +86,15 @@ export function useFormInput<T, V>(props: {
                 formContext.validators.set(validates);
             }
         }
-    }, [name, validator, formContext, elementId]);
+    }, [name, validator, formContext, elementId, isDisabled]);
 
     const setLocalValue = useCallback(function setLocalValue(next: V) {
         _setLocalValue(prev => {
-            let nxt: V = next;
+            let nxt = next;
             if (typeof next === "function") {
                 nxt = next(prev);
             }
-            if (propsRef.current.valueIsEqual && propsRef.current.valueIsEqual(prev, nxt)) {
+            if (propsRef.current.valueIsEqual && propsRef.current.valueIsEqual(prev as T, nxt as unknown as T)) {
                 return prev;
             }
             return nxt;
@@ -122,9 +110,9 @@ export function useFormInput<T, V>(props: {
         if (valueToLocalValue) {
             const val = valueToLocalValue(value);
             if (val instanceof Promise) {
-                val.then(setLocalValue)
+                val.then(v => setLocalValue(v as V))
             } else {
-                setLocalValue(val);
+                setLocalValue(val as V);
             }
         } else {
             setLocalValue(value as V);
@@ -146,9 +134,9 @@ export function useFormInput<T, V>(props: {
             if (valueToLocalValue) {
                 const val = valueToLocalValue(value);
                 if (val instanceof Promise) {
-                    val.then(setLocalValue)
+                    val.then(v => setLocalValue(v as V))
                 } else {
-                    setLocalValue(val);
+                    setLocalValue(val as V);
                 }
             } else {
                 setLocalValue(value as unknown as V);
@@ -198,9 +186,6 @@ export function useFormInput<T, V>(props: {
         // now we check if there is preventive change involved
         if (propsRef.current.preventChange) {
             const response = propsRef.current.preventChange(nextValue);
-            if (response === true) {
-                return;
-            }
             if (isPromise(response)) {
                 const val = await response;
                 if (val === true) {
@@ -232,20 +217,26 @@ export function useFormInput<T, V>(props: {
             const valueToLocalValue = propsRef.current.valueToLocalValue;
             const val = valueToLocalValue(nextValue);
             if (isPromise(val)) {
+                //@ts-ignore
                 nextValue = await val;
             } else {
+                //@ts-ignore
                 nextValue = val;
             }
         }
-        setLocalValue(nextValue)
-
+        setLocalValue(nextValue as V)
     }, [name, formContext, setLocalValue]);
-    const [, startTransition] = useTransition();
-    const handleValueChangeTransition = useCallback(async (nxtVal?: (T | ((current?: T) => T | undefined))) => {
-        startTransition(() => {
-            handleValueChange(nxtVal)
-        })
-    }, [handleValueChange]);
+
+    const handleOnFocus = useCallback(() => {
+        if (formContext?.focusedElementId) {
+            formContext.focusedElementId.set(elementId);
+        }
+        if (onFocus) {
+            onFocus();
+        }
+        return typeof onFocus === 'function'
+    }, [onFocus, formContext, elementId])
+
     return {
         localValue,
         setLocalValue,
@@ -257,7 +248,9 @@ export function useFormInput<T, V>(props: {
         isBusy,
         setIsBusy,
         formContext,
-        handleValueChange: handleValueChangeTransition
+        handleValueChange,
+        handleOnFocus,
+        elementId
     };
 }
 

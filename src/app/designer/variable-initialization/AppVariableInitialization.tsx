@@ -22,14 +22,14 @@ import {useSaveSqlLite} from "../../../core/hooks/useSaveSqlLite.ts";
 import {useDeleteSqlLite} from "../../../core/hooks/useDeleteSqlLite.ts";
 import {ClosePanelContext, useNavigatePanel} from "../../../core/hooks/useNavigatePanel.ts";
 
-
-export type QueryType = (props: {
+export type QueryTypeParam = {
     params?: Record<string, SqlValue>,
     page?: number,
     filter?: QueryParamsObject,
     sort?: Array<{ column: string, direction: 'asc' | 'desc' }>,
     rowPerPage?: number
-}) => Promise<QueryTypeResult>
+}
+export type QueryType = (props: QueryTypeParam) => Promise<QueryTypeResult>
 
 export type FetchType = (inputs?: Record<string, unknown>) => Promise<Record<string, unknown> & { error?: string }>
 export type FormulaDependencyParameter = {

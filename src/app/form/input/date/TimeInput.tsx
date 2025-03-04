@@ -16,12 +16,11 @@ export const TimeInput = forwardRef(function TimeInput(props: {
     style?: CSSProperties,
     inputStyle?: CSSProperties,
     required?: boolean,
-    validator?: (value?: unknown) => Promise<string | undefined>,
-    elementId?: string
+    validator?: (value?: unknown) => Promise<string | undefined>
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
 
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style, error, label, onChange, value, name, disabled, validator, required, elementId} = props;
+    const {inputStyle, style, error, label, onChange, value, name, disabled, validator, required} = props;
     const {
         localValue,
         setLocalValue,
@@ -29,7 +28,8 @@ export const TimeInput = forwardRef(function TimeInput(props: {
         formContext,
         handleValueChange,
         isDisabled,
-        isBusy
+        isBusy,
+        handleOnFocus
     } = useFormInput<typeof value, {
         hour?: string,
         minute?: string
@@ -39,7 +39,7 @@ export const TimeInput = forwardRef(function TimeInput(props: {
         error,
         valueToLocalValue: param => {
             param = utils.toNumber(param);
-            if (param >= 0) {
+            if (param && param >= 0) {
                 const hour = utils.startPad(Math.floor(param/60),1);
                 const minute = utils.startPad((param % 60), 2);
                 return {hour, minute};
@@ -51,7 +51,6 @@ export const TimeInput = forwardRef(function TimeInput(props: {
         required,
         disabled,
         label,
-        elementId,
         onChange
     });
     const propsRef = useRef({onChange, value, handleValueChange});
@@ -87,6 +86,7 @@ export const TimeInput = forwardRef(function TimeInput(props: {
                 }}
                 value={localValue?.hour}
                 style={{width: '50%'}}
+                onFocus={handleOnFocus}
                 onChange={e => setLocalValue(prev => {
                     const next = ({...prev, hour: e});
                     if (next.hour !== prev?.hour) {
@@ -95,7 +95,13 @@ export const TimeInput = forwardRef(function TimeInput(props: {
                     return prev;
                 })}
             />
-            <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:0}}>
+            <div style={{
+                borderTop: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
+                borderBottom: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
+                bottom: 5,
+                background: disabled ? 'rgba(0,0,0,0.03)' : 'unset',
+                ...inputStyle
+            }}>
                 {':'}
             </div>
             <TextInput
@@ -113,6 +119,7 @@ export const TimeInput = forwardRef(function TimeInput(props: {
                 value={localValue?.minute}
                 style={{width: '50%'}}
                 maxLength={2}
+                onFocus={handleOnFocus}
                 onChange={e => setLocalValue(prev => {
                     const next = ({...prev, minute: e});
                     if (next.minute !== prev?.minute) {

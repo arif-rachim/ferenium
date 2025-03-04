@@ -9,7 +9,7 @@ import {useWhichChange} from "../../core/hooks/useWhichChange.ts";
 export const ComponentRenderer = memo(forwardRef(ComponentRendererFC));
 const log = createLogger('ComponentRenderer');
 
-function useCheckIfPropsIsChanged(next){
+function useCheckIfPropsIsChanged<T extends Record<string, unknown>>(next:T){
     const prevValueRef = useRef<Record<string, unknown>>();
     const nextValueRef = useRef(next);
     nextValueRef.current = next;
@@ -36,10 +36,10 @@ function useCheckIfPropsIsChanged(next){
         return prev;
     }
     // okay we know now something is changed, other wise send back the old params.
-    const nextA = {};
+    const nextA:Record<string, unknown> = {};
     for (const key of nextKeys) {
         if(typeof next[key] === 'function'){
-            nextA[key] = (...args) => {
+            nextA[key] = (...args:unknown[]) => {
                 const fun = nextValueRef.current[key] as (...args:unknown[]) => void;
                 if(fun){
                     return fun(...args)

@@ -30,7 +30,7 @@ export function useShowPopUp() {
             });
 
             return <div style={{width: '100%', height: '100%'}}>
-                <div id={id} style={{width, left, top, opacity: 0, position: 'absolute',transition:'opacity 100ms ease-out'}}>{element}</div>
+                <div id={id} style={{width, left, top, opacity: 0, position: 'fixed'}}>{element}</div>
             </div>
         }, {plainPanel: true})
     }

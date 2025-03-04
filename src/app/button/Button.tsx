@@ -76,7 +76,7 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
             background: type === 'submit' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
             color: type === 'submit' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
             borderRadius: 20,
-            boxShadow: buttonDisabled ? 'unset' : isOnPress ? '0px 5px 5px -3px rgba(0,0,0,0.5) inset' : isHovered ? '0px 5px 8px -3px rgba(255,255,255,0.2) inset' : 'unset',
+            boxShadow: buttonDisabled ? 'unset' : isOnPress ? '0px 5px 5px -3px rgba(0,0,0,0.1) inset' : isHovered ? '0px -5px 5px -3px rgba(0,0,0,0.2) inset' : '0px -5px 5px -3px rgba(0,0,0,0.1) inset',
             transition: 'box-shadow 100ms ease-in-out',
             ...style,
             paddingLeft: isNumber(style?.paddingLeft) && style?.paddingLeft > 10 ? style?.paddingLeft : 10,

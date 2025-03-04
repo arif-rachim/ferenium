@@ -19,6 +19,10 @@ label, input, button, option, select, body, textarea {
     font-weight: 400;
     font-size: 14px;
 }
+input:focus, textarea:focus,textarea:focus,select:focus,div.table-row:focus {
+    background: yellow;
+    outline: none;
+}
 
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
@@ -42,18 +46,6 @@ html, body, #root {
     min-width: 320px;
     height: 100%;
     overflow: auto;
-}
-
-input:focus {
-    outline: none;
-}
-
-textarea:focus {
-    outline: none;
-}
-
-select:focus {
-    outline: none;
 }
 
 * {
