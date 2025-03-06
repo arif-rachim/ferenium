@@ -1,4 +1,5 @@
 import {deleteFile, loadFromFile, saveToFile} from "./electronApi.ts";
+import {deleteOPFS, loadFromOPFS, saveToOPFS} from "./opfsApi.ts";
 
 const FILE = 'app-storage.json';
 const FILE_META = 'app-meta.json';
@@ -14,16 +15,13 @@ export async function getAppMeta(){
 
 export async function saveAppMeta(meta:Record<string, unknown>){
     await saveToFile(FILE_META, encodeFromString(JSON.stringify(meta)));
+    await saveToOPFS(FILE_META, encodeFromString(JSON.stringify(meta)));
 }
 
 export async function setItem(key: string, value: string | number | null | Record<string, unknown>) {
     config[key] = value;
+    debugger;
     await saveConfig(config);
-    if (value && typeof value === 'object') {
-        localStorage.setItem(key, JSON.stringify(value))
-    } else {
-        localStorage.setItem(key, JSON.stringify({value: value,__type:typeof value}))
-    }
 }
 
 export async function removeItem(key: string) {
@@ -31,12 +29,12 @@ export async function removeItem(key: string) {
         delete config[key];
         await saveConfig(config)
     }
-    localStorage.removeItem(key)
 }
 
 export async function clear() {
     await deleteFile(FILE);
-    localStorage.clear()
+    await deleteOPFS(FILE);
+    // localStorage.clear()
 }
 
 export function getItem<T>(key: string) {
@@ -70,14 +68,23 @@ async function loadConfig() {
         const config = JSON.parse(decodeToString(buffer));
         return config as Record<string, unknown>
     }
+    const {data} = await loadFromOPFS(FILE);
+    if (data) {
+        const meta = JSON.parse(decodeToString(data));
+        return meta as Record<string, unknown>
+    }
     return undefined;
 }
 
 async function loadApp() {
     const buffer = await loadFromFile(FILE_META);
-
     if (buffer) {
         const meta = JSON.parse(decodeToString(buffer));
+        return meta as Record<string, unknown>
+    }
+    const {data} = await loadFromOPFS(FILE_META);
+    if (data) {
+        const meta = JSON.parse(decodeToString(data));
         return meta as Record<string, unknown>
     }
     return undefined;
@@ -85,4 +92,5 @@ async function loadApp() {
 
 async function saveConfig(config: Record<string, unknown>) {
     await saveToFile(FILE, encodeFromString(JSON.stringify(config)));
+    await saveToOPFS(FILE, encodeFromString(JSON.stringify(config)));
 }

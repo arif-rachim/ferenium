@@ -2,6 +2,7 @@ import type {BindParams, Database, ParamsObject, SqlValue} from "sql.js";
 import {utils} from "../../../../core/utils/utils.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
 import {deleteFile, loadFromFile, saveToFile} from "../../../../core/utils/electronApi.ts";
+import {deleteOPFS, loadFromOPFS, saveToOPFS} from "../../../../core/utils/opfsApi.ts";
 
 const defaultFileName = 'database.db';
 const log = createLogger('[Utils]:Sqlite');
@@ -39,14 +40,16 @@ type Payload = SaveToOPFS | LoadFromOPFS | ExecuteQuery | DeleteFromOPFS | Persi
 
 export default async function sqlite(payload: Payload): Promise<{ errors?: string, value?: unknown }> {
     if (payload.type === 'saveToFile') {
-        const result = await saveToOPFS({
-            binaryArray: payload.binaryArray,
-            fileName: payload.fileName ?? defaultFileName
-        });
+        await saveToFile(payload.fileName ?? defaultFileName, payload.binaryArray);
+        const result = await saveToOPFS(payload.fileName ?? defaultFileName, payload.binaryArray)
         return {value: undefined, errors: result.success ? undefined : 'Unable to save file'}
     }
     if (payload.type === 'loadFromFile') {
-        const result = await loadFromOPFS({fileName: payload.fileName ?? defaultFileName});
+        const data = await loadFromFile(payload.fileName ?? defaultFileName);
+        if (data) {
+            return {value: data}
+        }
+        const result = await loadFromOPFS(payload.fileName ?? defaultFileName);
         return {value: result.data, errors: result.success ? undefined : 'Unable to load file'}
     }
     if (payload.type === 'executeQuery') {
@@ -58,8 +61,9 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
         return {value: {columns: result.columns, values: result.values}, errors: result.errors}
     }
     if (payload.type === 'deleteFromFile') {
-        const result = await deleteFromOPFS({fileName: payload.fileName ?? defaultFileName});
-        return {value: result.data, errors: result.success ? undefined : 'Unable to delete file'}
+        await deleteFile(payload.fileName ?? defaultFileName);
+        await deleteOPFS(payload.fileName ?? defaultFileName);
+        return {value: undefined, errors: undefined}
     }
     if (payload.type === 'persistChanges') {
         await persistDb(payload.fileName ?? defaultFileName);
@@ -67,56 +71,56 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
     }
     return {errors: 'Unable to identify payload type', value: ''}
 }
-
-async function saveToOPFS({binaryArray, fileName}: {
-    binaryArray: Uint8Array,
-    fileName: string
-}): Promise<{
-    success: boolean
-}> {
-    const root = await navigator.storage.getDirectory();
-    const fileHandle = await root.getFileHandle(fileName, {create: true});
-    const writeableStream = await fileHandle.createWritable();
-    await writeableStream.write(binaryArray);
-    await writeableStream.close();
-    await saveToFile(fileName,binaryArray)
-    return {success: true}
-}
-
-async function loadFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data?: Uint8Array }> {
-    log.debug('[OPFS]Loading', fileName);
-    const unit8Array = await loadFromFile(fileName);
-    if(unit8Array){
-        return {data: unit8Array, success: true};
-    }
-    const root = await navigator.storage.getDirectory();
-    const fileHandle = await root.getFileHandle(fileName);
-    const file = await fileHandle.getFile();
-    const arrayBuffer = await file.arrayBuffer();
-    log.debug('[OPFS]Succesfully loading', fileName);
-    return {data: new Uint8Array(arrayBuffer), success: true};
-}
-
-async function deleteFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data: string }> {
-    log.debug('[OPFS]Removing', fileName);
-    const root = await navigator.storage.getDirectory();
-    try {
-        await deleteFile(fileName);
-        log.debug('[OPFS]Removing entry', fileName);
-        await root.removeEntry(fileName, {recursive: true});
-        log.debug('[OPFS]Clearing cache', fileName);
-        delete database[fileName];
-        log.debug('[OPFS]Succesfully removing', fileName);
-        return {data: '', success: true};
-    } catch (e: unknown) {
-        let message = '';
-        if (e !== undefined && e !== null && typeof e === 'object' && 'message' in e) {
-            message = e.message as string;
-        }
-        return {data: message, success: false};
-    }
-
-}
+//
+// async function saveToOPFS({binaryArray, fileName}: {
+//     binaryArray: Uint8Array,
+//     fileName: string
+// }): Promise<{
+//     success: boolean
+// }> {
+//     const root = await navigator.storage.getDirectory();
+//     const fileHandle = await root.getFileHandle(fileName, {create: true});
+//     const writeableStream = await fileHandle.createWritable();
+//     await writeableStream.write(binaryArray);
+//     await writeableStream.close();
+//     await saveToFile(fileName,binaryArray)
+//     return {success: true}
+// }
+//
+// async function loadFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data?: Uint8Array }> {
+//     log.debug('[OPFS]Loading', fileName);
+//     const unit8Array = await loadFromFile(fileName);
+//     if(unit8Array){
+//         return {data: unit8Array, success: true};
+//     }
+//     const root = await navigator.storage.getDirectory();
+//     const fileHandle = await root.getFileHandle(fileName);
+//     const file = await fileHandle.getFile();
+//     const arrayBuffer = await file.arrayBuffer();
+//     log.debug('[OPFS]Succesfully loading', fileName);
+//     return {data: new Uint8Array(arrayBuffer), success: true};
+// }
+//
+// async function deleteFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data: string }> {
+//     log.debug('[OPFS]Removing', fileName);
+//     const root = await navigator.storage.getDirectory();
+//     try {
+//         await deleteFile(fileName);
+//         log.debug('[OPFS]Removing entry', fileName);
+//         await root.removeEntry(fileName, {recursive: true});
+//         log.debug('[OPFS]Clearing cache', fileName);
+//         delete database[fileName];
+//         log.debug('[OPFS]Succesfully removing', fileName);
+//         return {data: '', success: true};
+//     } catch (e: unknown) {
+//         let message = '';
+//         if (e !== undefined && e !== null && typeof e === 'object' && 'message' in e) {
+//             message = e.message as string;
+//         }
+//         return {data: message, success: false};
+//     }
+//
+// }
 
 const database: Record<string, Database> = {};
 const initSqlJs = self['initSqlJs'];
@@ -127,8 +131,12 @@ async function getDatabase(fileName: string) {
         db = database[fileName];
     } else {
         try {
-            const {data, success} = await loadFromOPFS({fileName})
-            if (success) {
+            let data = await loadFromFile(fileName);
+            if (!data) {
+                const res = await loadFromOPFS(fileName);
+                data = res.data;
+            }
+            if (data) {
                 log.debug('[DB]opening db', fileName);
                 const SQL = await initSqlJs({
                     locateFile: file => `${file}`
@@ -148,7 +156,8 @@ async function persistDb(fileName: string) {
     const db = await getDatabase(fileName);
     if (db) {
         const binaryArray = db.export();
-        await saveToOPFS({binaryArray, fileName})
+        await saveToFile(fileName, binaryArray)
+        await saveToOPFS(fileName, binaryArray)
     }
 }
 
