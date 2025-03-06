@@ -5,7 +5,7 @@ export const triggerDownloadZip = async (fileName: string, data: unknown) => {
     const jsonContent = JSON.stringify(data, null, 2);
 
     // Add the JSON file to the ZIP
-    zip.file('data.json', jsonContent);
+    zip.file('meta-inf.json', jsonContent);
 
     // Generate the ZIP file
     const zipBlob = await zip.generateAsync({type: 'blob'});

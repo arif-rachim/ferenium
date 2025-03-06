@@ -2,11 +2,11 @@ import AppDesigner, {Application} from "./app/designer/AppDesigner.tsx";
 import {useEffect, useState} from "react";
 import AppViewer from "./app/viewer/AppViewer.tsx";
 import {openDevTools} from "./core/utils/electronApi.ts";
-import {getItem, setItem} from "./core/utils/appStorage.ts";
+import {saveAppMeta} from "./core/utils/appStorage.ts";
 
-export function App() {
+export function App(props:{meta:Record<string, unknown>}) {
     const [value, setValue] = useState<Application>(() => {
-        const val = getItem('application');
+        const val = props.meta;
         if (val) {
             const app = val as Application;
             app?.pages?.forEach(p => {
@@ -42,7 +42,6 @@ export function App() {
                 await openDevTools()
             }
         }
-
         window.addEventListener('keydown',onF10)
         window.addEventListener('keydown',onF12)
         window.addEventListener('keydown',onF5)
@@ -54,12 +53,12 @@ export function App() {
     }, [designMode]);
     return <div style={{display: 'flex', width: '100%', height: '100%', flexDirection: 'column'}}>
         {designMode && <AppDesigner value={value} onChange={async (val) => {
-            await setItem('application',val);
             setValue(val);
+            saveAppMeta(val).then()
         }}/>}
         {!designMode && <AppViewer value={value} onChange={async (val) => {
-            await setItem('application',val);
             setValue(val);
+            saveAppMeta(val).then()
         }} startingPage={'adm/home/landing-page'}/>}
     </div>
 }

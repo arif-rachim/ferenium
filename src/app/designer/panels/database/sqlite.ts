@@ -43,7 +43,6 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
             binaryArray: payload.binaryArray,
             fileName: payload.fileName ?? defaultFileName
         });
-
         return {value: undefined, errors: result.success ? undefined : 'Unable to save file'}
     }
     if (payload.type === 'loadFromFile') {
@@ -86,9 +85,9 @@ async function saveToOPFS({binaryArray, fileName}: {
 
 async function loadFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data?: Uint8Array }> {
     log.debug('[OPFS]Loading', fileName);
-    const buffer = await loadFromFile(fileName);
-    if(buffer){
-        return {data: new Uint8Array(buffer), success: true};
+    const unit8Array = await loadFromFile(fileName);
+    if(unit8Array){
+        return {data: unit8Array, success: true};
     }
     const root = await navigator.storage.getDirectory();
     const fileHandle = await root.getFileHandle(fileName);
