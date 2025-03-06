@@ -3,6 +3,7 @@ import {utils} from "../../../../core/utils/utils.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
 import {deleteFile, loadFromFile, saveToFile} from "../../../../core/utils/electronApi.ts";
 import {deleteOPFS, loadFromOPFS, saveToOPFS} from "../../../../core/utils/opfsApi.ts";
+import {loadFromNetwork} from "../../../../core/utils/networkApi.ts";
 
 const defaultFileName = 'database.db';
 const log = createLogger('[Utils]:Sqlite');
@@ -50,7 +51,13 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
             return {value: data}
         }
         const result = await loadFromOPFS(payload.fileName ?? defaultFileName);
-        return {value: result.data, errors: result.success ? undefined : 'Unable to load file'}
+        if (result.success) {
+            return {value: result.data}
+        }
+        const networkData = await loadFromNetwork(payload.fileName ?? defaultFileName);
+        if (networkData) {
+            return {value: networkData}
+        }
     }
     if (payload.type === 'executeQuery') {
         const result = await executeQuery({
@@ -134,7 +141,10 @@ async function getDatabase(fileName: string) {
             let data = await loadFromFile(fileName);
             if (!data) {
                 const res = await loadFromOPFS(fileName);
-                data = res.data;
+                data = res?.data;
+            }
+            if (!data) {
+                data = await loadFromNetwork(fileName);
             }
             if (data) {
                 log.debug('[DB]opening db', fileName);
