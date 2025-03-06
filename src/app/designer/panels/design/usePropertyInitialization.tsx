@@ -59,7 +59,7 @@ export function usePropertyInitialization(props: { container: Container }) {
             const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
             const log = createLogger(`[Props]:${container.type}:${containerPropKey}:${container.id}`);
             const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
-            const module: { exports: unknown } = {exports: {}};
+            const module: { exports: unknown } = {exports: defaultExports};
             try {
                 const fun = new Function(...funcParams);
                 const funcParamsInstance = [module, navigate, navigatePanel, closePanel, db, app, page, z, alertBox, tools, utils, formContext, log, ...propDependencies];
@@ -69,24 +69,22 @@ export function usePropertyInitialization(props: { container: Container }) {
                 log.error(err);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
             }
-            if (returnType) {
-                if (JSON.stringify(module.exports) !== '{}') {
-                    try {
-                        returnType.parse(module.exports)
-                        errorMessage.propertyValidation({
-                            propertyName: containerPropKey,
-                            containerId: container.id,
-                        })
-                    } catch (err) {
-                        errorMessage.propertyValidation({
-                            propertyName: containerPropKey,
-                            containerId: container.id,
-                            err
-                        })
-                    }
+            if (module.exports !== defaultExports && returnType) {
+                try {
+                    returnType.parse(module.exports)
+                    errorMessage.propertyValidation({
+                        propertyName: containerPropKey,
+                        containerId: container.id,
+                    })
+                } catch (err) {
+                    errorMessage.propertyValidation({
+                        propertyName: containerPropKey,
+                        containerId: container.id,
+                        err
+                    })
                 }
             }
-            if (typeof module.exports === 'function') {
+            if (module.exports !== defaultExports && typeof module.exports === 'function') {
                 const originalFunction = module.exports as (...args: unknown[]) => unknown
                 result[containerPropKey] = (...args: unknown[]) => {
                     try {
@@ -104,10 +102,8 @@ export function usePropertyInitialization(props: { container: Container }) {
                         })
                     }
                 }
-            } else {
-                if (JSON.stringify(module.exports) !== '{}') {
-                    result[containerPropKey] = module.exports;
-                }
+            } else if (module.exports !== defaultExports) {
+                result[containerPropKey] = module.exports;
             }
         }
         return result;
@@ -134,7 +130,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                 const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
                 const log = createLogger(`[Props]:${container.type}:${containerPropKey}:${container.id}`);
                 const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
-                const module: { exports: unknown } = {exports: {}};
+                const module: { exports: unknown } = {exports: defaultExports};
                 try {
                     if (pageId !== context.activePageIdSignal.get()) {
                         return;
@@ -148,24 +144,22 @@ export function usePropertyInitialization(props: { container: Container }) {
                     log.debug('We have pageId', pageId, 'activePageId', context.activePageIdSignal.get());
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
                 }
-                if (returnType) {
-                    if (JSON.stringify(module.exports) !== '{}') {
-                        try {
-                            returnType.parse(module.exports)
-                            errorMessage.propertyValidation({
-                                propertyName: containerPropKey,
-                                containerId: container.id,
-                            })
-                        } catch (err) {
-                            errorMessage.propertyValidation({
-                                propertyName: containerPropKey,
-                                containerId: container.id,
-                                err
-                            })
-                        }
+                if (module.exports !== defaultExports && returnType) {
+                    try {
+                        returnType.parse(module.exports)
+                        errorMessage.propertyValidation({
+                            propertyName: containerPropKey,
+                            containerId: container.id,
+                        })
+                    } catch (err) {
+                        errorMessage.propertyValidation({
+                            propertyName: containerPropKey,
+                            containerId: container.id,
+                            err
+                        })
                     }
                 }
-                if (typeof module.exports === 'function') {
+                if (module.exports !== defaultExports && typeof module.exports === 'function') {
                     const originalFunction = module.exports as (...args: unknown[]) => unknown
                     const wrapper = (...args: unknown[]) => {
                         try {
@@ -189,15 +183,13 @@ export function usePropertyInitialization(props: { container: Container }) {
                         }
                         return ({...props, [containerPropKey]: wrapper})
                     })
-                } else {
-                    if (JSON.stringify(module.exports) !== '{}') {
-                        setComponentProps(props => {
-                            if (props[containerPropKey] === module.exports) {
-                                return props;
-                            }
-                            return ({...props, [containerPropKey]: module.exports})
-                        })
-                    }
+                } else if (module.exports !== defaultExports) {
+                    setComponentProps(props => {
+                        if (props[containerPropKey] === module.exports) {
+                            return props;
+                        }
+                        return ({...props, [containerPropKey]: module.exports})
+                    })
                 }
             })
             destroyerCallbacks.push(destroyer);
@@ -208,3 +200,5 @@ export function usePropertyInitialization(props: { container: Container }) {
     });
     return componentProps;
 }
+
+const defaultExports = {};
