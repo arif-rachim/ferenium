@@ -1,13 +1,12 @@
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 
-const oldPath = path.join(__dirname,'..', 'dist', 'main.js');
-const newPath = path.join(__dirname,'..', 'dist', 'main.cjs');
-
-fs.rename(oldPath, newPath, (err) => {
-    if (err) {
-        console.error('Error renaming file:', err);
-    } else {
-        console.log('File renamed successfully!');
-    }
-});
+const oldPath = path.join(__dirname, 'dist', 'main.js');
+const newPath = path.join(__dirname, 'dist', 'main.cjs');
+const oldDir = path.join(__dirname,'..','dist');
+const newDir = path.join(__dirname,'dist');
+async function copyFolder(){
+    await fs.rename(oldPath,newPath);
+    await fs.copy(oldDir, newDir, {recursive:true})
+}
+copyFolder().then()

@@ -29,9 +29,8 @@ async function init() {
             preload: path.join(__dirname, 'preload.js') // Load the preload script
         }
     });
-    win.webContents.openDevTools();
-    //win.loadFile(indexHtmlPath)
-    win.loadURL('http://localhost:5173');
+    win.loadFile(indexHtmlPath)
+    //win.loadURL('http://localhost:5173');
 }
 
 Menu.setApplicationMenu(null);

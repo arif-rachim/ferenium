@@ -1,0 +1,43 @@
+{
+  "name": "esnaadm",
+  "version": "2.0.0",
+  "description": "EsnaadM is a versatile mobile application developed by jac.mil.ae. Designed to run seamlessly on laptops, tablets, and various other devices, EsnaadM provides offline functionality, ensuring that you can continue working without a server connection. It also supports automatic syncing to the server once a connection is re-established, allowing for smooth data management and synchronization.",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node rename.cjs && electron .",
+    "build": "tsc && node rename.cjs && electron-builder"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "35.0.0",
+    "electron-builder": "25.1.8",
+    "fs-extra": "^11.3.0"
+  },
+  "build": {
+    "appId": "ae.mil.jac.esnaadm",
+    "productName": "EsnaadM",
+    "mac": {
+      "icon": "dist/icons/mac/icon.icns"
+    },
+    "win": {
+      "icon": "dist/icons/win/icon.ico",
+      "target": "nsis"
+    },
+    "linux": {
+      "icon": "dist/icons/png/64x64.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": false,
+      "installerIcon": "dist/icons/win/icon.ico",
+      "uninstallerIcon": "dist/icons/win/icon.ico",
+      "uninstallDisplayName": "Uninstall EsnaadM"
+    },
+    "directories": {
+      "output": "build"
+    }
+  }
+}

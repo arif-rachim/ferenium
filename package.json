@@ -6,10 +6,9 @@
   "scripts": {
     "dev": "vite",
     "tsc": "tsc",
-    "build": "tsc && vite build",
+    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && tsc && vite build && cd electron && npm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "electron": "tsc -p tsconfig.electron.json && node electron/rename.cjs && electron dist/main.cjs"
+    "preview": "vite preview"
   },
   "peerDependencies": {
     "react": "^18.2.0",
@@ -26,8 +25,8 @@
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/parser": "^7.2.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "app-builder-bin": "^5.0.0-alpha.10",
     "crypto-js": "^4.2.0",
-    "electron": "^35.0.0",
     "escodegen": "^2.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
