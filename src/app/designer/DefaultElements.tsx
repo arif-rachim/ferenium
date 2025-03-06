@@ -1002,6 +1002,7 @@ const LayoutContainer = forwardRef(function LayoutContainer(props: {
     const {elements, displayMode} = useContainerLayoutHook(container);
     const isHidden = hidden === true;
     const showElement = !isHidden;
+
     return <ContainerRendererIdContext.Provider value={props.dataElementId}>
         {showElement &&
             <div ref={ref as LegacyRef<HTMLDivElement>}

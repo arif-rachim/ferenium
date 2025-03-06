@@ -1,20 +1,18 @@
 import {utils} from "./utils.ts";
 import {useMemo} from "react";
-
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+const LEVEL = ["debug", "info", "warn", "error"] as const;
+type LogLevel = typeof LEVEL[number];
 const globalContext:{activeName?:string} = {activeName:undefined};
 
+const enableGrouping = false;
+const minimumLevel:LogLevel = 'error';
+
 export function createLogger(name:string,initialLevel: LogLevel = 'debug') {
-    const levels: Record<LogLevel, number> = {
-        debug: 1,
-        info: 2,
-        warn: 3,
-        error: 4
-    };
+
     let currentLevel = initialLevel;
     const currentName = name;
     const shouldLog = (level: LogLevel): boolean => {
-        return levels[level] >= levels[currentLevel];
+        return LEVEL.indexOf(level) >= LEVEL.indexOf(currentLevel) && LEVEL.indexOf(minimumLevel) <= LEVEL.indexOf(currentLevel);
     }
     const setLevel = (level: LogLevel): void => {
         currentLevel = level;
@@ -24,10 +22,10 @@ export function createLogger(name:string,initialLevel: LogLevel = 'debug') {
         if(shouldLog(level)){
             const timeStamp = utils.hhMmSs(new Date());
             const prefix = `(${timeStamp}) [${level}]`;
-            if(globalContext.activeName === undefined){
+            if(enableGrouping && globalContext.activeName === undefined){
                 globalContext.activeName = currentName;
                 console.groupCollapsed(currentName);
-            }else if (globalContext.activeName !== currentName){
+            }else if (enableGrouping && globalContext.activeName !== currentName){
                 globalContext.activeName = currentName;
                 console.groupEnd();
                 console.groupCollapsed(currentName);

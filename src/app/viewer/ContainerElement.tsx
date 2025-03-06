@@ -1,7 +1,7 @@
 import {Container} from "../designer/AppDesigner.tsx";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {AppViewerContext} from "./context/AppViewerContext.ts";
-import {CSSProperties, useEffect, useMemo, useState} from "react";
+import {CSSProperties, useEffect, useState,memo} from "react";
 import {useSignal, useSignalEffect} from "react-hook-signal";
 import {ElementStyleProps} from "../designer/LayoutBuilderProps.ts";
 import {ElementRenderer} from "./ElementRenderer.tsx";
@@ -11,7 +11,7 @@ import {isEmpty} from "../../core/utils/isEmpty.ts";
 /**
  * The ContainerElement component renders a container element based on the provided props.
  */
-export function ContainerElement(props: { container: Container }) {
+export const ContainerElement = memo(function ContainerElement(props: { container: Container }) {
     const {elements} = useAppContext<AppViewerContext>();
     const {container} = props;
 
@@ -41,14 +41,18 @@ export function ContainerElement(props: { container: Container }) {
             containerSignal.set(container);
         }
     }, [containerSignal, container]);
-    useSignalEffect(() => setComputedStyle(initiateStyle()));
-    const computedStyleString = JSON.stringify(computedStyle);
-    const memoizedComputedStyle = useMemo(() => {
-        return JSON.parse(computedStyleString);
-    },[computedStyleString]) as CSSProperties;
+    useSignalEffect(() => {
+        const style = initiateStyle();
+        setComputedStyle(old => {
+            if(JSON.stringify(old) !== JSON.stringify(style)){
+                return style;
+            }
+            return old;
+        })
+    });
 
     const elementProps: ElementStyleProps = {
-        style: memoizedComputedStyle,
+        style: computedStyle,
         dataElementId: container?.id ?? '',
         container: container
     };
@@ -57,4 +61,4 @@ export function ContainerElement(props: { container: Container }) {
         return <ElementRenderer container={container} elementProps={elementProps}/>
     }
     return <EmptyComponent />
-}
+});
