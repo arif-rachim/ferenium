@@ -8,22 +8,22 @@ Ferenium is a rapid application development (RAD) framework designed to accelera
 *   **Component-Based Architecture:** Build applications using reusable UI components, with the flexibility to create custom components.
 *   **Signal-Based Logic:** Connect components and data using signals and effects for reactive programming.
 *   **JSON-Based Application Definition:** Outputs a JSON file that captures the application structure, including UI elements, data connections, and configurations.
-*   **Sate Suite Viewer:** Run and interact with your applications by loading the generated JSON file in the Sate Suite Viewer.
+*   **Ferenium Viewer:** Run and interact with your applications by loading the generated JSON file in the Ferenium Viewer.
 *   **Focus on Productivity:** Designed to simplify the development process and boost productivity for enterprise application development.
 *   **Database Integration:** Support for SQLite database integration, allowing direct manipulation and querying of data within applications.
 
 ## Getting Started
 
-To get started with Sate Suite, you'll need to:
+To get started with Ferenium, you'll need to:
 
-1.  **Clone the Repository:** Clone the Sate Suite repository from GitHub to your local machine.
+1.  **Clone the Repository:** Clone the Ferenium repository from GitHub to your local machine.
 2.  **Install Dependencies:** Navigate to the project directory and run `npm install` to install all required dependencies.
 3.  **Start the Development Server:** Run `npm run dev` to start the development server.
-4.  **Explore the Application:** Open your browser and visit the provided URL to access the Sate Suite.
+4.  **Explore the Application:** Open your browser and visit the provided URL to access the Ferenium.
 
 ## How It Works
 
-Sate Suite provides two modes: Designer and Viewer:
+Ferenium provides two modes: Designer and Viewer:
 
 *   **Designer Mode:**
     *   Use a drag-and-drop interface to construct UI layouts.
@@ -39,7 +39,7 @@ Sate Suite provides two modes: Designer and Viewer:
     *   Use the navigation function to switch between pages.
     *   Interact with different form elements such as text, number, radio buttons and checkboxes.
 
-The development process in Sate Suite generally involves:
+The development process in Ferenium generally involves:
 
 1.  **Designing the UI:** Using the Designer mode to drag and drop components, customize their properties and styles, and build the desired user interface.
 
@@ -59,7 +59,6 @@ The development process in Sate Suite generally involves:
 *   **Zod:** For data validation.
 *   **Monaco Editor:** For code editing within the interface.
 *   **Sql.js:** For SQLite database functionalities.
-*    **dnd-kit:** For drag and drop functionality.
 
 ## Contributing
 
