@@ -2,6 +2,7 @@
   "name": "ferenium",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/app",
+    "packages/electron"
   ]
 }
