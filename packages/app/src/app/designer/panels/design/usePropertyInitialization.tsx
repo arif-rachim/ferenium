@@ -28,7 +28,8 @@ export function usePropertyInitialization(props: { container: Container }) {
         elements: elementsLib,
         allVariablesSignal,
         allVariablesSignalInstance,
-        navigate
+        navigate,
+        activePageName
     } = context;
 
     const alertBox = useModalBox();
@@ -66,6 +67,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                 fun.call(null, ...funcParamsInstance);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
             } catch (err) {
+                console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
                 log.error(err);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
             }
@@ -77,6 +79,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                         containerId: container.id,
                     })
                 } catch (err) {
+                    console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
                     errorMessage.propertyValidation({
                         propertyName: containerPropKey,
                         containerId: container.id,
@@ -95,6 +98,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                         });
                         return result;
                     } catch (err) {
+                        console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
                         errorMessage.propertyInvocation({
                             propertyName: containerPropKey,
                             containerId: container.id,
@@ -140,8 +144,8 @@ export function usePropertyInitialization(props: { container: Container }) {
                     fun.call(null, ...funcParamsInstance);
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
                 } catch (err) {
+                    console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
                     log.error(err);
-                    log.debug('We have pageId', pageId, 'activePageId', context.activePageIdSignal.get());
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
                 }
                 if (module.exports !== defaultExports && returnType) {
@@ -152,6 +156,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                             containerId: container.id,
                         })
                     } catch (err) {
+                        console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
                         errorMessage.propertyValidation({
                             propertyName: containerPropKey,
                             containerId: container.id,
@@ -170,6 +175,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                             });
                             return result;
                         } catch (err) {
+                            console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
                             errorMessage.propertyInvocation({
                                 propertyName: containerPropKey,
                                 containerId: container.id,

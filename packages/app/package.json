@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "tsc": "tsc",
-    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && tsc && vite build",
+    "build": "echo \"Compiling App\" && tsc && node --max-old-space-size=8192 ../../node_modules/vite/bin/vite.js build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

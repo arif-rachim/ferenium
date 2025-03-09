@@ -151,7 +151,7 @@ export function useAppInitiator(props: LayoutBuilderProps & {
         allCallablesSignal,
 
         navigate,
-        navigateBack
+        navigateBack,
     };
 }
 

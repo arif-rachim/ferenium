@@ -1,6 +1,9 @@
 {
   "name": "ferenium",
   "private": true,
+  "scripts": {
+    "build": "npm run build --workspace=packages/app && npm run build --workspace=packages/electron"
+  },
   "workspaces": [
     "packages/app",
     "packages/electron"

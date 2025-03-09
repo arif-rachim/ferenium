@@ -23,6 +23,7 @@ export interface AppViewerContext {
     allTablesSignal: Signal.Computed<Array<Table>>;
     allPagesSignal: Signal.Computed<Array<Page>>;
     activePageIdSignal: Signal.State<string>;
+    activePageName:string;
     allContainersSignal: Signal.Computed<Array<Container>>;
     allPageVariablesSignal: Signal.Computed<Array<Variable>>;
     allPageFetchersSignal: Signal.Computed<Array<Fetcher>>;

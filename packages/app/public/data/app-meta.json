@@ -674,7 +674,7 @@
               "formula": "module.exports = page.var.value.get()"
             },
             "onChange": {
-              "formula": "module.exports = (val) => {\r\n    const onChange = page.var.onChange.get();\r\n    if(onChange){\r\n        onChange(val);\r\n    }\r\n}"
+              "formula": "const onChange = page.var.onChange.get();\r\nmodule.exports = (val) => {\r\n    if(onChange){\r\n        onChange(val);\r\n    }\r\n}"
             }
           }
         }
@@ -967,7 +967,7 @@
               "formula": "module.exports = p => p?.CODE_"
             },
             "valueToRowData": {
-              "formula": "module.exports = async v => {\r\n    const dataProvider = page.var.dataProvider.get();\r\n    return (await dataProvider()).find(i => i.ID_ === v);\r\n}"
+              "formula": "const dataProvider = page.var.dataProvider.get();\r\nmodule.exports = async v => {\r\n    const dp = await dataProvider()\r\n    return dp.find(i => i?.ID_ === v);\r\n}"
             },
             "inputStyle": {
               "formula": "module.exports = {\r\n    border : 'unset',\r\n    padding : '0px 5px',\r\n    borderRadius: 0\r\n}"

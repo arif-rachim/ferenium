@@ -16,7 +16,11 @@ import {ClosePanelContext} from "../../core/hooks/useNavigatePanel.ts";
  */
 export default function AppViewer(props: LayoutBuilderProps & { startingPage: string }) {
     const appContext = useAppInitiator(props);
-    const context = {...appContext, elements: {...DefaultElements, ...props.elements}} as AppViewerContext;
+    const context = {
+        ...appContext,
+        elements: {...DefaultElements, ...props.elements},
+        activePageName: props.startingPage
+    } as AppViewerContext;
     return <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -38,7 +42,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
             height: '100%',
             flexDirection: 'column',
             overflow: 'auto',
-            position:'relative'
+            position: 'relative'
         }}>
             <ErrorBoundary>
                 <AppViewerContext.Provider value={context}>

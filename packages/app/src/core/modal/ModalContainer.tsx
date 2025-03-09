@@ -40,6 +40,8 @@ export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
                     margin: '0 1rem',
                     maxWidth : '80%',
                     maxHeight: '80%',
+                    display:'flex',
+                    flexDirection:'column',
                     ...animate(p.config)
                 }}>{p.element}</div>
             </AutoFocusDiv>
