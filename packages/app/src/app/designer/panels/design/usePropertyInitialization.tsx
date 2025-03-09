@@ -67,7 +67,9 @@ export function usePropertyInitialization(props: { container: Container }) {
                 fun.call(null, ...funcParamsInstance);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
             } catch (err) {
-                console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
+                console.log(`Error on %c"${activePageName}:${container.type}:${containerPropKey}"%c`, "font-weight:bold", "");
+            //:${container.type}
+                console.error(err);
                 log.error(err);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
             }
@@ -79,7 +81,9 @@ export function usePropertyInitialization(props: { container: Container }) {
                         containerId: container.id,
                     })
                 } catch (err) {
-                    console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
+                    console.log(`Error on %c"${activePageName}:${container.type}:${containerPropKey}"%c`, "font-weight:bold", "");
+                    console.error(err);
+                    console.error(err);
                     errorMessage.propertyValidation({
                         propertyName: containerPropKey,
                         containerId: container.id,
@@ -98,7 +102,8 @@ export function usePropertyInitialization(props: { container: Container }) {
                         });
                         return result;
                     } catch (err) {
-                        console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
+                        console.log(`Error on %c"${activePageName}:${container.type}:${containerPropKey}"%c`, "font-weight:bold", "");
+                        console.error(err);
                         errorMessage.propertyInvocation({
                             propertyName: containerPropKey,
                             containerId: container.id,
@@ -144,7 +149,8 @@ export function usePropertyInitialization(props: { container: Container }) {
                     fun.call(null, ...funcParamsInstance);
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
                 } catch (err) {
-                    console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
+                    debugger;
+                    console.log(`Error on %c"${activePageName}:${container.type}:${containerPropKey}"%c`, "font-weight:bold", "")
                     log.error(err);
                     errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
                 }
@@ -156,7 +162,8 @@ export function usePropertyInitialization(props: { container: Container }) {
                             containerId: container.id,
                         })
                     } catch (err) {
-                        console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
+                        console.log(`Error on %c"${activePageName}:${container.type}:${containerPropKey}"%c`, "font-weight:bold", "");
+                        console.error(err);
                         errorMessage.propertyValidation({
                             propertyName: containerPropKey,
                             containerId: container.id,
@@ -175,7 +182,8 @@ export function usePropertyInitialization(props: { container: Container }) {
                             });
                             return result;
                         } catch (err) {
-                            console.log('Error Invoking','containerPropKey',containerPropKey,'page',activePageName,err)
+                            console.log(`Error on %c"${activePageName}:${container.type}:${containerPropKey}"%c`, "font-weight:bold", "");
+                            console.error(err);
                             errorMessage.propertyInvocation({
                                 propertyName: containerPropKey,
                                 containerId: container.id,

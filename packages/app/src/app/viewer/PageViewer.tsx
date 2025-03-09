@@ -92,7 +92,7 @@ export const PageViewer = memo(function PageViewer(props: {
         allCallablesSignal: appContext.allCallablesSignal,
         elements,
         navigate,
-        activePageName:props.page.name
+        activePageName: page.name
     } as AppViewerContext;
 
     const [container, setContainer] = useState<Container | undefined>(() => {

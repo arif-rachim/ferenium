@@ -59,6 +59,6 @@ export function App(props:{meta:Record<string, unknown>}) {
         {!designMode && <AppViewer value={value} onChange={async (val) => {
             setValue(val);
             saveAppMeta(val).then()
-        }} startingPage={'adm/home/landing-page'}/>}
+        }} startingPage={'app/home'}/>}
     </div>
 }

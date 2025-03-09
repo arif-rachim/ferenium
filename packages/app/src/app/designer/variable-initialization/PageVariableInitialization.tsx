@@ -6,7 +6,7 @@ import {useAppContext} from "../../../core/hooks/useAppContext.ts";
 import {callableInitialization} from "./callableSchemaInitialization.ts";
 import {fetcherInitialization} from "./fetcherSchemaInitialization.ts";
 import {queryInitialization} from "./queryInitialization.ts";
-import {createContext, PropsWithChildren, useContext, useRef} from "react";
+import {createContext, PropsWithChildren, useContext, useRef, useState} from "react";
 import {AppVariableInitializationContext, FormulaDependencyParameter,} from "./AppVariableInitialization.tsx";
 import {Signal} from "signal-polyfill";
 import {createValidator} from "./createValidator.ts";
@@ -33,7 +33,8 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         allPageFetchersSignal,
         variableInitialValueSignal,
         navigate,
-        activePageIdSignal
+        activePageIdSignal,
+        activePageName
     } = useAppContext();
     const navigatePanel = useNavigatePanel();
     const closePanel = useContext(ClosePanelContext);
@@ -88,6 +89,7 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         return page;
     });
     const ref2 = useRef();
+    const [isReady,setIsReady] = useState(false);
     useSignalEffect(() => {
         const applicationVariables = allApplicationVariablesSignal.get() ?? [];
         const applicationVariablesInstance = allApplicationVariablesSignalInstance.get();
@@ -105,7 +107,9 @@ export function PageVariableInitialization(props: PropsWithChildren) {
             label: 'allPageVariablesSignalInstance.set',
             props: {applicationVariables, applicationVariablesInstance, variableInitialValue, variables}
         })
+        console.log('activePageName',activePageName)
         allPageVariablesSignalInstance.set([...stateInstances, ...computedInstance]);
+        setIsReady(true);
     });
 
     useSignalEffect(() => {
@@ -125,7 +129,7 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         })
     })
     return <PageVariableInitializationContext.Provider value={pageScopesSignal}>
-        {props.children}
+        {isReady && props.children}
     </PageVariableInitializationContext.Provider>
 }
 
