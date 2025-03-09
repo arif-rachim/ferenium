@@ -34,7 +34,6 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         variableInitialValueSignal,
         navigate,
         activePageIdSignal,
-        activePageName
     } = useAppContext();
     const navigatePanel = useNavigatePanel();
     const closePanel = useContext(ClosePanelContext);
@@ -89,7 +88,7 @@ export function PageVariableInitialization(props: PropsWithChildren) {
         return page;
     });
     const ref2 = useRef();
-    const [isReady,setIsReady] = useState(false);
+    const [isReady, setIsReady] = useState(false);
     useSignalEffect(() => {
         const applicationVariables = allApplicationVariablesSignal.get() ?? [];
         const applicationVariablesInstance = allApplicationVariablesSignalInstance.get();
@@ -107,7 +106,6 @@ export function PageVariableInitialization(props: PropsWithChildren) {
             label: 'allPageVariablesSignalInstance.set',
             props: {applicationVariables, applicationVariablesInstance, variableInitialValue, variables}
         })
-        console.log('activePageName',activePageName)
         allPageVariablesSignalInstance.set([...stateInstances, ...computedInstance]);
         setIsReady(true);
     });

@@ -173,8 +173,7 @@ export default function AppDesigner(props: LayoutBuilderProps) {
         activeDropZoneIdSignal: activeDropZoneIdSignal,
         uiDisplayModeSignal: uiDisplayModeSignal,
         navigate,
-        navigateBack,
-        activePageName : ''
+        navigateBack
     }
 
     return <ErrorBoundary>

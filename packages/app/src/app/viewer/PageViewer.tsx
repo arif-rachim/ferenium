@@ -47,6 +47,7 @@ export const PageViewer = memo(function PageViewer(props: {
         },
         startingPage: page.name
     })
+
     const parentContext = useAppContext();
     const {allPageVariablesSignal,allPageVariablesSignalInstance} = appContext;
     useEffect(() => {
@@ -92,7 +93,6 @@ export const PageViewer = memo(function PageViewer(props: {
         allCallablesSignal: appContext.allCallablesSignal,
         elements,
         navigate,
-        activePageName: page.name
     } as AppViewerContext;
 
     const [container, setContainer] = useState<Container | undefined>(() => {

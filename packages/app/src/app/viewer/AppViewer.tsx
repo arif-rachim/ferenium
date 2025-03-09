@@ -18,8 +18,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
     const appContext = useAppInitiator(props);
     const context = {
         ...appContext,
-        elements: {...DefaultElements, ...props.elements},
-        activePageName: props.startingPage
+        elements: {...DefaultElements, ...props.elements}
     } as AppViewerContext;
     return <div style={{
         display: 'flex',
