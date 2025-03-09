@@ -1,6 +1,7 @@
 import {ChangeEvent, LegacyRef, useEffect, useRef} from "react";
 import JSZip from "jszip";
 import {useAppContext} from "../hooks/useAppContext.ts";
+import {Application} from "../../app/designer/AppDesigner.tsx";
 
 
 export function useLoadExtractJsonFromZip() {
@@ -15,22 +16,29 @@ export function useLoadExtractJsonFromZip() {
             if (fileInput.files === null || fileInput.files.length === 0) {
                 return;
             }
-
             const file = fileInput.files[0];
-            const zip = new JSZip();
-            const zipContent = await zip.loadAsync(file);
-            const jsonFile = zipContent.file('meta-inf.json');
+            const extension = file && file.name && file.name.split('.').pop()?.toLowerCase()
+            const isUnzipped = extension === 'json';
+            let jsonData: Application | undefined = undefined;
+            if (isUnzipped) {
+                const jsonString = await readFileAsString(file);
+                jsonData = JSON.parse(jsonString);
+            } else {
+                const zip = new JSZip();
+                const zipContent = await zip.loadAsync(file);
+                const jsonFile = zipContent.file('meta-inf.json');
 
-            if (!jsonFile) {
-                throw new Error("JSON file not found in the ZIP archive");
+                if (!jsonFile) {
+                    throw new Error("JSON file not found in the ZIP archive");
+                }
+                const jsonString = await jsonFile.async('string');
+                jsonData = JSON.parse(jsonString);
             }
-
-            const jsonString = await jsonFile.async('string');
-
+            if (!jsonData) {
+                return;
+            }
             try {
-                const jsonData = JSON.parse(jsonString);
                 applicationSignal.set(jsonData);
-
             } catch (error) {
                 console.error('Failed to extract JSON from ZIP:', error);
             }
@@ -47,4 +55,13 @@ export function useLoadExtractJsonFromZip() {
     }, [applicationSignal]);
 
     return {ref: ref as LegacyRef<HTMLInputElement> | undefined}
+}
+
+function readFileAsString(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string); // The file content as a string
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
 }

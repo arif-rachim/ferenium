@@ -1,18 +1,19 @@
 import JSZip from "jszip";
 
-export const triggerDownloadZip = async (fileName: string, data: unknown) => {
-    const zip = new JSZip();
+const unzip = true;
+export const triggerDownloadZip = async (data: unknown) => {
     const jsonContent = JSON.stringify(data, null, 2);
-
-    // Add the JSON file to the ZIP
-    zip.file('meta-inf.json', jsonContent);
-
-    // Generate the ZIP file
-    const zipBlob = await zip.generateAsync({type: 'blob'});
-
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(zipBlob);
-    link.download = `${fileName}.zip`;
+    let blob: Blob | undefined = undefined;
+    if (unzip) {
+        blob = new Blob([jsonContent], {type: "text/plain"});
+    } else {
+        const zip = new JSZip();
+        zip.file('meta-inf.json', jsonContent);
+        blob = await zip.generateAsync({type: 'blob'});
+    }
+    link.href = URL.createObjectURL(blob);
+    link.download = `app-meta.${unzip ? 'json' : 'zip'}`;
 
     // Trigger the download
     link.click();
