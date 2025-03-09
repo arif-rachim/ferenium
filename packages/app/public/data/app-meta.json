@@ -1047,7 +1047,7 @@
               "formula": "module.exports = z.object({\r\n    userId : z.string(),\r\n    password : z.string()\r\n})"
             },
             "onChange": {
-              "formula": "module.exports = async (params,config) => {\r\n    const { userId, password } = params;\r\n    debugger;\r\n    const result = await app.call.validateHashPassword({password,userId});\r\n    if(result.success){\r\n        const user = await page.query.findUsers({filter:{USER_ID_ : {\r\n                type : 'equal',\r\n                value : userId\r\n            }}})\r\n            if(user.data && user.data.length > 0){\r\n                utils.setItem('app-user',JSON.stringify(user.data[0]));\r\n                app.var.loggedInUser.set(user.data[0]);\r\n            }\r\n    }else{\r\n        config.errors.set({password:result.message,userId:result.message});\r\n    }\r\n}"
+              "formula": "module.exports = async (params,config) => {\r\n    const { userId, password } = params;\r\n    debugger;\r\n    const result = await app.call.validateHashPassword({password,userId});\r\n    if(result.success){\r\n        const user = await page.query.findUsers({filter:{USER_ID_ : {\r\n                type : 'equal',\r\n                value : userId\r\n            }}})\r\n            if(user.data && user.data.length > 0){\r\n                utils.setItem('app-user',user.data[0]);\r\n                app.var.loggedInUser.set(user.data[0]);\r\n            }\r\n    }else{\r\n        config.errors.set({password:result.message,userId:result.message});\r\n    }\r\n}"
             }
           }
         },
@@ -1172,7 +1172,7 @@
       "fetchers": [
         {
           "id": "701379d5-110d-4ec7-bf06-13afeff32b8e",
-          "name": "download_tail",
+          "name": "downloadTail",
           "protocol": "http",
           "domain": "localhost:5008",
           "method": "post",
@@ -1210,7 +1210,7 @@
         {
           "name": "downloadTail",
           "id": "491a1eee-b85b-4351-8355-e26a0b39eded",
-          "functionCode": "async function downloadTail ({ tail }){\r\n    const result = await page.fetch.download_tail({ downloadEntries: [{ \"Module\": \"ESNAAD_M\" }, { \"Module\": \"MIS_FM_SI\", \"Params\": [tail] }] });\r\n    const { Result, error, ErrorMessage, ErrorCode } = result;\r\n    \r\n    if (ErrorCode === 'ADM.002.001') {\r\n        const action = await alertBox({\r\n            message: `Session is expired, or invalid permission`,\r\n            buttons : [{\r\n                id : 'login',\r\n                label : 'I would like to go back to login page',\r\n                icon : 'IoIosLogIn'\r\n            },{\r\n                id : 'retry',\r\n                label : 'Please retry again',\r\n                icon : 'IoMdRefresh'\r\n            }]\r\n        })\r\n        if(action === 'login'){\r\n            return navigate('app/login');\r\n        }\r\n        if(action === 'retry'){\r\n            return await downloadTail({tail})\r\n        }\r\n    }\r\n    if (error || ErrorMessage) {\r\n        await alertBox({\r\n            message: `Error ${error}`\r\n        })\r\n        return;\r\n    }\r\n    page.var.downloadStatus.set({\r\n        attachmentId: Result.DownloadId,\r\n        status: Result.Status\r\n    })\r\n}\r\n\r\nmodule.exports = downloadTail",
+          "functionCode": "async function downloadTail ({ tail }){\r\n    const result = await page.fetch.downloadTail({ downloadEntries: [{ \"Module\": \"ESNAAD_M\" }, { \"Module\": \"MIS_FM_SI\", \"Params\": [tail] }] });\r\n    const { Result, error, ErrorMessage, ErrorCode } = result;\r\n    \r\n    if (ErrorCode === 'ADM.002.001') {\r\n        const action = await alertBox({\r\n            message: `Session is expired, or invalid permission`,\r\n            buttons : [{\r\n                id : 'login',\r\n                label : 'I would like to go back to login page',\r\n                icon : 'IoIosLogIn'\r\n            },{\r\n                id : 'retry',\r\n                label : 'Please retry again',\r\n                icon : 'IoMdRefresh'\r\n            }]\r\n        })\r\n        if(action === 'login'){\r\n            return navigate('app/login');\r\n        }\r\n        if(action === 'retry'){\r\n            return await downloadTail({tail})\r\n        }\r\n    }\r\n    if (error || ErrorMessage) {\r\n        await alertBox({\r\n            message: `Error ${error}`\r\n        })\r\n        return;\r\n    }\r\n    page.var.downloadStatus.set({\r\n        attachmentId: Result.DownloadId,\r\n        status: Result.Status\r\n    })\r\n}\r\n\r\nmodule.exports = downloadTail",
           "schemaCode": "z.promise(z.void())",
           "inputSchemaCode": "z.object({\r\n    tail:z.string()\r\n})"
         }
@@ -31668,7 +31668,7 @@
     {
       "name": "setAppIsBusy",
       "id": "91bca35d-3402-4f01-8394-05f628c05246",
-      "functionCode": "module.exports = (message) => {\r\n    const id = utils.guid();\r\n    const appIsBusyMessages = app.var.appIsBusyMessages.get();\r\n    appIsBusyMessages.push({id,message});\r\n    app.var.appIsBusyMessages.set(appIsBusyMessages);\r\n    return () => {\r\n        const appIsBusyMessages = app.var.appIsBusyMessages.get();\r\n        const index = appIsBusyMessages.findIndex(i => i.id === id);\r\n        appIsBusyMessages.splice(index,1)\r\n        app.var.appIsBusyMessages.set(appIsBusyMessages);\r\n    }\r\n}",
+      "functionCode": "module.exports = (message) => {\r\n    const id = utils.guid();\r\n    const appIsBusyMessages = app.var.appIsBusyMessages.get();\r\n    appIsBusyMessages.push({id,message:utils.toString(message)});\r\n    app.var.appIsBusyMessages.set(appIsBusyMessages);\r\n    return () => {\r\n        const appIsBusyMessages = app.var.appIsBusyMessages.get();\r\n        const index = appIsBusyMessages.findIndex(i => i.id === id);\r\n        appIsBusyMessages.splice(index,1)\r\n        app.var.appIsBusyMessages.set(appIsBusyMessages);\r\n    }\r\n}",
       "schemaCode": "z.function().returns(z.void())",
       "inputSchemaCode": "z.string()"
     },
@@ -31727,7 +31727,7 @@
       "name": "loggedInUser",
       "type": "state",
       "id": "a8621b2f-0864-4317-b320-eee913b26fb7",
-      "functionCode": "const user = utils.getItem('app-user');\r\nmodule.exports = user ? JSON.parse(user) : undefined",
+      "functionCode": "const user = utils.getItem('app-user');\r\nmodule.exports = user",
       "schemaCode": "z.object({\r\n\tID_:z.number().nullable().optional(),\r\n\tVERSION_:z.number().nullable().optional(),\r\n\tEMAIL_:z.string().nullable().optional(),\r\n\tF_NAME_:z.string().nullable().optional(),\r\n\tL_NAME_:z.string().nullable().optional(),\r\n\tPHONE_:z.any(),\r\n\tLST_LOG_:z.string().nullable().optional(),\r\n\tREG_STS_:z.string().nullable().optional(),\r\n\tPID_:z.string().nullable().optional(),\r\n\tSEX_TYPE_:z.string().nullable().optional(),\r\n\tDOB_:z.string().nullable().optional(),\r\n\tUSR_TYPE_:z.string().nullable().optional(),\r\n\tUSER_ID_:z.string().nullable().optional(),\r\n\tACTIVE_PERSONNEL_:z.number().nullable().optional(),\r\n\tUSER_SETTINGS_:z.string().nullable().optional(),\r\n\tRANK_ID:z.number().nullable().optional(),\r\n\tPOS_ID:z.number().nullable().optional(),\r\n\tCOUNTRY_ID:z.number().nullable().optional(),\r\n\tMIL_UNIT_ID:z.number().nullable().optional(),\r\n\tCREATED_BY_:z.any(),\r\n\tCREATED_ON_:z.any(),\r\n\tMOD_BY_:z.string().nullable().optional(),\r\n\tMOD_ON_:z.string().nullable().optional(),\r\n\tTERM_:z.any(),\r\n\tM_NAME_:z.string().nullable().optional(),\r\n\tMOBILE_:z.string().nullable().optional(),\r\n\tEXT_:z.string().nullable().optional(),\r\n\tMILITARY_NO_:z.string().nullable().optional(),\r\n\tREG_STS_MODIFIED_DATE_:z.any(),\r\n\tREG_STS_MODIFIED_USER_ID:z.any(),\r\n\tDES_BU_ID_:z.any(),\r\n\tDEPARTMENT_ID_:z.number().nullable().optional(),\r\n\tIS_AGREE_ROLE_ADMIN_EULA_:z.number().nullable().optional(),\r\n\tDEFAULT_DASHBOARD_:z.number().nullable().optional(),\r\n\tLAST_PROMOTION_DATE_:z.any(),\r\n\tNEXT_PROMOTION_DATE_:z.any(),\r\n\tNATIONALITY_:z.any(),\r\n\tIS_MILITARY_:z.number().nullable().optional(),\r\n\tPOSITION_:z.string().nullable().optional(),\r\n\tDEACTIVATED_:z.number().nullable().optional(),\r\n\tF_NAME_AR_:z.any(),\r\n\tM_NAME_AR_:z.any(),\r\n\tL_NAME_AR_:z.any(),\r\n\tREASON_ID:z.any(),\r\n\tIS_AUTO_:z.number().nullable().optional()\r\n}).optional()"
     },
     {
