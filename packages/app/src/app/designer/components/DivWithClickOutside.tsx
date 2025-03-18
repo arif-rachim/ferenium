@@ -2,7 +2,7 @@ import {ForwardedRef, forwardRef, HTMLProps, PropsWithChildren, useEffect} from 
 import {useForwardedRef} from "../../../core/hooks/useForwardedRef.ts";
 
 export const DivWithClickOutside = forwardRef(function DivWithClickOutside(props: PropsWithChildren<HTMLProps<HTMLDivElement> & {
-    onClickOutside: (event: MouseEvent) => void
+    onClickOutside?: (event: MouseEvent) => void
 }>, ref: ForwardedRef<HTMLElement>) {
     const localRef = useForwardedRef<HTMLDivElement>(ref as ForwardedRef<HTMLDivElement>);
     const {onClickOutside, children, ...properties} = props;

@@ -37,7 +37,7 @@ export const CheckboxInput = forwardRef(function CheckboxInput(props: {
     } as CSSProperties;
 
     if (inputDisabled) {
-        style.background = 'rgba(0,0,0,0.05)';
+        checkboxStyle.background = 'rgba(0,0,0,0.05)';
     }
     return <label ref={ref} style={{display: 'flex', flexDirection: 'column', ...style}}
                   onClick={async () => {

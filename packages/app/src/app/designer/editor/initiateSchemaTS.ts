@@ -92,7 +92,7 @@ function composeNavigation(allPages: Array<Page>) {
     }).join(',');
     return `
 type Navigate = {${type}};
-declare const navigate : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => void;
+declare const navigate : <P extends keyof Navigate>(path:P,param?:(Navigate[P] & {transientNavigation?:boolean})) => void;
 declare const navigatePanel : <P extends keyof Navigate>(path:P,param?:Navigate[P]) => Promise<unknown>;
 declare const closePanel : (param?:unknown) => void;
 `
@@ -122,8 +122,7 @@ declare const log: {
     info : (...params:any[]) => void,
     debug : (...params:any[]) => void,
     warn : (...params:any[]) => void,
-    error : (...params:any[]) => void,
-    setLevel : (param:'debug'|'info'|'warn'|'error') => void
+    error : (...params:any[]) => void
 }
     `
 }
@@ -176,12 +175,15 @@ function composeForm(formSchema?: string) {
                 value: Signal.State<${formSchema}>,
                 initialValue: ${formSchema},
                 errors: Signal.State<Record<string, string>>,
-                isChanged: Signal.State<boolean>,
+                isChanged: Signal.Computed<boolean>,
+                touched:Signal.State<Record<string,number>>,
                 reset: () => void,
                 submit: () => Promise<void>,
                 formIsValid: () => Promise<boolean>
                 isBusy: Signal.State<boolean>,
-                isDisabled: Signal.State<boolean>
+                isDisabled: Signal.State<boolean>,
+                onChange:(key:string,callback:(props:{isChanged:boolean,lastChanged?:Date}) => Promise<void>) => () => void,
+                touch : (key:string) => void
             }`
     // }
     // return '';

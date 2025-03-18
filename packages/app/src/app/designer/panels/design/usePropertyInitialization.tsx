@@ -57,7 +57,7 @@ export function usePropertyInitialization(props: { container: Container }) {
             const allVariablesInstance = allVariablesSignalInstance.get();
             const allVariables = allVariablesSignal.get();
             const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
-            const log = createLogger(`[Props]:${container.type}:${containerPropKey}:${container.id}`);
+            const log = createLogger(`${container.type}>${containerPropKey}>${container.id}`);
             const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
             const module: { exports: unknown } = {exports: defaultExports};
             try {
@@ -66,7 +66,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                 fun.call(null, ...funcParamsInstance);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id});
             } catch (err) {
-                console.error(err);
+                log.error(err);
                 log.error(err);
                 errorMessage.propertyValue({propertyName: containerPropKey, containerId: container.id, err});
             }
@@ -78,8 +78,6 @@ export function usePropertyInitialization(props: { container: Container }) {
                         containerId: container.id,
                     })
                 } catch (err) {
-                    console.error(err);
-                    console.error(err);
                     errorMessage.propertyValidation({
                         propertyName: containerPropKey,
                         containerId: container.id,
@@ -98,7 +96,6 @@ export function usePropertyInitialization(props: { container: Container }) {
                         });
                         return result;
                     } catch (err) {
-                        console.error(err);
                         errorMessage.propertyInvocation({
                             propertyName: containerPropKey,
                             containerId: container.id,
@@ -132,7 +129,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                 const allVariablesInstance = allVariablesSignalInstance.get();
                 const allVariables = allVariablesSignal.get();
                 const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
-                const log = createLogger(`[Props]:${container.type}:${containerPropKey}:${container.id}`);
+                const log = createLogger(`${container.type}>${containerPropKey}>${container.id}`);
                 const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
                 const module: { exports: unknown } = {exports: defaultExports};
                 try {
@@ -155,7 +152,6 @@ export function usePropertyInitialization(props: { container: Container }) {
                             containerId: container.id,
                         })
                     } catch (err) {
-                        console.error(err);
                         errorMessage.propertyValidation({
                             propertyName: containerPropKey,
                             containerId: container.id,
@@ -174,7 +170,6 @@ export function usePropertyInitialization(props: { container: Container }) {
                             });
                             return result;
                         } catch (err) {
-                            console.error(err);
                             errorMessage.propertyInvocation({
                                 propertyName: containerPropKey,
                                 containerId: container.id,

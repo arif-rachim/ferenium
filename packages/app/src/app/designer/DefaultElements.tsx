@@ -13,6 +13,7 @@ import {cssLength, cssPropertiesSchema, iconSchema} from "./cssPropertiesSchema.
 import {ComponentRenderer} from "../data/ComponentRenderer.tsx";
 import {faultToIconByStatusId} from "../../core/components/fault-status-icon/faultToIconByStatusId.tsx";
 import {TextInput} from "../form/input/text/TextInput.tsx";
+import {ValidationInput} from "../form/input/validation/ValidationInput.tsx";
 import {DateInput} from "../form/input/date/DateInput.tsx";
 import {DateRangeInput} from "../form/input/date/DateRangeInput.tsx";
 import {SelectInput} from "../form/input/select/SelectInput.tsx";
@@ -40,8 +41,11 @@ import {RxButton} from "react-icons/rx";
 import {BsMenuButtonWide} from "react-icons/bs";
 import {PageSelectionWithMapperPropertyEditor} from "../data/PageSelectionWithMapperPropertyEditor.tsx";
 import {TimeInput} from "../form/input/date/TimeInput.tsx";
+import {GrValidate} from "react-icons/gr";
+import {createLogger} from "../../core/utils/logger.ts";
 
 const ZodSqlValue = z.union([z.number(), z.string(), z.instanceof(Uint8Array), z.null()]);
+const log = createLogger('DefaultElements');
 export const DefaultElements: Record<string, Element> = {
     container: element({
         shortName: 'Container',
@@ -52,7 +56,7 @@ export const DefaultElements: Record<string, Element> = {
             onMouseDown: z.function().returns(z.void()),
             onMouseUp: z.function().returns(z.void()),
             hidden: z.boolean().optional(),
-            dataElementId:z.string()
+            dataElementId: z.string()
         },
         component: (props, ref) => {
             const {container, onClick, style, onMouseDown, onMouseUp, hidden} = props;
@@ -154,7 +158,7 @@ export const DefaultElements: Record<string, Element> = {
                                 returnTypeZod = module.exports
                             }
                         } catch (err) {
-                            console.error(err);
+                            log.error(err);
                         }
                     }
                     return returnTypeZod;
@@ -178,7 +182,7 @@ export const DefaultElements: Record<string, Element> = {
                                 returnTypeZod = z.function().args(type, type).returns(z.promise(type))
                             }
                         } catch (err) {
-                            console.error(err);
+                            log.error(err);
                         }
                     }
                     return returnTypeZod;
@@ -206,7 +210,7 @@ export const DefaultElements: Record<string, Element> = {
                                 }
                                 const shapes = Object.keys(voSchema._def.shape() as object) as Array<string>;
                                 const errorsSchema = z.object(shapes.reduce((result, key) => {
-                                    result[key] = z.string().optional();
+                                    result[key] = z.string().optional() as ZodType;
                                     return result;
                                 }, {} as Record<string, ZodType>));
                                 const configSchema = z.object({
@@ -225,7 +229,7 @@ export const DefaultElements: Record<string, Element> = {
                             }
 
                         } catch (err) {
-                            console.error(err);
+                            log.error(err);
                         }
                     }
                     return returnTypeZod;
@@ -249,14 +253,15 @@ export const DefaultElements: Record<string, Element> = {
             type: z.enum(['text', 'number', 'password', 'textarea']).optional(),
             disabled: z.boolean().optional(),
             required: z.boolean().optional(),
-            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional()))
+            validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())),
+            placeholder: z.string().optional()
         },
         component: (props, ref) => {
             const {
                 name,
+                value,
                 onChange,
                 onBlur,
-                value,
                 label,
                 error,
                 type,
@@ -264,7 +269,8 @@ export const DefaultElements: Record<string, Element> = {
                 inputStyle,
                 valueMapper,
                 validator,
-                required
+                required,
+                placeholder
             } = props;
             return <TextInput ref={ref as MutableRefObject<HTMLLabelElement>}
                               style={props.style}
@@ -280,6 +286,24 @@ export const DefaultElements: Record<string, Element> = {
                               valueToLocalValue={valueMapper}
                               validator={validator}
                               required={required}
+                              placeholder={placeholder}
+            />
+        }
+    }),
+    validation: element({
+        shortName: 'Validation',
+        icon: GrValidate,
+        property: {
+            name: z.string().optional(),
+            style: cssPropertiesSchema,
+            validator: z.function().args().returns(z.promise(z.string().optional())),
+        },
+        component: (props, ref) => {
+            const {style, validator, name} = props;
+            return <ValidationInput ref={ref as MutableRefObject<HTMLLabelElement>}
+                                    style={style}
+                                    name={name}
+                                    validator={validator}
             />
         }
     }),
@@ -438,7 +462,7 @@ export const DefaultElements: Record<string, Element> = {
                               value={value}
                               name={name}
                               onChange={(...args) => {
-                                  if(onChange && typeof onChange === 'function'){
+                                  if (onChange && typeof onChange === 'function') {
                                       onChange(...args)
                                   }
                               }}
@@ -491,7 +515,7 @@ export const DefaultElements: Record<string, Element> = {
             value: z.union([z.string(), z.number()]).optional(),
             label: z.string().optional(),
             error: z.string().optional(),
-            onChange: z.function().args(z.union([z.string(), z.number(),z.null()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
+            onChange: z.function().args(z.union([z.string(), z.number(), z.null()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
             popupStyle: cssPropertiesSchema,
@@ -778,7 +802,8 @@ export const DefaultElements: Record<string, Element> = {
                 value: z.union([z.string(), z.number()]).optional(),
                 selectedRows: z.array(z.union([z.string(), z.number()]))
             })).returns(z.void()),
-            enableMultipleSelection: z.union([z.boolean(),z.function().args(z.record(ZodSqlValue).optional()).returns(z.boolean())]).optional(),
+            visibleColumns : z.record(z.boolean()),
+            enableMultipleSelection: z.union([z.boolean(), z.function().args(z.record(ZodSqlValue).optional()).returns(z.boolean())]).optional(),
         },
         component: (props, ref) => {
             const {
@@ -796,7 +821,8 @@ export const DefaultElements: Record<string, Element> = {
                 itemToKey,
                 enableMultipleSelection,
                 selectedRows,
-                onMultipleSelectionChange
+                onMultipleSelectionChange,
+                visibleColumns
             } = props;
             return <QueryGrid ref={ref as ForwardedRef<HTMLDivElement>} query={query} style={style}
                               columnsConfig={config}
@@ -807,6 +833,7 @@ export const DefaultElements: Record<string, Element> = {
                               itemToKey={itemToKey} enableMultipleSelection={enableMultipleSelection}
                               selectedRows={selectedRows}
                               onMultipleSelectionChange={onMultipleSelectionChange}
+                              visibleColumns={visibleColumns}
             />
         },
         propertyEditor: {
@@ -832,7 +859,7 @@ export const DefaultElements: Record<string, Element> = {
                     return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
                 })
             },
-            enableMultipleSelection:{
+            enableMultipleSelection: {
                 label: 'enableSelection',
                 component: createCustomPropertyEditor((props) => {
                     const {element, gridTemporalColumns, propertyName} = props;
@@ -845,7 +872,7 @@ export const DefaultElements: Record<string, Element> = {
                             result[key] = ZodSqlValue.optional();
                             return result;
                         }, {} as ZodRawShape);
-                        returnTypeZod = z.union([z.boolean(),z.function().args(z.object(param)).returns(z.boolean())]) as unknown as ZodFunction<ZodTuple, ZodTypeAny>;
+                        returnTypeZod = z.union([z.boolean(), z.function().args(z.object(param)).returns(z.boolean())]) as unknown as ZodFunction<ZodTuple, ZodTypeAny>;
                     }
                     return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
                 })
@@ -915,11 +942,28 @@ export const DefaultElements: Record<string, Element> = {
                             index: z.number(),
                             refresh: z.function().returns(z.void())
                         })).returns(z.union([z.promise(z.void()), z.void()])) as unknown as ZodFunction<ZodTuple, ZodTypeAny>
-
                     }
                     return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
                 })
-            }
+            },
+            visibleColumns: {
+                label: 'visibleColumns',
+                component: createCustomPropertyEditor((props) => {
+                    const {element, gridTemporalColumns, propertyName} = props;
+                    let returnTypeZod: ZodType | undefined = undefined;
+                    if (element) {
+                        returnTypeZod = element.property[propertyName] as ZodType
+                    }
+                    if (gridTemporalColumns) {
+                        const param = gridTemporalColumns.reduce((result, key) => {
+                            result[key] = z.boolean().optional();
+                            return result;
+                        }, {} as ZodRawShape);
+                        returnTypeZod = z.object(param) as ZodType;
+                    }
+                    return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
+                })
+            },
         }
     }),
     faultStatusIcon: element({
@@ -967,18 +1011,21 @@ const TitleBox = forwardRef(function TitleBox(props: {
             </div>
             <div style={{display: 'flex', flexDirection: 'row', paddingLeft: 10}}>
                 <div style={{
-                    fontSize: 'smaller',
+                    fontWeight: 600,
                     borderTop: '1px solid rgba(0,0,0,0.1)',
                     borderLeft: '1px solid rgba(0,0,0,0.1)',
                     borderRight: '1px solid rgba(0,0,0,0.1)',
                     paddingLeft: 5,
                     paddingTop: 3,
                     paddingRight: 5,
+                    paddingBottom: 5,
                     borderTopLeftRadius: 5,
                     borderTopRightRadius: 5,
                     lineHeight: 0.8, position: 'relative',
+                    color: '#666',
                     bottom: -1,
-                    background: 'white'
+                    background: 'white',
+
                 }}>{title}</div>
             </div>
 

@@ -5,6 +5,7 @@ import {Container} from "../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
 import {queryGridColumnsTemporalColumnsSignal} from "../designer/editor/queryGridColumnsTemporalColumnsSignal.ts";
 import {useForwardedRef} from "../../core/hooks/useForwardedRef.ts";
+import {DivWithClickOutside} from "../designer/components/DivWithClickOutside.tsx";
 
 export type QueryTypeResult = {
     error?: string,
@@ -45,11 +46,13 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
     onQueryResultChange?: (result: QueryTypeResult) => void,
     enableMultipleSelection?: boolean | ((item?: Record<string, SqlValue>) => boolean),
     selectedRows?: Array<string | number>,
+    onClickOutside?: () => void,
     onMultipleSelectionChange?: (params: {
         type: 'add' | 'remove' | 'addAll' | 'removeAll',
         value?: string | number,
         selectedRows: Array<string | number>
-    }) => void
+    }) => void,
+    visibleColumns?: Record<string, boolean>
 }>(function QueryGrid(props, ref) {
     const referenceRef = useForwardedRef<HTMLDivElement>(ref);
     const {
@@ -68,7 +71,9 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         onQueryResultChange,
         enableMultipleSelection,
         selectedRows,
-        onMultipleSelectionChange
+        onMultipleSelectionChange,
+        onClickOutside,
+        visibleColumns
     } = props;
 
     const rowPerPage = pageable ? props.rowPerPage ? props.rowPerPage : 20 : Number.MAX_SAFE_INTEGER
@@ -117,7 +122,7 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         const queryGridCols = queryGridColumnsTemporalColumnsSignal.get();
         queryGridCols[containerId] = queryResult.columns ?? [];
         queryGridColumnsTemporalColumnsSignal.set({...queryGridCols});
-    }, [queryResult,containerId]);
+    }, [queryResult, containerId]);
 
     useEffect(() => {
         if (propsRef.current.onQueryResultChange) {
@@ -125,17 +130,19 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         }
     }, [queryResult]);
     const dataIsNotEmpty = ((queryResult.data ?? []) as Array<Record<string, SqlValue>>).length > 0;
-    return <div ref={referenceRef}
-                style={{
-                    overflow: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flexGrow: 1,
-                    background: 'white',
-                    ...style
-                }}>
+    return <DivWithClickOutside ref={referenceRef}
+                                onClickOutside={onClickOutside}
+                                style={{
+                                    overflow: 'auto',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    flexGrow: 1,
+                                    background: 'white',
+                                    ...style
+                                }}>
         <div style={{display: 'flex', flexDirection: 'column', overflow: 'auto', flexGrow: 1}}>
             <SimpleTable columns={queryResult.columns ?? []}
+                         visibleColumns={visibleColumns}
                          data={queryResult.data as Array<Record<string, SqlValue>>}
                          itemToKey={itemToKey}
                          columnsConfig={columnsConfig}
@@ -218,5 +225,5 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
                                    });
                                }}/>
         }
-    </div>
+    </DivWithClickOutside>
 })

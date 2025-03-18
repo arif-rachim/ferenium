@@ -1,9 +1,10 @@
 import {ModalParameter} from "../hooks/modal/useModal.ts";
 import {HTMLProps, useEffect, useRef} from "react";
+import {AnimatePresence, motion} from "framer-motion";
 
 export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
     const modalPanels = props.modalPanels;
-    return <>
+    return <AnimatePresence>
         {modalPanels.map(p => {
             const position = p.config?.position;
             const isPlain = p.config?.plainPanel === true
@@ -32,7 +33,7 @@ export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
                 alignItems: 'center',
                 justifyContent: justifyContent,
             }} key={p.id}>
-                <div style={{
+                <motion.div initial={{scale:0.8}} animate={{scale:1}} exit={{scale:0.8}} style={{
                     background: '#FFF',
                     borderRadius: borderRadius,
                     boxShadow: '0 0px 10px -3px rgba(0,0,0,0.3),0 10px 10px 0px rgba(0,0,0,0.2)',
@@ -43,10 +44,10 @@ export function ModalContainer(props: { modalPanels: Array<ModalParameter> }) {
                     display:'flex',
                     flexDirection:'column',
                     ...animate(p.config)
-                }}>{p.element}</div>
+                }}>{p.element}</motion.div>
             </AutoFocusDiv>
         })}
-    </>
+    </AnimatePresence>
 }
 
 
@@ -78,5 +79,6 @@ function AutoFocusDiv(props: HTMLProps<HTMLDivElement>) {
             divRef.current.focus();
         }
     }, []);
-    return <div ref={divRef} tabIndex={-1} {...props}/>;
+    //@ts-ignore
+    return <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} ref={divRef} tabIndex={-1} {...props}/>;
 }

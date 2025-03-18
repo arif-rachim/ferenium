@@ -2,8 +2,7 @@ import type {MutableRefObject} from "react";
 import {useRef} from "react";
 import {createLogger} from "../utils/logger.ts";
 
-const log = createLogger('[Utils]:useWhichChange');
-log.setLevel('debug');
+const log = createLogger('Utils>useWhichChange');
 export function whichChange(params: {
     label: string,
     props: Record<string, unknown> | undefined,

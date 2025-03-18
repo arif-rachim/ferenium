@@ -20,7 +20,6 @@ import {ColumnsConfig} from "../../../designer/panels/database/TableEditor.tsx";
 import {Container} from "../../../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
 import {useShowPopUp} from "../../../../core/hooks/useShowPopUp.tsx";
-import {DivWithClickOutside} from "../../../designer/components/DivWithClickOutside.tsx"
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useFormInput} from "../../useFormInput.ts";
 import {utils} from "../../../../core/utils/utils.ts";
@@ -34,6 +33,7 @@ import {dbSchemaInitialization} from "../../../designer/variable-initialization/
 import {useModalBox} from "../../../designer/variable-initialization/useModalBox.tsx";
 import {useSignalEffect} from "react-hook-signal";
 import {colors} from "../../../../core/style/colors.ts";
+import {useNavigatePanel} from "../../../../core/hooks/useNavigatePanel.ts";
 
 const defaultRowDataToText = (data: unknown) => {
     if (typeof data === "string") {
@@ -95,8 +95,6 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         validator,
         required,
     } = props;
-    const log = useMemo(() => createLogger(`SelectInput:${label}`), [label]);
-    log.setLevel('warn');
     const {
         localValue,
         localError,
@@ -104,7 +102,8 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         handleOnFocus,
         formContext,
         elementId,
-        isDisabled
+        isDisabled,
+        isBusy
     } = useFormInput<typeof value, Record<string, SqlValue> | undefined>({
         name,
         value,
@@ -126,6 +125,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
     const appSignal = useContext(AppVariableInitializationContext);
     const pageSignal = useContext(PageVariableInitializationContext);
     const alertBox = useModalBox();
+    const navigatePanel = useNavigatePanel();
     const {allPagesSignal, applicationSignal, elements, navigate} = context;
     const isDesignMode = 'uiDisplayModeSignal' in context && context.uiDisplayModeSignal.get() === 'design';
     const propsRef = useRef({valueToRowData, rowDataToText, rowDataToValue});
@@ -140,19 +140,18 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         let renderer: ReactNode | undefined = undefined;
         if (rendererPageId && rendererPageDataMapperFormula) {
             let valueParams = {value: text};
-            const log = createLogger(['[Component]', 'SelectInput', 'rowDataToRenderer', name].filter(i => i).join(':'));
-            log.setLevel('warn');
+            const log = createLogger(`SelectInput>${name}>rowDataToRenderer`);
             try {
                 const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
                 const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
-                const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', rendererPageDataMapperFormula)
+                const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', 'navigate', 'navigatePanel', rendererPageDataMapperFormula)
                 const module: {
                     exports: (props: unknown) => unknown
                 } = {
                     exports: () => {
                     }
                 };
-                fun.call(null, module, app, page, utils, log, db, alertBox)
+                fun.call(null, module, app, page, utils, log, db, alertBox, navigate, navigatePanel)
                 valueParams = module.exports(localValue) as unknown as typeof valueParams;
             } catch (err) {
                 log.error(err);
@@ -205,28 +204,21 @@ export const SelectInput = forwardRef(function SelectInput(props: {
             currentPage: number,
             index: number
         } | false, HTMLLabelElement>(ref, (closePanel, commitLayout) => {
-            return <DivWithClickOutside onClickOutside={() => closePanel(false)}>
-                <QueryGrid query={query} columnsConfig={config}
-                           rowPerPage={10}
-                           paginationButtonCount={3}
-                           onFocusedRowChange={closePanel}
-                           style={{
-                               boxShadow: '0px 10px 8px -8px rgba(0,0,0,0.5)',
-                               paddingBottom: pageable ? 0 : 10,
-                               borderBottomLeftRadius: 10,
-                               borderBottomRightRadius: 10,
-                               borderLeft: '1px solid rgba(0,0,0,0.1)',
-                               borderRight: '1px solid rgba(0,0,0,0.1)',
-                               ...popupStyle
-                           }}
-                           focusedRow={localValue}
-                           container={container}
-                           filterable={filterable}
-                           sortable={sortable}
-                           pageable={pageable}
-                           itemToKey={itemToKey}
-                           onQueryResultChange={commitLayout}
-                /></DivWithClickOutside>
+            return <QueryGrid query={query} columnsConfig={config}
+                              onClickOutside={() => closePanel(false)}
+                              rowPerPage={10}
+                              paginationButtonCount={3}
+                              onFocusedRowChange={closePanel}
+                              style={popupStyle}
+                              focusedRow={localValue}
+                              container={container}
+                              filterable={filterable}
+                              sortable={sortable}
+                              pageable={pageable}
+                              itemToKey={itemToKey}
+                              onQueryResultChange={commitLayout}
+
+            />
         });
         popupVisibleRef.current = false;
         if (props === false) {
@@ -237,7 +229,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
             await handleValueChange(propsRef.current.rowDataToValue(props.value));
         }
         if (formContext?.focusNext) {
-            formContext?.focusNext()
+            //formContext?.focusNext()
         }
     }
 
@@ -254,6 +246,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                       error={localError}
                       label={label}
                       value={text}
+                      busy={isBusy}
                       disabled={isDisabled}
                       overlayElement={renderer}
                       enableClearIcon={!utils.isEmpty(localValue)}

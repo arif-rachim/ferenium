@@ -67,7 +67,7 @@ export function PropertyInitialization(props: {
                 const allVariablesInstance = allVariablesSignalInstance.get();
                 const allVariables = allVariablesSignal.get();
                 const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
-                const log = createLogger(`[Props]:${container.type}:${containerPropKey}:${container.id}`);
+                const log = createLogger(`${container.type}>${containerPropKey}>${container.id}`);
                 const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', 'log', containerProp.formula] as Array<string>;
                 const module: { exports: unknown } = {exports: {}};
 

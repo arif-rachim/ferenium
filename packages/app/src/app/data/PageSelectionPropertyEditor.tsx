@@ -6,6 +6,7 @@ import {BORDER} from "../../core/style/Border.ts";
 import {Icon} from "../../core/components/icon/Icon.ts";
 import {useSignalEffect} from "react-hook-signal";
 import {usePropertyEditorInitialHook} from "../../core/hooks/usePropertyEditorInitialHook.ts";
+import {useLogger} from "../../core/utils/logger.ts";
 
 const green = 'green';
 const red = 'red';
@@ -15,7 +16,7 @@ export function PageSelectionPropertyEditor(props: { propertyName: string }) {
 
     const update = useUpdateDragContainer();
     const [value, setValue] = useState<string>('');
-
+    const log = useLogger(`PageSelectionPropertyEditor>${containerSignal.get()?.type}>${propertyName}`);
     useSignalEffect(() => {
         const selectedDragContainer = containerSignal.get();
         if (selectedDragContainer && selectedDragContainer.properties && propertyName in selectedDragContainer.properties) {
@@ -27,7 +28,7 @@ export function PageSelectionPropertyEditor(props: { propertyName: string }) {
                 const pageId = module.exports
                 setValue(pageId);
             } catch (err) {
-                console.error(err);
+                log.error(err);
             }
         }
     })

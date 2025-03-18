@@ -63,7 +63,7 @@ export function fetcherInitialization(props: {
                         data?: Record<string, unknown>,
                     }
                 } = {exports: {}};
-                const log = createLogger('FetcherInitialization');
+                const log = createLogger('fetcherInitialization');
                 try {
                     const params = ['module', 'app', 'page', fetcher.functionCode ?? ''];
                     const fun = new Function(...params)

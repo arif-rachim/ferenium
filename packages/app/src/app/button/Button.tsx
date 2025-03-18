@@ -39,7 +39,6 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
     } = props;
     const propsRef = useRef({allowOnFormBusy, allowOnFormDisabled});
     propsRef.current = {allowOnFormBusy, allowOnFormDisabled};
-
     const Icon = icon && icon in Io ? Io[icon] : undefined;
     const type = typeProps ?? 'button';
     // this is default behaviour of button
@@ -59,7 +58,11 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
 
     useSignalEffect(() => {
         const isBusy = formContext !== undefined && formContext.isBusy.get();
-        const isDisabled = formContext !== undefined && formContext.isDisabled.get();
+        let isDisabled = formContext !== undefined && formContext.isDisabled.get();
+        const isChanged = formContext?.isChanged.get();
+        if (type === 'submit' || type === 'reset') {
+            isDisabled = isDisabled || !isChanged;
+        }
         const allowEvenIfDisabled = propsRef.current.allowOnFormDisabled === true;
         const allowEvenIfBusy = propsRef.current.allowOnFormBusy === true;
         if (!allowEvenIfDisabled) {

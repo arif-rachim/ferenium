@@ -1,7 +1,6 @@
 import {Dispatch, SetStateAction, useCallback, useContext, useEffect, useId, useRef, useState} from "react";
 import {useSignal, useSignalEffect} from "react-hook-signal";
 import {FormContext} from "./Form.tsx";
-import {useLogger} from "../../core/utils/logger.ts";
 import {isPromise} from "../../core/utils/isPromise.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
 
@@ -30,16 +29,12 @@ export function useFormInput<T, V>(props: {
         preventChange,
         validator: propsValidator,
         required,
-        label,
         onFocus
     } = props;
     const elementId = useId();
-    const log = useLogger(`useFormInput:${label}`);
-    log.setLevel('warn');
     const nameSignal = useSignal(name);
     const disabledPropsSignal = useSignal(disabledProps);
     const validator = useCallback(async (value: unknown) => {
-        log.debug('value', value, 'required', required, 'propsValidator', propsValidator);
         if (required && isEmpty(value)) {
             return 'Value is required';
         }
@@ -47,7 +42,7 @@ export function useFormInput<T, V>(props: {
             return await propsValidator(value as T)
         }
         return undefined;
-    }, [propsValidator, required, log]) as (params?:unknown) => Promise<string|undefined>;
+    }, [propsValidator, required]) as (params?: unknown) => Promise<string | undefined>;
 
     const [localValue, _setLocalValue] = useState<V | undefined>(() => {
         if (valueToLocalValue) {
@@ -164,7 +159,7 @@ export function useFormInput<T, V>(props: {
         }
     });
 
-    const handleValueChange = useCallback(async (nxtVal?: (T | ((current?: T) => T | undefined))) => {
+    const handleValueChange = useCallback(async (nxtVal?: (T | ((current?: T) => T | undefined)), programmaticChange?: boolean) => {
         let nextValue = nxtVal as (T | undefined);
         let prevValue = propsRef.current.value;
 
@@ -198,9 +193,11 @@ export function useFormInput<T, V>(props: {
             const errors = {...formContext.errors.get()};
             delete errors[name];
             formContext.errors.set(errors);
-
             const newFormVal = {...formContext.value.get(), [name]: nextValue};
             formContext.value.set(newFormVal);
+            if (programmaticChange !== true) {
+                formContext.touched.set({...formContext.touched.get(), [name]: Date.now()});
+            }
             if (propsRef.current.onChange) {
                 propsRef.current.onChange(nextValue);
             }

@@ -78,7 +78,7 @@ export const DateRangeInput = forwardRef(function DateRangeInput(props: {
                 to: (toIsString ? dateToString(to) : to) as string
             };
             if (shouldTriggerChange) {
-                handleValueChange(val).then();
+                handleValueChange(val,true).then();
             }
         }
     }, [setLocalValue, formContext, localValue, name, handleValueChange]);

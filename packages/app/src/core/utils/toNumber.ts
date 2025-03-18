@@ -1,3 +1,6 @@
+import {createLogger} from "./logger.ts";
+
+const log = createLogger("toNumber");
 export function toNumber(val: unknown, defaultVal?: number): number | undefined {
     if (val === undefined || val === null) {
         return defaultVal;
@@ -14,7 +17,7 @@ export function toNumber(val: unknown, defaultVal?: number): number | undefined 
                 result = parseInt(val);
             }
         } catch (err) {
-            console.error(err);
+            log.error(err);
         }
         if (isNaN(result)) {
             return defaultVal

@@ -21,10 +21,11 @@ import {createRequest} from "../../createRequest.ts";
 import {Query, Table} from "../database/getTables.ts";
 import type {ChangeEvent} from "react";
 import {useNameRefactor} from "../../../../core/hooks/useNameRefactor.ts";
+import {createLogger} from "../../../../core/utils/logger.ts";
 import untrack = Signal.subtle.untrack;
 
 const LABEL_WIDTH = 60;
-
+const log = createLogger('FetcherEditorPanel')
 export function FetcherEditorPanel(props: { fetcherId?: string, panelId: string, scope: 'page' | 'application' }) {
     const {
         allPageFetchersSignal,
@@ -162,7 +163,6 @@ export function FetcherEditorPanel(props: { fetcherId?: string, panelId: string,
 
     async function testFetcher() {
         const fetcherValue = fetcherSignal.get();
-        // repopulate fetcher
 
         const fetcher = {...fetcherValue};
 
@@ -207,7 +207,7 @@ export function FetcherEditorPanel(props: { fetcherId?: string, panelId: string,
                 return h
             });
         } catch (err) {
-            console.log(err);
+            log.error(err);
         }
 
 

@@ -1,5 +1,5 @@
 import {LayoutBuilderProps} from "../designer/LayoutBuilderProps.ts";
-import {notifiable} from "react-hook-signal";
+import {useSignalEffect} from "react-hook-signal";
 import {AppVariableInitialization} from "../designer/variable-initialization/AppVariableInitialization.tsx";
 import ErrorBoundary from "../../core/components/ErrorBoundary.tsx";
 import {AppViewerContext} from "./context/AppViewerContext.ts";
@@ -10,6 +10,9 @@ import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
 import {PageVariableInitialization} from "../designer/variable-initialization/PageVariableInitialization.tsx";
 import {ModalProvider} from "../../core/modal/ModalProvider.tsx";
 import {ClosePanelContext} from "../../core/hooks/useNavigatePanel.ts";
+import {useState} from "react";
+import {Container} from "../designer/AppDesigner.tsx";
+import {motion} from "framer-motion";
 
 /**
  * Renders the application viewer component.
@@ -20,6 +23,19 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
         ...appContext,
         elements: {...DefaultElements, ...props.elements}
     } as AppViewerContext;
+    const [{container, activePageId}, setContainerAndPageId] = useState<{
+        container?: Container,
+        activePageId: string
+    }>({
+        container: context.allContainersSignal.get().find(item => isEmpty(item.parent)),
+        activePageId: context.activePageIdSignal.get()
+    });
+
+    useSignalEffect(() => {
+        const activePageId = context.activePageIdSignal.get();
+        const container = context.allContainersSignal.get().find(item => isEmpty(item.parent));
+        setContainerAndPageId({container, activePageId});
+    })
     return <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -33,8 +49,8 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
             // maxWidth: 1200,
             // maxHeight: 800,
             // borderRadius: 20,
-            // padding: 5,
-            background: '#444',
+            padding: 5,
+            background: 'white',
             boxShadow: '0px 15px 20px -4px rgba(0,0,0,0.5)',
             display: 'flex',
             width: '100%',
@@ -49,23 +65,22 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                         <AppVariableInitialization>
                             <PageVariableInitialization>
                                 <ClosePanelContext.Provider value={context.navigateBack}>
-                                    <notifiable.div style={{
+                                    <motion.div layout={'position'} style={{
                                         // borderRadius: 15,
                                         flexGrow: 1,
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        overflow: 'auto',
+                                        overflow: 'hidden',
                                         background: 'white',
-                                        position: 'relative'
-                                    }}>
-                                        {() => {
-                                            const container = context.allContainersSignal.get().find(item => isEmpty(item.parent));
-                                            if (container) {
-                                                return <ContainerElement container={container}/>
-                                            }
-                                            return <></>
-                                        }}
-                                    </notifiable.div>
+                                        position: 'relative',
+                                        top: 0,
+                                        left: 0
+                                    }} initial={{opacity: 0, scale: 0.99}} animate={{opacity: 1, scale: 1}}
+                                                exit={{opacity: 0, scale: 0.99}}
+                                                transition={{bounce: 0}}
+                                                key={activePageId}>
+                                        {container && <ContainerElement container={container}/>}
+                                    </motion.div>
                                 </ClosePanelContext.Provider>
                             </PageVariableInitialization>
                         </AppVariableInitialization>
@@ -73,6 +88,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                 </AppViewerContext.Provider>
 
             </ErrorBoundary>
+
 
         </div>
     </div>

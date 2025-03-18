@@ -11,7 +11,9 @@ import {useRemoveDashboardPanel} from "../../../../core/style/useRemoveDashboard
 import {z, ZodType, ZodTypeAny} from "zod";
 import {useContext, useEffect} from "react";
 import {PanelIsFocusedContext} from "../../../Dashboard.tsx";
+import {createLogger} from "../../../../core/utils/logger.ts";
 
+const log = createLogger('ComponentPropertyEditor');
 /**
  * ComponentPropertyEditor is a React component that renders a property editor panel for a component.
  */
@@ -171,7 +173,7 @@ function getParentFormSchema(selectedContainer: Container, allContainers: Contai
         if ('schema' in container.properties && container.properties.schema && container.properties.schema.formula) {
             try {
                 if(container.properties.schema.formula.indexOf('module.exports')<0){
-                    console.log("form schema require to have `module.exports` seems you are missing it");
+                    log.error("form schema require to have `module.exports` seems you are missing it");
                 }
                 const fun = new Function('module', 'z', container.properties.schema.formula);
                 const module: { exports: ZodType | undefined } = {exports: undefined};
@@ -181,7 +183,7 @@ function getParentFormSchema(selectedContainer: Container, allContainers: Contai
                     return zodTypeToJson(type)
                 }
             } catch (err) {
-                console.error(err);
+                log.error(err);
             }
         }
     }

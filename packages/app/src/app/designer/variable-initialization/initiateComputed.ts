@@ -11,7 +11,7 @@ const db = dbSchemaInitialization();
 export const initiateComputed = (app: FormulaDependencyParameter, page: FormulaDependencyParameter) => (v: Variable) => {
 
     const params = ['module', 'app', 'page', 'utils', 'log', 'db', v.functionCode];
-    const log = createLogger(`[Computed]:${v.name}:${v.id}`);
+    const log = createLogger(`Computed>${v.name}>${v.id}`);
     try {
         const init = new Function(...params);
         const computed = new Signal.Computed(() => {

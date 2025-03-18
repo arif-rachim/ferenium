@@ -15,6 +15,7 @@ import {MdOutlineCheckBox, MdOutlineCheckBoxOutlineBlank} from "react-icons/md";
 import {IoMdCheckbox} from "react-icons/io";
 import {queryGridColumnsTemporalColumnsSignal} from "./queryGridColumnsTemporalColumnsSignal.ts";
 import {ValueMapperSelector} from "../../data/ValueMapperSelector.tsx";
+import {useLogger} from "../../../core/utils/logger.ts";
 
 const green = 'green';
 const red = 'red';
@@ -92,6 +93,7 @@ function EditColumnConfigFormula(props: {
     const {columns: columnsProps, formula, closePanel} = props;
     const [config, setConfig] = useState<ColumnsConfig>({});
     const [allHiddenStatus, setAllHiddenStatus] = useState<ThreeState>('no');
+    const log = useLogger(`EditColumnConfigFormula>${props.formula}`);
     const columns = useMemo(() => {
         return ((columnsProps ?? []).map((col, index) => {
             if (config && col in config && config[col]) {
@@ -112,7 +114,7 @@ function EditColumnConfigFormula(props: {
                     fun.call(null, module);
                     setConfig(module.exports);
                 } catch (err) {
-                    console.error(err);
+                    log.error(err);
                 }
             }, 100)
         }
@@ -128,7 +130,7 @@ function EditColumnConfigFormula(props: {
                         clone[col] = {...clone[col]};
                         clone[col].hidden = true;
                     }
-                    return clone;
+                    return clone as typeof oldConfig;
                 }
                 return oldConfig;
             })
@@ -141,7 +143,7 @@ function EditColumnConfigFormula(props: {
                         clone[col] = {...clone[col]};
                         clone[col].hidden = false;
                     }
-                    return clone;
+                    return clone as typeof oldConfig;
                 }
                 return oldConfig;
             })
@@ -208,7 +210,7 @@ function EditColumnConfigFormula(props: {
                                 clone[col] = {...clone[col]};
                                 clone[col].index = columnsNew.indexOf(col);
                             }
-                            return clone;
+                            return clone as typeof oldConfig;
                         }
                         return oldConfig;
                     })

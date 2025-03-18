@@ -5,6 +5,7 @@ import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {EmptyComponent} from "../../components/empty-component/EmptyComponent.tsx";
 import ErrorBoundary from "../../../../core/components/ErrorBoundary.tsx";
 import {usePropertyInitialization} from "./usePropertyInitialization.tsx";
+import {useLogger} from "../../../../core/utils/logger.ts";
 
 /**
  * Renders a container component with dynamically generated properties based on container properties and dependencies.
@@ -27,7 +28,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     const context = useAppContext();
     const {component} = context && context.elements && container && container.type in context.elements ? context.elements[container.type] : {component: EmptyComponent};
     const ref = useRef<HTMLElement | null>(null);
-
+    const log = useLogger(`ElementRenderer>${container.type}`)
     const propsRef = useRef(elementProps);
     propsRef.current = elementProps;
 
@@ -57,7 +58,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
                 element.setAttribute('data-element-id', propsRef.current.dataElementId);
                 element.setAttribute('draggable', propsRef.current.draggable.toString());
             } catch (err) {
-                console.error(err)
+                log.error(err)
             }
         }
         return () => {
@@ -70,7 +71,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
                     element.removeEventListener('mouseover', onMouseOver);
                     element.removeEventListener('click', onClick);
                 } catch (err) {
-                    console.error(err);
+                    log.error(err);
                 }
             }
         }

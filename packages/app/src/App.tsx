@@ -22,23 +22,17 @@ export function App(props:{meta:Record<string, unknown>}) {
     useEffect(() => {
         function onF10(event:KeyboardEvent) {
             if(event.code === 'F10'){
-                event.preventDefault();
-                event.stopPropagation();
                 setDesignMode(!designMode);
             }
         }
         function onF5(event:KeyboardEvent) {
             if(event.code === 'F5'){
-                event.preventDefault();
-                event.stopPropagation();
                 location.reload();
             }
         }
 
         async function onF12(event:KeyboardEvent) {
             if(event.code === 'F12'){
-                event.preventDefault();
-                event.stopPropagation();
                 await openDevTools()
             }
         }

@@ -4,6 +4,7 @@ import {BindParams, SqlValue} from "sql.js";
 import {zodSchemaToJson} from "../../../core/utils/zodSchemaToJson.ts";
 import {createLogger} from "../../../core/utils/logger.ts";
 
+const log = createLogger('dbSchemaInitialization');
 export function composeTableSchema(table: Table) {
     const schema: string[] = [];
     for (const info of table.tableInfo) {
@@ -12,7 +13,7 @@ export function composeTableSchema(table: Table) {
     }
     return `z.object({\n\t${schema.join(',\n\t')}\n})`
 }
-const log = createLogger('[Utils]:DbSchemaInitialization');
+
 export function composeArraySchema(data: Array<unknown>) {
     const schema: Record<string, string> = {};
 

@@ -8,7 +8,8 @@ import {
     MutableRefObject,
     useEffect,
     useRef,
-    useState
+    useState,
+    useTransition
 } from "react";
 import {Label} from "../../Label.tsx";
 import {guid} from "../../../../core/utils/guid.ts";
@@ -30,6 +31,7 @@ export const TextInput = forwardRef(function TextInput(props: {
         inputStyle?: CSSProperties,
         maxLength?: number,
         disabled?: boolean,
+        busy?: boolean,
         required?: boolean,
         type?: 'text' | 'number' | 'password' | 'textarea',
         allCaps?: boolean,
@@ -67,7 +69,7 @@ export const TextInput = forwardRef(function TextInput(props: {
             enableClearIcon,
             onClearIconClicked,
             autoFocus,
-
+            busy
         } = props;
 
         const {
@@ -96,7 +98,7 @@ export const TextInput = forwardRef(function TextInput(props: {
         const inputRef = props.inputRef ? props.inputRef : localRef;
 
         const inputDisabled = isDisabled || isBusy;
-
+        const [_, startTransition] = useTransition();
         const propsRef = useRef({onChange});
         propsRef.current = {onChange};
 
@@ -132,8 +134,9 @@ export const TextInput = forwardRef(function TextInput(props: {
             if (e?.target.selectionStart) {
                 setCursorLoc(e.target.selectionStart);
             }
-
-            handleValueChange(val).then();
+            startTransition(() => {
+                handleValueChange(val).then();
+            })
         };
         const handleFocus = () => {
             const hasOnFocus = handleOnFocus();
@@ -181,17 +184,24 @@ export const TextInput = forwardRef(function TextInput(props: {
             style: style,
             autoComplete: guid(),
             placeholder: placeholder,
-            autoFocus: autoFocus
+            autoFocus: autoFocus,
         })
 
         const [mouseOver, setMouseOver] = useState(false)
         return <Label errorMessage={localError} label={label} ref={ref} style={{minWidth: 0, ...defaultStyle}}
                       onMouseLeave={(e) => {
-                          const containsElement = e.relatedTarget && inputRef.current ? inputRef.current.contains(e.relatedTarget as Node) : false;
+                          let containsElement = true;
+                          if(e.relatedTarget){
+                              if(e.relatedTarget === window){
+                                  containsElement = false;
+                              }else{
+                                  containsElement = inputRef.current ? inputRef.current.contains(e.relatedTarget as Node) : false;
+                              }
+                          }
                           if (!containsElement) {
                               setMouseOver(false)
                           }
-                      }} onMouseEnter={() => setMouseOver(true)}>
+                      }} onMouseEnter={() => setMouseOver(true)} isBusy={isBusy || busy}>
             {input}
             {overlayElement &&
                 <div style={{

@@ -36,8 +36,7 @@ export function initiateEffect(props: {
         }
 
         const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', 'log', wrapWithTryCatch(v.functionCode)];
-        const log = createLogger(`[Effect]:${v?.name}:${v?.id}`);
-        log.setLevel('warn');
+        const log = createLogger(`Effect>${v?.name}>${v?.id}`);
         try {
             const func = new Function(...params) as (...args: unknown[]) => void
             const destructor = effect(() => {

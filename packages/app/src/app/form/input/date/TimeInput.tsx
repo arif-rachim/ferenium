@@ -64,7 +64,7 @@ export const TimeInput = forwardRef(function TimeInput(props: {
             const shouldTriggerChange = value === undefined || (timeValue.toString() !== value.toString());
             const val = valueIsString ? timeValue.toString() : timeValue;
             if (shouldTriggerChange) {
-                handleValueChange(val).then();
+                handleValueChange(val,true).then();
             }
         }
     }, [setLocalValue, formContext, localValue, name]);
@@ -99,8 +99,8 @@ export const TimeInput = forwardRef(function TimeInput(props: {
                 borderTop: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
                 borderBottom: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
                 bottom: 5,
-                background: disabled ? 'rgba(0,0,0,0.03)' : 'unset',
-                ...inputStyle
+                ...inputStyle,
+                background: (isDisabled || isBusy) ? 'rgba(0,0,0,0.04)' : 'unset',
             }}>
                 {':'}
             </div>

@@ -1,5 +1,5 @@
-import {createContext, CSSProperties, ForwardedRef, forwardRef, LegacyRef, useEffect, useRef} from "react";
-import {useSignal, useSignalEffect} from "react-hook-signal";
+import {createContext, CSSProperties, ForwardedRef, forwardRef, LegacyRef, useCallback, useEffect, useRef} from "react";
+import {useComputed, useSignal, useSignalEffect} from "react-hook-signal";
 import {Signal} from "signal-polyfill";
 import {Container} from "../designer/AppDesigner.tsx";
 import {useContainerStyleHook} from "./container/useContainerStyleHook.ts";
@@ -41,14 +41,22 @@ export const Form = forwardRef(function Form(props: {
         validator: Validator,
         disabled?: boolean
     }>>([]);
-    const isChanged = useSignal<boolean>(false);
+
+    const touched = useSignal<Record<string, number>>({})
     const isBusy = useSignal<boolean>(false);
     const isDisabled = useSignal<boolean>(disabled === true);
-
+    const isChanged = useComputed<boolean>(() => {
+        const touch = touched.get();
+        const keys = Object.keys(touch);
+        if (keys.length === 0) {
+            return false;
+        }
+        return keys.reduce((isTouched, key) => (isTouched || touch[key] > 0), false)
+    });
 
     const reset = () => {
         localValue.set(structuredClone(value ?? {}));
-        isChanged.set(false);
+        touched.set({});
         errors.set({});
     }
 
@@ -64,7 +72,7 @@ export const Form = forwardRef(function Form(props: {
             return;
         }
         await propsRef.current.onChange(localValue.get(), {value: localValue, initialValue: value, errors, reset});
-        isChanged.set(false);
+        touched.set({});
         isBusy.set(false);
     }
     const validateValue = async (props: { key: string, value: unknown }) => {
@@ -82,6 +90,7 @@ export const Form = forwardRef(function Form(props: {
     }
 
     const formIsValid = async () => {
+        debugger;
         const formValue = localValue.get();
         const validatorKeys = validators.get().map(i => i.name);
         const errorsValue: Record<string, string> = {};
@@ -111,7 +120,7 @@ export const Form = forwardRef(function Form(props: {
 
     useEffect(() => {
         localValue.set(structuredClone(value ?? {}));
-        isChanged.set(false);
+        touched.set({});
     }, [localValue, isChanged, value]);
 
     useSignalEffect(() => {
@@ -126,6 +135,49 @@ export const Form = forwardRef(function Form(props: {
                 }
             }
         })();
+    })
+    const fieldChangeListenerRef = useRef<Array<{
+        key: string,
+        callback: (props: { isChanged: boolean, lastChanged?: Date }) => void
+    }>>([]);
+
+    const onFieldChange = useCallback(function onFieldChange(key: string, callback: (props: {
+        isChanged: boolean,
+        lastChanged?: Date
+    }) => void) {
+        const listener = {callback, key};
+        fieldChangeListenerRef.current.push(listener);
+        return function removeListener() {
+            fieldChangeListenerRef.current.splice(fieldChangeListenerRef.current.indexOf(listener), 1);
+        }
+    }, []);
+
+    const touch = useCallback(function touch(key: string) {
+        touched.set({...touched.get(), [key]: Date.now()})
+    }, [])
+
+    const touchPrevValue = useRef<Record<string, number>>({});
+    useSignalEffect(() => {
+        const touch = touched.get();
+        const touchPrevVal = touchPrevValue.current;
+        touchPrevValue.current = touch;
+        const diff = getObjectDiff(touchPrevVal, touch);
+        Object.keys(diff).forEach(key => {
+            fieldChangeListenerRef.current.forEach(k => {
+                if (k.key === key) {
+                    let isChanged = false;
+                    let date:Date|undefined = undefined;
+                    if(diff && key in diff && diff[key] && diff[key].next){
+                        isChanged = diff[key].next > 0
+                        if(isChanged){
+                            date = new Date(diff[key].next);
+                        }
+                    }
+                    k.callback({isChanged, lastChanged: date})
+                }
+            })
+        });
+
     })
 
     return <ContainerRendererIdContext.Provider value={props.dataElementId}>
@@ -146,17 +198,20 @@ export const Form = forwardRef(function Form(props: {
             <FormContext.Provider value={{
                 value: localValue,
                 initialValue: value ?? {},
+                touched,
                 errors,
                 validators,
                 submit,
                 reset,
                 isChanged,
+                onChange: onFieldChange,
                 formIsValid,
                 validateValue,
                 isBusy,
                 isDisabled,
                 focusedElementId,
-                focusNext
+                focusNext,
+                touch
             }}>
                 {elements}
             </FormContext.Provider>
@@ -167,7 +222,8 @@ export type FormContextType = {
     value: Signal.State<Record<string, unknown>>,
     initialValue: Record<string, unknown>,
     errors: Signal.State<Record<string, string>>,
-    isChanged: Signal.State<boolean>,
+    isChanged: Signal.Computed<boolean>,
+    touched: Signal.State<Record<string, number>>,
     validators: Signal.State<Array<{
         name: string,
         elementId: string,
@@ -181,6 +237,23 @@ export type FormContextType = {
     validateValue: (params: { key: string, value: unknown }) => Promise<string | undefined> | undefined,
     isBusy: Signal.State<boolean>,
     isDisabled: Signal.State<boolean>,
-    focusNext: (forward?: boolean) => void
+    focusNext: (forward?: boolean) => void,
+    onChange: (key: string, callback: (props: { isChanged: boolean, lastChanged?: Date }) => void) => () => void,
+    touch: (key: string) => void
 }
+
+function getObjectDiff(prev: Record<string, number>, next: Record<string, number>): Record<string, {
+    prev?: number,
+    next?: number
+}> {
+    let diff:Record<string, {prev?:number,next?:number}> = {};
+    let keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+    keys.forEach(key => {
+        if (prev[key] !== next[key]) {
+            diff[key] = {prev: prev[key], next: next[key]};
+        }
+    })
+    return diff;
+}
+
 export const FormContext = createContext<FormContextType | undefined>(undefined)

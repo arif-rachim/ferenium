@@ -2,6 +2,7 @@ import {SqlValue} from "sql.js";
 import sqlite from "./sqlite.ts";
 import {mapTableInfoTypeToTs} from "./mapTableInfoTypeToTs.ts";
 import {FetcherParameter} from "../../AppDesigner.tsx";
+import {createLogger} from "../../../../core/utils/logger.ts";
 
 export interface Table {
     type: string,
@@ -57,7 +58,7 @@ export interface TableInfo {
     pk: number
 }
 
-
+const log = createLogger('getTableInfo')
 export async function getTableInfo(tableName: string) {
     const result = await sqlite({type: 'executeQuery', query: `pragma table_info(${tableName})`})
     const data: TableInfo[] = [];
@@ -67,7 +68,7 @@ export async function getTableInfo(tableName: string) {
             for (const item of values) {
                 const type = item[2] as string;
                 if (type === "") {
-                    console.warn(`Warning this column is type empty "${item[1]}" from table "${tableName}"`)
+                    log.warn(`Warning this column is type empty "${item[1]}" from table "${tableName}"`)
                 }
                 data.push({
                     cid: item[0] as number,

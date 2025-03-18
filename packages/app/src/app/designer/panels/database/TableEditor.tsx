@@ -35,6 +35,8 @@ import {isPromise} from "../../../../core/utils/isPromise.ts";
 import {notifiable, useSignal} from "react-hook-signal";
 import {useModalBox} from "../../variable-initialization/useModalBox.tsx";
 import {TextInput} from "../../../form/input/text/TextInput.tsx";
+import {AnimatePresence} from "framer-motion";
+import {useNavigatePanel} from "../../../../core/hooks/useNavigatePanel.ts";
 
 async function queryTable(props: {
     table: Table,
@@ -180,7 +182,14 @@ export function SimpleTableFooter(props: {
     }
 
     return <div
-        style={{display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', borderTop: BORDER, padding: 5,background: '#F2F2F2',}}>
+        style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            borderTop: BORDER,
+            padding: 5,
+            background: '#F2F2F2',
+        }}>
         <Button style={{
             padding: 0,
             paddingBottom: 2,
@@ -244,7 +253,7 @@ export type ColumnsConfig = Record<string, {
 }>
 
 
-function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, col: string) {
+function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, col: string, visibleColumns: Record<string, boolean | undefined>={}) {
 
 
     let minWidth: CSSProperties['minWidth'] | undefined = undefined;
@@ -252,6 +261,7 @@ function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, co
     let hide: boolean | undefined = false;
     if (columnsConfig !== undefined && columnsConfig !== null && typeof columnsConfig === 'object' && col in columnsConfig) {
         const config = columnsConfig[col];
+        const isVisible = visibleColumns && col in visibleColumns ? visibleColumns[col] : undefined;
         if (!isEmpty(config.minWidth)) {
             {
                 minWidth = config.minWidth;
@@ -264,7 +274,10 @@ function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, co
         }
         if (config.hidden !== undefined) {
             hide = config.hidden;
+        }else if (isVisible !== undefined){
+            hide = !isVisible
         }
+
     }
     return {minWidth, maxWidth, hide, col};
 }
@@ -320,7 +333,8 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
         type: 'add' | 'remove' | 'addAll' | 'removeAll',
         value?: string | number,
         selectedRows: Array<string | number>
-    }) => void
+    }) => void,
+    visibleColumns?: Record<string, boolean>
 }) {
     const {
         columns: columnsProps,
@@ -339,14 +353,16 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
         enableMultipleSelection,
         selectedRows,
         onMultipleSelectionChange,
+        visibleColumns
     } = props;
 
     const hasMultipleSelection = typeof enableMultipleSelection === 'function' ? true : enableMultipleSelection === true;
-    const keyMapper = (itemToKey ?? defaultItemToKey) as (item:T) => string | number;
+    const keyMapper = (itemToKey ?? defaultItemToKey) as (item: T) => string | number;
     const dataIsEmpty = (data ?? []).length === 0;
     const [focusedRow, setFocusedRow] = useState<T | undefined>(focusedRowProps);
     useEffect(() => setFocusedRow(focusedRowProps), [focusedRowProps]);
     const alertBox = useModalBox();
+    const navigatePanel = useNavigatePanel();
     const {allPagesSignal, elements, applicationSignal, navigate} = useAppContext();
     const appSignal = useContext(AppVariableInitializationContext);
     const pageSignal = useContext(PageVariableInitializationContext);
@@ -361,7 +377,12 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
 
     const selectedRowsSignal = useSignal<Array<string | number>>(selectedRows ?? []);
     const multipleSelectionType = useSignal<'all' | 'some' | 'none'>("none");
-    const propsRef = useRef({dataKeys: [] as Array<string | number>, keyMapper, multipleSelectionType, selectedRowsSignal});
+    const propsRef = useRef({
+        dataKeys: [] as Array<string | number>,
+        keyMapper,
+        multipleSelectionType,
+        selectedRowsSignal
+    });
     const {dataKeys, restrictedKeys} = useMemo(() => {
         return (data ?? []).reduce((result, item, index) => {
             const keyMapper = propsRef.current.keyMapper;
@@ -439,11 +460,11 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                     const multipleSelection = multipleSelectionType.get();
                     return <ThreeStateCheckbox value={multipleSelection}/>
                 }}</notifiable.div>}
-                {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col))).filter(i => !i.hide).map(({
-                                                                                                                      col,
-                                                                                                                      minWidth,
-                                                                                                                      maxWidth
-                                                                                                                  }) => {
+                {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col, visibleColumns))).filter(i => !i.hide).map(({
+                                                                                                                                      col,
+                                                                                                                                      minWidth,
+                                                                                                                                      maxWidth
+                                                                                                                                  }) => {
                     let title = col;
                     if (columnsConfig && typeof columnsConfig === 'object' && col in columnsConfig) {
                         const config = columnsConfig[col];
@@ -515,11 +536,11 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                         background: '#F2F2F2',
                         color: "black",
                     }}></div>}
-                    {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col))).filter(i => !i.hide).map(({
-                                                                                                                          col,
-                                                                                                                          minWidth,
-                                                                                                                          maxWidth
-                                                                                                                      }, index, source) => {
+                    {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col, visibleColumns))).filter(i => !i.hide).map(({
+                                                                                                                                          col,
+                                                                                                                                          minWidth,
+                                                                                                                                          maxWidth
+                                                                                                                                      }, index, source) => {
                         const lastIndex = (source.length - 1) === index
                         let value = '';
                         if (filter && col in filter) {
@@ -554,171 +575,179 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                     })}
                 </div>
             }
-            {(data ?? []).map((item, rowIndex, data) => {
-                const key = keyMapper(item) ? keyMapper(item) : rowIndex;
-                const focusedKey = focusedRow && keyMapper(focusedRow) ? keyMapper(focusedRow) : -1;
-                const isFocused = key === focusedKey;
-                const tableRowStyle = {display: 'table-row'} as CSSProperties
-                if (isFocused) {
-                    tableRowStyle.background = 'rgba(0,0,0,0.1)'
-                }
-                const lastRow = rowIndex === data.length - 1;
-                return <div className={'table-row'} style={tableRowStyle}
-                            key={`${key}`} tabIndex={0} onKeyDown={(e) => {
-                    const sibling = e.code === 'ArrowUp' ? e.currentTarget.previousElementSibling : e.code === 'ArrowDown' ? e.currentTarget.nextElementSibling : null;
-                    if (sibling && sibling.classList.contains('table-row')) {
-                        (sibling as HTMLDivElement).focus();
+            <AnimatePresence>
+                {(data ?? []).map((item, rowIndex, data) => {
+                    const key = keyMapper(item) ? keyMapper(item) : rowIndex;
+                    const focusedKey = focusedRow && keyMapper(focusedRow) ? keyMapper(focusedRow) : -1;
+                    const isFocused = key === focusedKey;
+                    const tableRowStyle = {display: 'table-row'} as CSSProperties
+                    if (isFocused) {
+                        tableRowStyle.background = 'rgba(0,0,0,0.1)'
                     }
-                    if (e.code === 'Enter') {
+                    const lastRow = rowIndex === data.length - 1;
+                    return <div className={'table-row'} style={tableRowStyle}
+                                key={`${key}`} tabIndex={0} onKeyDown={(e) => {
+                        const sibling = e.code === 'ArrowUp' ? e.currentTarget.previousElementSibling : e.code === 'ArrowDown' ? e.currentTarget.nextElementSibling : null;
+                        if (sibling && sibling.classList.contains('table-row')) {
+                            (sibling as HTMLDivElement).focus();
+                        }
+                        if (e.code === 'Enter') {
+                            if (onFocusedRowChange) {
+                                onFocusedRowChange(item)
+                            } else {
+                                setFocusedRow(item)
+                            }
+                        }
+                    }} onClick={() => {
                         if (onFocusedRowChange) {
                             onFocusedRowChange(item)
                         } else {
                             setFocusedRow(item)
                         }
-                    }
-                }} onClick={() => {
-                    if (onFocusedRowChange) {
-                        onFocusedRowChange(item)
-                    } else {
-                        setFocusedRow(item)
-                    }
-                }} onDoubleClick={() => {
-                    if (onRowDoubleClick) {
-                        onRowDoubleClick(item)
-                    }
-                }}>
-                    {hasMultipleSelection && <notifiable.div style={{
-                        display: 'table-cell',
-                        borderBottom: BORDER,
-                        background: '#F2F2F2',
-                        color: "black",
-                        textAlign: 'center',
-                    }} onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (restrictedKeys.includes(key)) {
-                            return;
+                    }} onDoubleClick={() => {
+                        if (onRowDoubleClick) {
+                            onRowDoubleClick(item)
                         }
-                        const selectedRows = selectedRowsSignal.get();
-                        const selected = selectedRows.includes(key);
-                        if (selected) {
-
-                            const newSelection = selectedRows.filter(i => i !== key);
-                            selectedRowsSignal.set(newSelection);
-                            const noneSelected = dataKeys.filter(i => newSelection.includes(i)).length === 0
-                            multipleSelectionType.set(noneSelected ? 'none' : 'some');
-                            if (onMultipleSelectionChange) {
-                                onMultipleSelectionChange({
-                                    selectedRows: selectedRowsSignal.get(),
-                                    type: 'remove',
-                                    value: key
-                                });
-                            }
-                        } else {
-                            const newSelection = [...selectedRows, key];
-                            selectedRowsSignal.set(newSelection);
-                            const allSelected = dataKeys.filter(i => newSelection.includes(i)).length === dataKeys.length;
-                            multipleSelectionType.set(allSelected ? 'all' : 'some');
-                            if (onMultipleSelectionChange) {
-                                onMultipleSelectionChange({
-                                    selectedRows: selectedRowsSignal.get(),
-                                    type: 'add',
-                                    value: key
-                                });
-                            }
-                        }
-                    }}>{() => {
-                        const selected = selectedRowsSignal.get().includes(key);
-                        const disabled = restrictedKeysSignal.get().includes(key)
-                        return <ThreeStateCheckbox value={selected ? 'some' : 'none'} disabled={disabled}/>
-                    }}</notifiable.div>}
-                    {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col))).filter(i => !i.hide).map(({
-                                                                                                                          col,
-                                                                                                                          minWidth,
-                                                                                                                          maxWidth
-                                                                                                                      }, colIndex,filteredColumns) => {
-                        let rendererPageId: string | undefined = undefined;
-                        const value = item[col] as ReactNode;
-                        let mappedValue: ReactNode | Promise<ReactNode> | undefined = value;
-                        let valueParams = {value};
-                        const lastIndex = colIndex === (filteredColumns.length - 1);
-                        if (columnsConfig !== undefined && columnsConfig !== null && typeof columnsConfig === 'object' && col in columnsConfig) {
-                            const config = columnsConfig[col];
-                            const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
-                            const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
-                            if (config.cellValueMapper) {
-                                const log = createLogger(`TableEditor:${col}:cellValueMapper`);
-                                try {
-                                    const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', config.cellValueMapper)
-                                    const module: {
-                                        exports: (props: unknown) => unknown
-                                    } = {exports:() => {}};
-
-                                    fun.call(null, module, app, page, utils, log, db, alertBox)
-
-                                    mappedValue = module.exports({
-                                        cellValue: value,
-                                        rowIndex,
-                                        rowData: item,
-                                        columnName: col,
-                                        gridData: data
-                                    }) as Promise<ReactNode>;
-
-                                } catch (err) {
-                                    log.error(err);
-                                }
-                            }
-
-                            if (config.rendererPageId) {
-                                rendererPageId = config.rendererPageId;
-                            }
-                            if (config.rendererPageDataMapperFormula) {
-                                const log = createLogger(`TableEditor:${col}:rendererMapper`);
-                                try {
-                                    const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', config.rendererPageDataMapperFormula)
-                                    const module: {exports: (props: unknown) => unknown} = {exports:() => {}};
-
-                                    fun.call(null, module, app, page, utils, log, db, alertBox)
-                                    valueParams = module.exports({
-                                        cellValue: value,
-                                        rowIndex,
-                                        rowData: item,
-                                        columnName: col,
-                                        gridData: data
-                                    }) as unknown as typeof valueParams;
-                                } catch (err) {
-                                    log.error(err);
-                                }
-                            }
-                        }
-                        let renderer = <CellRenderer value={mappedValue}/>;
-                        if (rendererPageId) {
-                            const page = allPagesSignal.get().find(p => p.id === rendererPageId);
-
-                            if (page) {
-                                renderer = <PageViewer
-                                    elements={elements}
-                                    page={page!}
-                                    appConfig={applicationSignal.get()}
-                                    value={valueParams}
-                                    navigate={navigate}
-                                />
-                            }
-                        }
-                        return <div style={{
+                    }}>
+                        {hasMultipleSelection && <notifiable.div style={{
                             display: 'table-cell',
-                            verticalAlign: 'middle',
-                            borderBottom: lastRow ? BORDER : BORDER,
-                            borderRight: lastIndex ? 'unset' : BORDER,
-                            overflow: 'hidden',
-                            minWidth,
-                            maxWidth
-                        }} key={`${colIndex}:${rowIndex}`}>
-                            <div style={{minHeight: 22, display: 'flex', flexDirection: 'column'}}>{renderer}</div>
-                        </div>
-                    })}
-                </div>
-            })}
+                            borderBottom: BORDER,
+                            background: '#F2F2F2',
+                            color: "black",
+                            textAlign: 'center',
+                        }} onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (restrictedKeys.includes(key)) {
+                                return;
+                            }
+                            const selectedRows = selectedRowsSignal.get();
+                            const selected = selectedRows.includes(key);
+                            if (selected) {
+
+                                const newSelection = selectedRows.filter(i => i !== key);
+                                selectedRowsSignal.set(newSelection);
+                                const noneSelected = dataKeys.filter(i => newSelection.includes(i)).length === 0
+                                multipleSelectionType.set(noneSelected ? 'none' : 'some');
+                                if (onMultipleSelectionChange) {
+                                    onMultipleSelectionChange({
+                                        selectedRows: selectedRowsSignal.get(),
+                                        type: 'remove',
+                                        value: key
+                                    });
+                                }
+                            } else {
+                                const newSelection = [...selectedRows, key];
+                                selectedRowsSignal.set(newSelection);
+                                const allSelected = dataKeys.filter(i => newSelection.includes(i)).length === dataKeys.length;
+                                multipleSelectionType.set(allSelected ? 'all' : 'some');
+                                if (onMultipleSelectionChange) {
+                                    onMultipleSelectionChange({
+                                        selectedRows: selectedRowsSignal.get(),
+                                        type: 'add',
+                                        value: key
+                                    });
+                                }
+                            }
+                        }}>{() => {
+                            const selected = selectedRowsSignal.get().includes(key);
+                            const disabled = restrictedKeysSignal.get().includes(key)
+                            return <ThreeStateCheckbox value={selected ? 'some' : 'none'} disabled={disabled}/>
+                        }}</notifiable.div>}
+                        {columns.map((col) => (extractWidthAndHiddenField(columnsConfig, col, visibleColumns))).filter(i => !i.hide).map(({
+                                                                                                                                              col,
+                                                                                                                                              minWidth,
+                                                                                                                                              maxWidth
+                                                                                                                                          }, colIndex, filteredColumns) => {
+                            let rendererPageId: string | undefined = undefined;
+                            const value = item[col] as ReactNode;
+                            let mappedValue: ReactNode | Promise<ReactNode> | undefined = value;
+                            let valueParams = {value};
+                            const lastIndex = colIndex === (filteredColumns.length - 1);
+                            if (columnsConfig !== undefined && columnsConfig !== null && typeof columnsConfig === 'object' && col in columnsConfig) {
+                                const config = columnsConfig[col];
+                                const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
+                                const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
+                                if (config.cellValueMapper) {
+                                    const log = createLogger(`TableEditor:${col}:cellValueMapper`);
+                                    try {
+                                        const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', 'navigate', 'navigatePanel', config.cellValueMapper)
+                                        const module: {
+                                            exports: (props: unknown) => unknown
+                                        } = {
+                                            exports: () => {
+                                            }
+                                        };
+
+                                        fun.call(null, module, app, page, utils, log, db, alertBox, navigate, navigatePanel)
+
+                                        mappedValue = module.exports({
+                                            cellValue: value,
+                                            rowIndex,
+                                            rowData: item,
+                                            columnName: col,
+                                            gridData: data
+                                        }) as Promise<ReactNode>;
+
+                                    } catch (err) {
+                                        log.error(err);
+                                    }
+                                }
+
+                                if (config.rendererPageId) {
+                                    rendererPageId = config.rendererPageId;
+                                }
+                                if (config.rendererPageDataMapperFormula) {
+                                    const log = createLogger(`TableEditor:${col}:rendererMapper`);
+                                    try {
+                                        const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', 'navigate', 'navigatePanel', config.rendererPageDataMapperFormula)
+                                        const module: { exports: (props: unknown) => unknown } = {
+                                            exports: () => {
+                                            }
+                                        };
+
+                                        fun.call(null, module, app, page, utils, log, db, alertBox, navigate, navigatePanel)
+                                        valueParams = module.exports({
+                                            cellValue: value,
+                                            rowIndex,
+                                            rowData: item,
+                                            columnName: col,
+                                            gridData: data
+                                        }) as unknown as typeof valueParams;
+                                    } catch (err) {
+                                        log.error(err);
+                                    }
+                                }
+                            }
+                            let renderer = <CellRenderer value={mappedValue}/>;
+                            if (rendererPageId) {
+                                const page = allPagesSignal.get().find(p => p.id === rendererPageId);
+
+                                if (page) {
+                                    renderer = <PageViewer
+                                        elements={elements}
+                                        page={page!}
+                                        appConfig={applicationSignal.get()}
+                                        value={valueParams}
+                                        navigate={navigate}
+                                    />
+                                }
+                            }
+                            return <div style={{
+                                display: 'table-cell',
+                                verticalAlign: 'middle',
+                                borderBottom: lastRow ? BORDER : BORDER,
+                                borderRight: lastIndex ? 'unset' : BORDER,
+                                overflow: 'hidden',
+                                minWidth,
+                                maxWidth
+                            }} key={`${colIndex}:${rowIndex}`}>
+                                <div style={{minHeight: 22, display: 'flex', flexDirection: 'column'}}>{renderer}</div>
+                            </div>
+                        })}
+                    </div>
+                })}
+            </AnimatePresence>
         </div>
         {dataIsEmpty &&
             <div style={{
@@ -745,7 +774,7 @@ function CellRenderer(props: { value: ReactNode | Promise<ReactNode> }) {
             propsValue.then(next => {
                 setValue(prev => {
                     if (prev !== next) {
-                        return next;
+                        return next as typeof prev;
                     }
                     return prev;
                 })
@@ -753,7 +782,7 @@ function CellRenderer(props: { value: ReactNode | Promise<ReactNode> }) {
         } else {
             setValue(prev => {
                 if (prev !== propsValue) {
-                    return propsValue;
+                    return propsValue as typeof prev;
                 }
                 return prev;
             });

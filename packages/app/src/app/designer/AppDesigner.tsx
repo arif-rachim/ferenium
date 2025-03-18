@@ -24,6 +24,7 @@ import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
 import {useAppInitiator} from "../../core/hooks/useAppInitiator.ts";
 import {PageVariableInitialization} from "./variable-initialization/PageVariableInitialization.tsx";
+import {InfoPanel} from "./panels/info/InfoPanel.tsx";
 
 export type VariableType = 'state' | 'computed' | 'effect';
 
@@ -242,6 +243,12 @@ export default function AppDesigner(props: LayoutBuilderProps) {
                                 Icon: Icon.Database,
                                 position: 'leftBottom',
                                 component: DatabasePanel
+                            },
+                            info: {
+                                title: 'Info',
+                                Icon: Icon.Info,
+                                position: 'leftBottom',
+                                component: InfoPanel
                             },
                             errors: {
                                 title: 'Errors',

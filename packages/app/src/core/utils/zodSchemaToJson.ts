@@ -1,6 +1,7 @@
 import {z, ZodType} from "zod";
 import {printNode, zodToTs} from "zod-to-ts";
-
+import {createLogger} from "./logger.ts";
+const log = createLogger('zodSchemaToJson')
 export function zodSchemaToZodType(schemaCode: string): ZodType {
     let returnType = z.any();
     try {
@@ -11,7 +12,7 @@ export function zodSchemaToZodType(schemaCode: string): ZodType {
         const fun = new Function('z', `return (${schemaCode})`);
         returnType = fun.call(null, z);
     } catch (err) {
-        console.error('zodSchemaToJson', err)
+        log.error('zodSchemaToJson', err)
     }
     return returnType;
 }

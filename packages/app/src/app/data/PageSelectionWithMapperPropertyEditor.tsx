@@ -7,6 +7,7 @@ import {Icon} from "../../core/components/icon/Icon.ts";
 import {useSignalEffect} from "react-hook-signal";
 import {usePropertyEditorInitialHook} from "../../core/hooks/usePropertyEditorInitialHook.ts";
 import {queryGridColumnsTemporalColumnsSignal} from "../designer/editor/queryGridColumnsTemporalColumnsSignal.ts";
+import {useLogger} from "../../core/utils/logger.ts";
 
 const green = 'green';
 const red = 'red';
@@ -33,7 +34,7 @@ export function PageSelectionWithMapperPropertyEditor(props: { propertyName: str
             }
         }
     })
-
+    const log = useLogger(`PageSelectionWithMapperPropertyEditor>${containerSignal.get()?.type}>${propertyName}`);
     useSignalEffect(() => {
         const container = containerSignal.get();
         if (container && container.properties && propertyName in container.properties) {
@@ -45,7 +46,7 @@ export function PageSelectionWithMapperPropertyEditor(props: { propertyName: str
                 const val = module.exports
                 setValue(val);
             } catch (err) {
-                console.error(err);
+                log.error(err);
             }
         } else {
             setValue(undefined);

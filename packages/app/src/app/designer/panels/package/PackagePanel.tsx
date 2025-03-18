@@ -5,6 +5,7 @@ import {useLoadExtractJsonFromZip} from "../../../../core/utils/useLoadExtractJs
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {AppDesignerContext} from "../../AppDesignerContext.ts";
 import {createNewBlankApplication} from "../../createNewBlankApplication.ts";
+import {deleteAppAndResetFactory} from "../../../../core/utils/appStorage.ts";
 
 export default function PackagePanel() {
     const context = useAppContext<AppDesignerContext>();
@@ -32,5 +33,9 @@ export default function PackagePanel() {
             context.uiDisplayModeSignal.set('design');
             context.allErrorsSignal.set([]);
         }}>Delete App</Button>
+        <Button onClick={async () => {
+            await deleteAppAndResetFactory();
+            window.location.reload();
+        }}>Delete App and Reset factory settings</Button>
     </div>
 }

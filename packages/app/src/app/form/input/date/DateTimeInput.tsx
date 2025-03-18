@@ -82,7 +82,7 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                 const shouldTriggerChange = value === undefined || (valueIsString && dateToString(dateValue) !== value) || (isDate(value) && dateToString(dateValue) !== dateToString(value));
                 const val = valueIsString ? dateToString(dateValue) : dateValue;
                 if (shouldTriggerChange) {
-                    handleValueChange(val).then();
+                    handleValueChange(val,true).then();
                 }
             }
         }
@@ -209,8 +209,8 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                     borderTop: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
                     borderBottom: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
                     bottom: 5,
-                    background: disabled ? 'rgba(0,0,0,0.03)' : 'unset',
-                    ...inputStyle
+                    ...inputStyle,
+                    background: (isDisabled || isBusy) ? 'rgba(0,0,0,0.04)' : 'unset',
                 }}>
                     {':'}
                 </div>

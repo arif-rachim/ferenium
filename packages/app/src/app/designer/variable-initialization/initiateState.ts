@@ -6,8 +6,7 @@ import {createLogger} from "../../../core/utils/logger.ts";
 
 
 export const initiateState = (variableInitialValue: Record<string, unknown>) => (v: Variable) => {
-    const log = createLogger(`[State]:${v.name}:${v.id}`);
-    log.setLevel('warn');
+    const log = createLogger(`State>${v.name}>${v.id}`);
     log.debug('Initiating',variableInitialValue);
     const module = {exports: {}};
     if (v.name in variableInitialValue && variableInitialValue[v.name] !== undefined && variableInitialValue[v.name] !== null) {

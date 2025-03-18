@@ -15,7 +15,6 @@ export function composeCallableSchema(allCallables: Array<Callable>) {
     }
     return `{${callableSchema.join(',')}}`
 }
-
 export function callableInitialization(props: {
     allCallables: Array<Callable>,
     app: FormulaDependencyParameter,
@@ -34,15 +33,14 @@ export function callableInitialization(props: {
             exports: () => {
             }
         };
+        const log = createLogger(`${callable.name}>${callable.id}`)
         try {
-            const log = createLogger(`[Callable]:${callable.name}:${callable.id}`)
             const fun = new Function('module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'log', callable.functionCode);
             fun.call(null, module, navigate, navigatePanel, closePanel, dbSchemaInitialization(), app, page, z, alertBox, tools, utils, log)
             call[callable.name] = module.exports
         } catch (err) {
-            console.error(err);
+            log.error(err);
         }
-
     }
     return call
 }

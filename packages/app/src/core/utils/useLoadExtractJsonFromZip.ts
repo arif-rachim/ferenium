@@ -2,8 +2,9 @@ import {ChangeEvent, LegacyRef, useEffect, useRef} from "react";
 import JSZip from "jszip";
 import {useAppContext} from "../hooks/useAppContext.ts";
 import {Application} from "../../app/designer/AppDesigner.tsx";
+import {createLogger} from "./logger.ts";
 
-
+const log = createLogger("useLoadExtractJsonFromZip")
 export function useLoadExtractJsonFromZip() {
     const ref = useRef<HTMLInputElement>();
     const {applicationSignal} = useAppContext();
@@ -40,7 +41,7 @@ export function useLoadExtractJsonFromZip() {
             try {
                 applicationSignal.set(jsonData);
             } catch (error) {
-                console.error('Failed to extract JSON from ZIP:', error);
+                log.error('Failed to extract JSON from ZIP:', error);
             }
         }
 

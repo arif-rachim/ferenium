@@ -4,10 +4,10 @@ import {createLogger} from "../../../../core/utils/logger.ts";
 import {deleteFile, loadFromFile, saveToFile} from "../../../../core/utils/electronApi.ts";
 import {deleteOPFS, loadFromOPFS, saveToOPFS} from "../../../../core/utils/opfsApi.ts";
 import {loadFromNetwork} from "../../../../core/utils/networkApi.ts";
+import {infoSignal} from "../../../../core/utils/info.ts";
 
 const defaultFileName = 'database.db';
-const log = createLogger('[Utils]:Sqlite');
-log.setLevel('info');
+const log = createLogger('sqlite.ts');
 
 interface SaveToOPFS {
     type: 'saveToFile',
@@ -70,6 +70,7 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
     if (payload.type === 'deleteFromFile') {
         await deleteFile(payload.fileName ?? defaultFileName);
         await deleteOPFS(payload.fileName ?? defaultFileName);
+        delete database[payload.fileName ?? defaultFileName];
         return {value: undefined, errors: undefined}
     }
     if (payload.type === 'persistChanges') {
@@ -78,56 +79,6 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
     }
     return {errors: 'Unable to identify payload type', value: ''}
 }
-//
-// async function saveToOPFS({binaryArray, fileName}: {
-//     binaryArray: Uint8Array,
-//     fileName: string
-// }): Promise<{
-//     success: boolean
-// }> {
-//     const root = await navigator.storage.getDirectory();
-//     const fileHandle = await root.getFileHandle(fileName, {create: true});
-//     const writeableStream = await fileHandle.createWritable();
-//     await writeableStream.write(binaryArray);
-//     await writeableStream.close();
-//     await saveToFile(fileName,binaryArray)
-//     return {success: true}
-// }
-//
-// async function loadFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data?: Uint8Array }> {
-//     log.debug('[OPFS]Loading', fileName);
-//     const unit8Array = await loadFromFile(fileName);
-//     if(unit8Array){
-//         return {data: unit8Array, success: true};
-//     }
-//     const root = await navigator.storage.getDirectory();
-//     const fileHandle = await root.getFileHandle(fileName);
-//     const file = await fileHandle.getFile();
-//     const arrayBuffer = await file.arrayBuffer();
-//     log.debug('[OPFS]Succesfully loading', fileName);
-//     return {data: new Uint8Array(arrayBuffer), success: true};
-// }
-//
-// async function deleteFromOPFS({fileName}: { fileName: string }): Promise<{ success: boolean, data: string }> {
-//     log.debug('[OPFS]Removing', fileName);
-//     const root = await navigator.storage.getDirectory();
-//     try {
-//         await deleteFile(fileName);
-//         log.debug('[OPFS]Removing entry', fileName);
-//         await root.removeEntry(fileName, {recursive: true});
-//         log.debug('[OPFS]Clearing cache', fileName);
-//         delete database[fileName];
-//         log.debug('[OPFS]Succesfully removing', fileName);
-//         return {data: '', success: true};
-//     } catch (e: unknown) {
-//         let message = '';
-//         if (e !== undefined && e !== null && typeof e === 'object' && 'message' in e) {
-//             message = e.message as string;
-//         }
-//         return {data: message, success: false};
-//     }
-//
-// }
 
 const database: Record<string, Database> = {};
 const initSqlJs = self['initSqlJs'];
@@ -139,12 +90,24 @@ async function getDatabase(fileName: string) {
     } else {
         try {
             let data = await loadFromFile(fileName);
+            if(data){
+                const current = infoSignal.get()
+                infoSignal.set({...current,database:{type:'file',path:fileName}})
+            }
             if (!data) {
                 const res = await loadFromOPFS(fileName);
                 data = res?.data;
+                if(data){
+                    const current = infoSignal.get()
+                    infoSignal.set({...current,database:{type:'opfs',path:fileName}})
+                }
             }
             if (!data) {
                 data = await loadFromNetwork(fileName);
+                if(data){
+                    const current = infoSignal.get()
+                    infoSignal.set({...current,database:{type:'network',path:fileName}})
+                }
             }
             if (data) {
                 log.debug('[DB]opening db', fileName);
@@ -213,6 +176,7 @@ async function executeQuery({query, params, fileName}: {
             params = cleanUpParams(params);
             log.debug('[ExecuteQuery] invoking ', query, params)
             const result = db.exec(query, params);
+
             if (result.length > 0) {
                 const {columns, values} = result.pop()!;
                 log.debug('[ExecuteQuery] result ', values.length, 'records', 'columns', columns, 'values', values);

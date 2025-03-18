@@ -18,10 +18,12 @@ label, input, button, option, select, body, textarea {
     line-height: 21px;
     font-weight: 400;
     font-size: 14px;
+    transition: background-color 0.25s ease-in-out;
 }
 input:focus, textarea:focus,textarea:focus,select:focus,div.table-row:focus {
     background: yellow;
     outline: none;
+
 }
 
 input[type="number"]::-webkit-outer-spin-button,

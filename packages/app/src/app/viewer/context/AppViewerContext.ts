@@ -42,7 +42,7 @@ export interface AppViewerContext {
     allCallablesSignal: Signal.Computed<Array<Callable>>,
 
     elements: LayoutBuilderProps['elements'],
-    navigate: (path: string, param?: unknown) => void,
+    navigate: (path: string, param?: Record<string, unknown> & { transientNavigation?: boolean | undefined; }) => void,
     navigateBack: () => void
 }
 
