@@ -12,10 +12,10 @@ import {useModalBox} from "../../variable-initialization/useModalBox.tsx";
 import {useSaveSqlLite} from "../../../../core/hooks/useSaveSqlLite.ts";
 import {useDeleteSqlLite} from "../../../../core/hooks/useDeleteSqlLite.ts";
 import {FormContext} from "../../../form/Form.tsx";
-import sqlite from "../database/sqlite.ts";
 import {utils} from "../../../../core/utils/utils.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
 import {ClosePanelContext, useNavigatePanel} from "../../../../core/hooks/useNavigatePanel.ts";
+import {useReadSqlLite} from "../../../../core/hooks/modal/useReadSqlLite.ts";
 
 const db = dbSchemaInitialization();
 
@@ -34,10 +34,7 @@ export function usePropertyInitialization(props: { container: Container }) {
     const alertBox = useModalBox();
     const saveSqlLite = useSaveSqlLite();
     const deleteSqlLite = useDeleteSqlLite();
-    const readSqlLite = async () => {
-        const result = await sqlite({type: 'loadFromFile'});
-        return (result.value as Uint8Array).buffer as ArrayBuffer;
-    }
+    const readSqlLite = useReadSqlLite();
     const tools = {saveSqlLite, deleteSqlLite, readSqlLite};
 
     const formContext = useContext(FormContext);

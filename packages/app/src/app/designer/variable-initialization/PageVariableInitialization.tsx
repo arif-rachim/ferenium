@@ -19,6 +19,7 @@ import {useSaveSqlLite} from "../../../core/hooks/useSaveSqlLite.ts";
 import {useDeleteSqlLite} from "../../../core/hooks/useDeleteSqlLite.ts";
 import {whichChange} from "../../../core/hooks/useWhichChange.ts";
 import {ClosePanelContext, useNavigatePanel} from "../../../core/hooks/useNavigatePanel.ts";
+import {useReadSqlLite} from "../../../core/hooks/modal/useReadSqlLite.ts";
 
 export function PageVariableInitialization(props: PropsWithChildren) {
 
@@ -40,7 +41,8 @@ export function PageVariableInitialization(props: PropsWithChildren) {
     const alertBox = useModalBox();
     const saveSqlLite = useSaveSqlLite();
     const deleteSqlLite = useDeleteSqlLite();
-    const tools = {saveSqlLite, deleteSqlLite};
+    const readSqlLite = useReadSqlLite();
+    const tools = {saveSqlLite, deleteSqlLite, readSqlLite};
 
     const validatorsComputed = useComputed<Array<{ variableId: string, validator: ZodType }>>(() => {
         return createValidator(allPageVariablesSignal.get(), errorMessage);

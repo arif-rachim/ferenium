@@ -735,6 +735,261 @@
     },
     {
       "queries": [],
+      "id": "bde3e991-ac44-440e-aee4-99e52380a0e7",
+      "variables": [],
+      "fetchers": [
+        {
+          "id": "dd57c95f-c73d-45cc-ac1b-3bc2d5204f6c",
+          "name": "loginAuthenticate",
+          "protocol": "http",
+          "domain": "localhost:5008",
+          "method": "post",
+          "contentType": "application/json",
+          "path": "login/authenticate",
+          "headers": [],
+          "paths": [],
+          "data": [
+            {
+              "id": "0f17a3f7-2e00-4e55-adf9-ebc6653c9ed4",
+              "isInput": true,
+              "name": "userId",
+              "value": "GAL2729"
+            },
+            {
+              "id": "00596e19-6252-4558-b035-d40628738b00",
+              "isInput": true,
+              "name": "password",
+              "value": "321"
+            }
+          ],
+          "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.unknown(),\n\tErrorCode:z.unknown(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.unknown(),\n\tStackTrace:z.unknown(),\n\tResult:z.object({\n\t\tUserId:z.string(),\n\t\tPid:z.string(),\n\t\tFirstName:z.string(),\n\t\tMiddleName:z.unknown(),\n\t\tLastName:z.string(),\n\t\tIsAdmin:z.boolean(),\n\t\tAccessCodes:z.array(z.string()),\n\t\tFavMenus:z.array(z.object({\n\t\t\t\tLabel:z.string(),\n\t\t\t\tValue:z.string(),\n\t\t\t\tId:z.string(),\n\t\t\t\tSelected:z.boolean(),\n\t\t\t\tVersion:z.number()\n})),\n\t\tUserSettings:z.string(),\n\t\tUserPreference:z.unknown(),\n\t\tRank:z.string(),\n\t\tTokenId:z.string()\n})\n})",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nlet protocol = '';\r\nlet domain = '';\r\nif (serverAddress) {\r\n    const [_protocol, _domain] = serverAddress.split('://')\r\n    protocol = _protocol ? _protocol : 'http';\r\n    domain = _domain ? _domain : 'localhost:5008'\r\n}\r\n"
+        },
+        {
+          "id": "fbfce48b-f168-4660-bfa8-90252b92f81f",
+          "name": "forceLogout",
+          "protocol": "http",
+          "domain": "localhost:5008",
+          "method": "post",
+          "contentType": "application/json",
+          "path": "logout/forceLogout",
+          "headers": [],
+          "paths": [],
+          "data": [
+            {
+              "id": "58584941-0d64-4be6-a9de-2facbd94190e",
+              "isInput": true,
+              "name": "userId",
+              "value": "GAL2729"
+            }
+          ],
+          "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.unknown(),\n\tErrorCode:z.unknown(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.unknown(),\n\tStackTrace:z.unknown(),\n\tResult:z.unknown()\n})",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nlet protocol = '';\r\nlet domain = '';\r\nif (serverAddress) {\r\n    const [_protocol, _domain] = serverAddress.split('://')\r\n    protocol = _protocol ? _protocol : 'http';\r\n    domain = _domain ? _domain : 'localhost:5008'\r\n}\r\n"
+        }
+      ],
+      "callables": [
+        {
+          "name": "loginToEsnaad",
+          "id": "97ea2ebe-3985-4ffe-acc1-5a1f0d27ffb2",
+          "functionCode": "async function login({ userId, password }) {\r\n    const response = await page.fetch.loginAuthenticate({ password, userId });\r\n    if (response.error) {\r\n        await alertBox({\r\n            message: `Unable to reach server ${response.error}`\r\n        });\r\n        return;\r\n    }\r\n    if (response.ErrorCode) {\r\n        if (response.ErrorCode === 'ADM.001.004') {\r\n            await alertBox({\r\n                message: 'Invalid login userId or Password.'\r\n            });\r\n            return;\r\n        }\r\n        if (response.ErrorCode === 'ADM.001.008') {\r\n            const result = await alertBox({\r\n                message: 'Session is already active, should we force login ?',\r\n                buttons: [{\r\n                    id: 'yes',\r\n                    label: 'Yes force login and logout session in other device',\r\n                    icon: 'IoMdLogIn'\r\n                }, {\r\n                    id: 'no',\r\n                    label: 'No, cancel my action',\r\n                    icon: 'IoIosLogOut'\r\n                }]\r\n            });\r\n            if (result === 'yes') {\r\n                await page.fetch.forceLogout({ userId });\r\n                return await login({ userId, password });\r\n            }\r\n        }\r\n        return;\r\n    }\r\n    const { FirstName, MiddleName, LastName } = response.Result;\r\n    return { FirstName, MiddleName, LastName };\r\n}\r\n\r\n\r\nmodule.exports = async (params) => {\r\n    const result = await login({password:params.password,userId:params.userId});\r\n    if (result) {\r\n        closePanel(true);\r\n    }\r\n};",
+          "schemaCode": "z.any()",
+          "inputSchemaCode": "z.any()"
+        }
+      ],
+      "containers": [
+        {
+          "id": "375aa548-42de-4494-bd27-4b891789f0e4",
+          "type": "container",
+          "children": [
+            "dfa1f46f-62f5-4cd9-9867-f2ae83e53546"
+          ],
+          "properties": {
+            "defaultStyle": {}
+          }
+        },
+        {
+          "id": "dfa1f46f-62f5-4cd9-9867-f2ae83e53546",
+          "type": "container",
+          "children": [
+            "c0347806-c52d-4d59-9852-723913d033de"
+          ],
+          "parent": "375aa548-42de-4494-bd27-4b891789f0e4",
+          "properties": {
+            "defaultStyle": {
+              "alignItems": "center",
+              "justifyContent": ""
+            }
+          }
+        },
+        {
+          "id": "c0347806-c52d-4d59-9852-723913d033de",
+          "type": "form",
+          "children": [
+            "067742cb-7f85-4977-8548-073a2e974ce7"
+          ],
+          "parent": "dfa1f46f-62f5-4cd9-9867-f2ae83e53546",
+          "properties": {
+            "defaultStyle": {
+              "alignItems": "",
+              "justifyContent": ""
+            },
+            "schema": {
+              "formula": "module.exports = z.object({\r\n    userId : z.string(),\r\n    password : z.string()\r\n})"
+            },
+            "style": {
+              "formula": "module.exports = {\r\n    padding : 10\r\n}"
+            },
+            "onChange": {
+              "formula": "module.exports = async (value) => {\r\n    await page.call.loginToEsnaad({\r\n        password : value.password,\r\n        userId : value.userId\r\n    });\r\n}"
+            }
+          }
+        },
+        {
+          "id": "aa490a1a-5081-4019-a9b5-3407327ee418",
+          "type": "container",
+          "children": [
+            "db065df8-0fd8-47f9-8153-1302a3901830",
+            "20bc2565-036a-470c-8f32-5655394ba02f",
+            "761bc994-8212-40c0-87a6-89416f8856be"
+          ],
+          "parent": "067742cb-7f85-4977-8548-073a2e974ce7",
+          "properties": {
+            "defaultStyle": {
+              "flexDirection": "row",
+              "alignItems": "flex-end",
+              "justifyContent": "",
+              "gap": "10px"
+            }
+          }
+        },
+        {
+          "id": "64aefa02-9f6c-495b-a191-d08835ecc86b",
+          "type": "title",
+          "children": [],
+          "parent": "067742cb-7f85-4977-8548-073a2e974ce7",
+          "properties": {
+            "defaultStyle": {},
+            "title": {
+              "formula": "module.exports = 'Please enter UserId and Password to login to Esnaad.'"
+            }
+          }
+        },
+        {
+          "id": "db065df8-0fd8-47f9-8153-1302a3901830",
+          "type": "input",
+          "children": [],
+          "parent": "aa490a1a-5081-4019-a9b5-3407327ee418",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'User Id'"
+            },
+            "name": {
+              "formula": "module.exports = 'userId'"
+            },
+            "required": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "20bc2565-036a-470c-8f32-5655394ba02f",
+          "type": "input",
+          "children": [],
+          "parent": "aa490a1a-5081-4019-a9b5-3407327ee418",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Password'"
+            },
+            "name": {
+              "formula": "module.exports = 'password'"
+            },
+            "required": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "761bc994-8212-40c0-87a6-89416f8856be",
+          "type": "container",
+          "children": [
+            "d344fcf8-344a-432e-9ecd-68a2a37de4a1",
+            "80f3cd03-60ae-4d7d-9acf-f310ff07ca02"
+          ],
+          "parent": "aa490a1a-5081-4019-a9b5-3407327ee418",
+          "properties": {
+            "defaultStyle": {
+              "flexDirection": "row",
+              "gap": "10px"
+            }
+          }
+        },
+        {
+          "id": "d344fcf8-344a-432e-9ecd-68a2a37de4a1",
+          "type": "button",
+          "children": [],
+          "parent": "761bc994-8212-40c0-87a6-89416f8856be",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Login'"
+            },
+            "type": {
+              "formula": "module.exports = 'submit'"
+            }
+          }
+        },
+        {
+          "id": "80f3cd03-60ae-4d7d-9acf-f310ff07ca02",
+          "type": "button",
+          "children": [],
+          "parent": "761bc994-8212-40c0-87a6-89416f8856be",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Cancel'"
+            },
+            "onClick": {
+              "formula": "module.exports = () => {\r\n    closePanel(false);\r\n}"
+            }
+          }
+        },
+        {
+          "id": "067742cb-7f85-4977-8548-073a2e974ce7",
+          "type": "container",
+          "children": [
+            "8d88f97d-75e9-4780-83db-c00f71cd8997",
+            "64aefa02-9f6c-495b-a191-d08835ecc86b",
+            "aa490a1a-5081-4019-a9b5-3407327ee418"
+          ],
+          "parent": "c0347806-c52d-4d59-9852-723913d033de",
+          "properties": {
+            "defaultStyle": {
+              "gap": "10px"
+            }
+          }
+        },
+        {
+          "id": "8d88f97d-75e9-4780-83db-c00f71cd8997",
+          "type": "title",
+          "children": [],
+          "parent": "067742cb-7f85-4977-8548-073a2e974ce7",
+          "properties": {
+            "defaultStyle": {},
+            "title": {
+              "formula": "module.exports = 'Login To Esnaad'"
+            },
+            "style": {
+              "formula": "module.exports = {\r\n    fontSize : 16\r\n}"
+            }
+          }
+        }
+      ],
+      "name": "@sys/login-to-esnaad"
+    },
+    {
+      "queries": [],
       "id": "77e32219-28e3-4d41-aff6-f9f9cae670a6",
       "variables": [
         {
@@ -1262,7 +1517,8 @@
             }
           ],
           "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.string(),\n\tErrorCode:z.string(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.string(),\n\tStackTrace:z.unknown(),\n\tResult:z.unknown()\n})",
-          "defaultValueFormula": ""
+          "defaultValueFormula": "",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nif(serverAddress){\r\n    const [protocol,domain] = serverAddress.split('://')\r\n    if(protocol && domain){\r\n        module.exports = {\r\n            protocol : protocol.toUpperCase() === 'HTTPS' ? 'https' : 'http',\r\n            domain : domain\r\n        }\r\n    }\r\n}"
         },
         {
           "id": "88f0b70b-a992-43ff-a8b2-914d0c06b462",
@@ -1276,16 +1532,56 @@
           "paths": [],
           "data": [],
           "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.unknown(),\n\tErrorCode:z.unknown(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.unknown(),\n\tStackTrace:z.unknown(),\n\tResult:z.object({\n\t\tReferences:z.object({\n\t\t\tCommands:z.array(z.object({\n\t\t\t\t\tId:z.number(),\n\t\t\t\t\tCode:z.string()\n})),\n\t\t\tPlatforms:z.array(z.object({\n\t\t\t\t\tId:z.number(),\n\t\t\t\t\tCode:z.string(),\n\t\t\t\t\tCommandId:z.number()\n}))\n}),\n\t\tTails:z.array(z.union([z.object({\n\t\t\t\tUnitId:z.number(),\n\t\t\t\tCommandId:z.number(),\n\t\t\t\tBtln:z.string(),\n\t\t\t\tPltf:z.string(),\n\t\t\t\tPltfId:z.number(),\n\t\t\t\tTail:z.string(),\n\t\t\t\tRemarks:z.string(),\n\t\t\t\tModifiedBy:z.string(),\n\t\t\t\tFullNameModifiedBy:z.string(),\n\t\t\t\tModifiedOn:z.string(),\n\t\t\t\tStatus:z.number()\n}),z.object({\n\t\t\t\tUnitId:z.number(),\n\t\t\t\tCommandId:z.number(),\n\t\t\t\tBtln:z.string(),\n\t\t\t\tPltf:z.string(),\n\t\t\t\tPltfId:z.number(),\n\t\t\t\tTail:z.string(),\n\t\t\t\tRemarks:z.unknown(),\n\t\t\t\tModifiedBy:z.unknown(),\n\t\t\t\tFullNameModifiedBy:z.unknown(),\n\t\t\t\tModifiedOn:z.unknown(),\n\t\t\t\tStatus:z.number()\n}),z.object({\n\t\t\t\tUnitId:z.number(),\n\t\t\t\tCommandId:z.number(),\n\t\t\t\tBtln:z.string(),\n\t\t\t\tPltf:z.string(),\n\t\t\t\tPltfId:z.number(),\n\t\t\t\tTail:z.string(),\n\t\t\t\tRemarks:z.unknown(),\n\t\t\t\tModifiedBy:z.string(),\n\t\t\t\tFullNameModifiedBy:z.string(),\n\t\t\t\tModifiedOn:z.string(),\n\t\t\t\tStatus:z.number()\n})]))\n})\n})",
-          "functionCode": ""
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nif(serverAddress){\r\n    const [protocol,domain] = serverAddress.split('://')\r\n    if(protocol && domain){\r\n        module.exports = {\r\n            protocol : protocol.toUpperCase() === 'HTTPS' ? 'https' : 'http',\r\n            domain : domain\r\n        }\r\n    }\r\n}"
+        },
+        {
+          "id": "79ed0677-13aa-43f4-9066-6bef9bd201eb",
+          "name": "lockTail",
+          "protocol": "http",
+          "domain": "localhost:5008",
+          "method": "post",
+          "contentType": "application/json",
+          "path": "TailManagement2/LockUnlock",
+          "headers": [],
+          "paths": [],
+          "data": [
+            {
+              "id": "7062e30d-0950-41ae-825e-bb0d9e367321",
+              "isInput": true,
+              "name": "remarks",
+              "value": "\"Tail Locked By Esnaadm\""
+            },
+            {
+              "id": "b30f4948-8808-4ced-a451-38e82f893ecc",
+              "isInput": false,
+              "name": "toLock",
+              "value": "true"
+            },
+            {
+              "id": "2b29e485-c338-487c-aec6-253ce45099f5",
+              "isInput": true,
+              "name": "unitId",
+              "value": "110"
+            }
+          ],
+          "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.string(),\n\tErrorCode:z.string(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.unknown(),\n\tStackTrace:z.unknown(),\n\tResult:z.unknown()\n})",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nif(serverAddress){\r\n    const [protocol,domain] = serverAddress.split('://')\r\n    if(protocol && domain){\r\n        module.exports = {\r\n            protocol : protocol.toUpperCase() === 'HTTPS' ? 'https' : 'http',\r\n            domain : domain\r\n        }\r\n    }\r\n}"
         }
       ],
       "callables": [
         {
           "name": "downloadTail",
           "id": "491a1eee-b85b-4351-8355-e26a0b39eded",
-          "functionCode": "async function downloadTail({ tail }) {\r\n    const result = await page.fetch.downloadTail({ downloadEntries: [{ \"Module\": \"ESNAAD_M\" }, { \"Module\": \"MIS_FM_SI\", \"Params\": [tail] }] });\r\n    const { Result, error, ErrorMessage, ErrorCode } = result;\r\n       if (ErrorCode === 'ADM.002.001') {\r\n        const action = await alertBox({\r\n            message: `Session is expired, or invalid permission`,\r\n            buttons: [{\r\n                id: 'login',\r\n                label: 'I would like to go back to login page',\r\n                icon: 'IoIosLogIn'\r\n            }, {\r\n                id: 'retry',\r\n                label: 'Please retry again',\r\n                icon: 'IoMdRefresh'\r\n            }]\r\n        })\r\n        if (action === 'login') {\r\n            return navigate('app/login');\r\n        }\r\n        if (action === 'retry') {\r\n            return await downloadTail({ tail })\r\n        }\r\n    }\r\n    if (error || ErrorMessage) {\r\n        await alertBox({\r\n            message: `Error ${error}`\r\n        })\r\n        return;\r\n    }\r\n    const downloadId = Result.DownloadId;\r\n    await runDownload(downloadId);\r\n}\r\n\r\nmodule.exports = downloadTail\r\n\r\nconst MAX_ATTEMPT = 100;\r\nasync function runDownload(attachmentId) {\r\n    let attemp = 0\r\n    let isReady = false;\r\n    while (!isReady && attemp < MAX_ATTEMPT) {\r\n        const result = await checkIfDownloadIsReady(attachmentId);\r\n        const readyUnknown = result && typeof result === 'object' && 'success' in result && result.success;\r\n        const lineItems = result && typeof result === 'object' && 'lineItems' in result && result.lineItems;\r\n        isReady = utils.toBoolean(readyUnknown)\r\n        if (lineItems && Array.isArray(lineItems)) {\r\n            page.var.downloadLineItems.set(lineItems);\r\n            page.var.refreshGrid.set(Date.now())\r\n        }\r\n        attemp++;\r\n        log.debug('attempt', attemp, 'downloadIsReady ?', 'readyUnknown', readyUnknown, 'isReady', isReady)\r\n    }\r\n    if (isReady) {\r\n        await downloadTheFile(attachmentId);\r\n        navigate('app/authenticate');\r\n    }\r\n}\r\n\r\nfunction checkIfDownloadIsReady(attachmentId) {\r\n    return new Promise(resolve => {\r\n        setTimeout(() => {\r\n            fetch(`http://localhost:5008/EsnaadMAppFacade/CheckDownloadProgress?downloadId=${attachmentId}`, { credentials: 'include' }).then(response => {\r\n                if (!response.ok) {\r\n                    resolve({ success: false });\r\n                } else {\r\n                    response.json().then((json) => {\r\n                        if (json.Success) {\r\n                            const lineItems = json.Result.ModuleStatuses.map(module => {\r\n                                return module.TableStatuses.map(ts => {\r\n                                    return {\r\n                                        module: module.Module,\r\n                                        moduleStatus: module.Status,\r\n                                        table: ts.Table,\r\n                                        tableStatus: ts.Status\r\n                                    }\r\n                                })\r\n                            }).flat()\r\n                            resolve({ success: json.Result.Status === 'Completed', lineItems })\r\n                            return;\r\n                        }\r\n                        resolve({ success: false });\r\n                    })\r\n                }\r\n            }).catch(err => {\r\n                resolve({ success: false });\r\n            })\r\n        }, 1000);\r\n    })\r\n}\r\n\r\nasync function downloadTheFile(attachmentId) {\r\n    try {\r\n        const response = await fetch(`http://localhost:5008/home/DownloadEsnaadMData?downloadId=${attachmentId}`, { credentials: 'include' });\r\n        if (!response.ok) {\r\n            alert('Error' + response.statusText);\r\n        }\r\n        const blob = await response.blob();\r\n        const arrayBuffer = await blob.arrayBuffer();\r\n        await tools.saveSqlLite(arrayBuffer);\r\n        utils.setItem('db-file-name', attachmentId);\r\n        const tailNumber = utils.getItem('tail-number');\r\n        await populateOutgoingTableFaults(tailNumber);\r\n        await populateOutgoingTableMissions(tailNumber);\r\n        await populateOutgoingTableInspections(tailNumber);\r\n        await db.commit();\r\n        await alertBox({\r\n            message: `The aircraft with tail number ${tailNumber} has been downloaded into the local database and is ready to use in offline mode.`,\r\n        })\r\n        app.var.tailNumber.set(tailNumber);\r\n    } catch (error) {\r\n        alertBox({\r\n            message: `Error downloading the file ${error}`,\r\n        })\r\n    }\r\n}\r\n\r\nasync function populateOutgoingTableMissions(tailNo) {\r\n    const { data } = await app.query.getTailBattalionAndCommandFromTailNumber({ params: { tailNumber: tailNo } });\r\n    if (data.length === 0) {\r\n        return;\r\n    }\r\n    const unitId = data[0].TAIL_UNIT_ID_\r\n    const missions = await db.read('OPS_TRN_MISSIONS', {});\r\n    for (const mission of missions) {\r\n        await db.record('MISSIONS', {\r\n            ABORT_REASON: mission.ABORT_REASON,\r\n            ABORT_REASON_ID: mission.ABORT_REASON_ID,\r\n            ACCESS_CODES_: mission.ACCESS_CODES_,\r\n            CALL_ID: mission.CALL_ID,\r\n            CANCEL_REASON: mission.CANCEL_REASON,\r\n            CANCEL_REASON_ID: mission.CANCEL_REASON_ID,\r\n            CANCEL_REASON_RMKS_: mission.CANCEL_REASON_RMKS_,\r\n            CREATED_BY_: mission.CREATED_BY_,\r\n            CREATED_ON_: mission.CREATED_ON_,\r\n            DATE_: mission.DATE_,\r\n            DESCRIPTION_: mission.DESCRIPTION_,\r\n            EXTERNAL_ID: mission.EXTERNAL_ID,\r\n            MISSION_ID_: mission.ID_,\r\n            MISSION_NO_: mission.MISSION_NO_,\r\n            MISS_PLAN_TYPE_: mission.MISS_PLAN_TYPE_,\r\n            MISS_SUB_TYPE_ID: mission.MISS_SUB_TYPE_ID,\r\n            MOD_BY_: mission.MOD_BY_,\r\n            MOD_ON_: mission.MOD_ON_,\r\n            PLTF_CFG_FUEL_UOM_ID: mission.PLTF_CFG_FUEL_UOM_ID,\r\n            PLTF_CFG_ID: mission.PLTF_CFG_ID,\r\n            PLTF_CFG_MNT_REM_: mission.PLTF_CFG_MNT_REM_,\r\n            PLTF_CFG_NO_OF_PASS_: mission.PLTF_CFG_NO_OF_PASS_,\r\n            PLTF_CFG_REQ_FUEL_: mission.PLTF_CFG_REQ_FUEL_,\r\n            ROUTE_: mission.ROUTE_,\r\n            SUBMT_BY_: mission.SUBMT_BY_,\r\n            SUBMT_ON_: mission.SUBMT_ON_,\r\n            SUPPORT_SUB_UNIT_ID: mission.SUPPORT_SUB_UNIT_ID,\r\n            TERM_: mission.TERM_,\r\n            UNIT_ID_: unitId\r\n        });\r\n    }\r\n\r\n    const wings = await db.read('OPS_TRN_WINGS', {});\r\n    for (const wing of wings) {\r\n        await db.record('WINGS', {\r\n            COY_ID: wing.COY_ID,\r\n            IDX_: wing.IDX_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            MISSION_WING_ID_: wing.ID_,\r\n            PLTF_ID: wing.PLTF_ID,\r\n            UNIT_ID_: unitId\r\n        })\r\n    }\r\n\r\n    const flights = await db.read('OPS_TRN_FLIGHTS', {});\r\n    for (const flight of flights) {\r\n        await db.record('FLIGHTS', {\r\n            BASE_FROM_ID: flight.BASE_FROM_ID,\r\n            BASE_TO_ID: flight.BASE_TO_ID,\r\n            CREATED_BY_: flight.CREATED_BY_,\r\n            CREATED_ON_: flight.CREATED_ON_,\r\n            ETA_: flight.ETA_,\r\n            ETD_: flight.ETD_,\r\n            IDX_: flight.IDX_,\r\n            MISSION_FLIGHT_ID_: flight.ID_,\r\n            MISSION_ID_: flight.MISSION_ID,\r\n            MOD_BY_: flight.MOD_BY_,\r\n            MOD_ON_: flight.MOD_ON_,\r\n            TERM_: flight.TERM_,\r\n            UNIT_ID_: unitId\r\n        });\r\n    }\r\n\r\n    const tailCrews = await db.read('OPS_TRN_TAIL_CREWS', {});\r\n    for (const tailCrew of tailCrews) {\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n        await db.record('TAIL_CREWS', {\r\n            ASSIGNED_: tailCrew.ASSIGNED_,\r\n            IS_ACTUAL_TAIL_ASSIGNED_: tailCrew.IS_ACTUAL_TAIL_ASSIGNED_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            MISSION_TAIL_CREW_ID_: tailCrew.ID_,\r\n            PLANNED_TAIL_ID: tailCrew.PLANNED_TAIL_ID,\r\n            TAIL_ID: tailCrew.TAIL_ID,\r\n            UNIT_ID_: unitId,\r\n            WING_ID: tailCrew.WING_ID\r\n        })\r\n    }\r\n\r\n    const missionCrews = await db.read('OPS_TRN_MISSION_CREW_PLAN', {});\r\n    for (const missionCrew of missionCrews) {\r\n        const tailCrew = await db.find('OPS_TRN_TAIL_CREWS', { ID_: missionCrew.TAIL_CREW_ID });\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n\r\n        await db.record('MISSION_CREW_PLANS', {\r\n            DUTY_SYMBOL_ID: missionCrew.DUTY_SYMBOL_ID,\r\n            FLIGHT_CREW_ID: missionCrew.FLIGHT_CREW_ID,\r\n            MISSION_CREW_PLAN_ID_: missionCrew.ID_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            SEAT_CONFIGURATION_ID_: missionCrew.SEAT_CONFIGURATION_ID_,\r\n            TAIL_CREW_ID: missionCrew.TAIL_CREW_ID,\r\n            UNIT_ID_: unitId\r\n        })\r\n    }\r\n\r\n    const tailFlights = await db.read('OPS_TRN_TAIL_FLIGHT', {});\r\n    for (const tailFlight of tailFlights) {\r\n        const tailCrew = await db.find('OPS_TRN_TAIL_CREWS', { ID_: tailFlight.TAIL_CREW_ID });\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n        await db.record('TAIL_FLIGHTS', {\r\n            ACTUAL_BASE_FROM_ID: tailFlight.ACTUAL_BASE_FROM_ID,\r\n            ACTUAL_BASE_TO_ID: tailFlight.ACTUAL_BASE_TO_ID,\r\n            ATA_: tailFlight.ATA_,\r\n            ATD_: tailFlight.ATD_,\r\n            CANCELLATION_REASON: tailFlight.CANCELLATION_REASON,\r\n            CANCELLATION_REASON_ID: tailFlight.CANCELLATION_REASON_ID,\r\n            CANCELLATION_REASON_RMKS_: tailFlight.CANCELLATION_REASON_RMKS_,\r\n            CRANK_TIME_: tailFlight.CRANK_TIME_,\r\n            FLIGHT_ID: tailFlight.FLIGHT_ID,\r\n            FLIGHT_STATUS_: tailFlight.FLIGHT_STATUS_,\r\n            IFFCODE_: tailFlight.IFFCODE_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            TAIL_CREW_ID: tailFlight.TAIL_CREW_ID,\r\n            TAIL_FLIGHT_ID_: tailFlight.ID_,\r\n            UNIT_ID_: unitId\r\n        })\r\n    }\r\n\r\n    const tailFlightRecords = await db.read('OPS_TRN_TAIL_FLIGHT_RECORD', {});\r\n    for (const tailFlightRecord of tailFlightRecords) {\r\n        const tailFlight = await db.find('OPS_TRN_TAIL_FLIGHT', { ID_: tailFlightRecord.TAIL_FLIGHT_ID });\r\n        const tailCrew = await db.find('OPS_TRN_TAIL_CREWS', { ID_: tailFlight.TAIL_CREW_ID });\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n\r\n        await db.record('TAIL_FLIGHT_RECORDS', {\r\n            CREATED_BY_: tailFlightRecord.CREATED_BY_,\r\n            CREATED_ON_: tailFlightRecord.CREATED_ON_,\r\n            CYCLES_: tailFlightRecord.CYCLES_,\r\n            ENGINE_STARTS1_: tailFlightRecord.ENGINE_STARTS1_,\r\n            ENGINE_STARTS2_: tailFlightRecord.ENGINE_STARTS2_,\r\n            EXTERNAL_LOAD_: tailFlightRecord.EXTERNAL_LOAD_,\r\n            FLIGHT_MINS_: tailFlightRecord.FLIGHT_MINS_,\r\n            FULL_NAME_CREATED_BY_: tailFlightRecord.FULL_NAME_CREATED_BY_,\r\n            FULL_NAME_MOD_BY_: tailFlightRecord.FULL_NAME_MOD_BY_,\r\n            INTERNAL_LOAD_: tailFlightRecord.INTERNAL_LOAD_,\r\n            LANDINGS_: tailFlightRecord.LANDINGS_,\r\n            MISSION_CODE_: tailFlightRecord.MISSION_CODE_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            MISSION_TAIL_FLIGHT_RECORD_ID_: tailFlightRecord.ID_,\r\n            MOD_BY_: tailFlightRecord.MOD_BY_,\r\n            MOD_ON_: tailFlightRecord.MOD_ON_,\r\n            PASSENGERS_: tailFlightRecord.PASSENGERS_,\r\n            PID_CREATED_BY_: tailFlightRecord.PID_CREATED_BY_,\r\n            PID_MOD_BY_: tailFlightRecord.PID_MOD_BY_,\r\n            ROUNDS_127_NAG_: tailFlightRecord.ROUNDS_127_NAG_,\r\n            ROUNDS_20_: tailFlightRecord.ROUNDS_20_,\r\n            ROUNDS_20_NAG_: tailFlightRecord.ROUNDS_20_NAG_,\r\n            ROUNDS_30_: tailFlightRecord.ROUNDS_30_,\r\n            ROUNDS_40_: tailFlightRecord.ROUNDS_40_,\r\n            ROUNDS_762_: tailFlightRecord.ROUNDS_762_,\r\n            ROUNDS_AM39_NAG_: tailFlightRecord.ROUNDS_AM39_NAG_,\r\n            ROUNDS_AS15TT_NAG_: tailFlightRecord.ROUNDS_AS15TT_NAG_,\r\n            ROUNDS_HELLFIRE_: tailFlightRecord.ROUNDS_HELLFIRE_,\r\n            ROUNDS_ROCKET_: tailFlightRecord.ROUNDS_ROCKET_,\r\n            ROUNDS_TORPEDO_NAG_: tailFlightRecord.ROUNDS_TORPEDO_NAG_,\r\n            ROUNDS_TOW_: tailFlightRecord.ROUNDS_TOW_,\r\n            RTA_: tailFlightRecord.RTA_,\r\n            RTD_: tailFlightRecord.RTD_,\r\n            SNAPSHOT_PLTF_CFG_ID_: tailFlightRecord.SNAPSHOT_PLTF_CFG_ID_,\r\n            TAAMS_FLIGHT_MINS_: tailFlightRecord.TAAMS_FLIGHT_MINS_,\r\n            TAIL_FLIGHT_ID: tailFlightRecord.TAIL_FLIGHT_ID,\r\n            TERM_: tailFlightRecord.TERM_,\r\n            UNIT_ID_: unitId,\r\n            VIP_CODE_ID_: tailFlightRecord.VIP_CODE_ID_\r\n        })\r\n    }\r\n}\r\n\r\nasync function populateOutgoingTableInspections(tailNo) {\r\n    const { data } = await app.query.getTailBattalionAndCommandFromTailNumber({ params: { tailNumber: tailNo } });\r\n    if (data.length === 0) {\r\n        return;\r\n    }\r\n    const unitId = data[0].TAIL_UNIT_ID_\r\n    const assignments = await db.read('MNT_TRN_INSPECTION_ASSIGNMENTS', {});\r\n    for (const assignment of assignments) {\r\n        const master = await db.find('MNT_TRN_INSPECTION_MASTERS', { ID_: assignment.INSP_MST_ID });\r\n        await db.record('ASSIGNMENTS', {\r\n            ASSIGNMENT_ID_: assignment.ID_,\r\n            INSP_MST_ID: master.ID_,\r\n            INSP_STAT_ID: assignment.INSP_STAT_ID,\r\n            UNIT_ID: unitId,\r\n\r\n            DUE_MIN_DATE_: assignment.DUE_MIN_DATE_,\r\n            DUE_DATE_: assignment.DUE_DATE_,\r\n            DUE_MAX_DATE_: assignment.DUE_MAX_DATE_,\r\n\r\n            DUE_MIN_HOURS_: assignment.DUE_MIN_HOURS_,\r\n            DUE_HOURS_: assignment?.DUE_HOURS_,\r\n            DUE_MAX_HOURS_: assignment.DUE_MAX_HOURS_,\r\n\r\n            DUE_MIN_LANDINGS_: assignment.DUE_MIN_LANDINGS_,\r\n            DUE_LANDINGS_: assignment.DUE_LANDINGS_,\r\n            DUE_MAX_LANDINGS_: assignment.DUE_MAX_LANDINGS_,\r\n\r\n            DUE_MIN_CYCLES_: assignment.DUE_MIN_CYCLES_,\r\n            DUE_CYCLES_: assignment.DUE_CYCLES_,\r\n            DUE_MAX_CYCLES_: assignment.DUE_MAX_CYCLES_,\r\n\r\n            DUE_MIN_ROUNDS_: assignment.DUE_MIN_ROUNDS_,\r\n            DUE_ROUNDS_: assignment.DUE_ROUNDS_,\r\n            DUE_MAX_ROUNDS_: assignment.DUE_MAX_ROUNDS_,\r\n\r\n            DUE_MIN_EQP_CYCLES_: assignment.DUE_MIN_EQP_CYCLES_,\r\n            DUE_EQP_CYCLES_: assignment.DUE_EQP_CYCLES_,\r\n            DUE_MAX_EQP_CYCLES_: assignment.DUE_MAX_EQP_CYCLES_,\r\n\r\n            INSP_NUMBER_: master.INSP_NUMBER_,\r\n            CREATED_BY_: assignment.CREATED_BY_,\r\n            CREATED_ON_: assignment.CREATED_ON_,\r\n            MOD_BY_: assignment.MOD_BY_,\r\n            MOD_ON_: assignment.MOD_ON_,\r\n            TERM_: assignment.TERM_,\r\n            ORDER_: assignment.ORDER_,\r\n            REQ_NO_: assignment.REQ_NO_,\r\n            IKT_ALLOC_STATUS_: assignment.IKT_ALLOC_STATUS_\r\n        })\r\n    }\r\n\r\n    const fmHistories = await db.read('MNT_HST_D18_FAULT_HISTORY', {});\r\n    for (const history of fmHistories) {\r\n        const fault = await db.find('MNT_TRN_FAULT_UNITS', { FAULT_NO_: history.FAULT_NO_ });\r\n\r\n        await db.record('INSPECTION_FAULT_HISTORY', {\r\n            FAULT_UNIT_ID_: fault.ID_,\r\n            UNIT_ID: unitId,\r\n            OPEN_DATE_: history.OPEN_DATE_,\r\n            OPEN_TOT_MINUTES_: history.OPEN_TOT_MINUTES_,\r\n            OPEN_LANDINGS_: history.OPEN_LANDINGS_,\r\n            OPEN_CYCLES_: history.OPEN_CYCLES_,\r\n            CLOSED_DATE_: history.CLOSED_DATE_,\r\n            CLOSED_TOT_MINUTES_: history.CLOSED_TOT_MINUTES_,\r\n            CLOSED_LANDINGS_: history.CLOSED_LANDINGS_,\r\n            CLOSED_CYCLES_: history.CLOSED_CYCLES_,\r\n            OPEN_DUE_MIN_DATE_: history.OPEN_DUE_MIN_DATE_,\r\n            OPEN_DUE_MIN_HOURS_: history.OPEN_DUE_MIN_HOURS_,\r\n            OPEN_DUE_MIN_LANDINGS_: history.OPEN_DUE_MIN_LANDINGS_,\r\n            OPEN_DUE_MIN_CYCLES_: history.OPEN_DUE_MIN_CYCLES_,\r\n            OPEN_DUE_DATE_: history.OPEN_DUE_DATE_,\r\n            OPEN_DUE_HOURS_: history.OPEN_DUE_HOURS_,\r\n            OPEN_DUE_LANDINGS_: history.OPEN_DUE_LANDINGS_,\r\n            OPEN_DUE_CYCLES_: history.OPEN_DUE_CYCLES_,\r\n            OPEN_DUE_MAX_DATE_: history.OPEN_DUE_MAX_DATE_,\r\n            OPEN_DUE_MAX_HOURS_: history.OPEN_DUE_MAX_HOURS_,\r\n            OPEN_DUE_MAX_LANDINGS_: history.OPEN_DUE_MAX_LANDINGS_,\r\n            OPEN_DUE_MAX_CYCLES_: history.OPEN_DUE_MAX_CYCLES_,\r\n            CLOSED_DUE_MIN_DATE_: history.CLOSED_DUE_MIN_DATE_,\r\n            CLOSED_DUE_MIN_HOURS_: history.CLOSED_DUE_MIN_HOURS_,\r\n            CLOSED_DUE_MIN_LANDINGS_: history.CLOSED_DUE_MIN_LANDINGS_,\r\n            CLOSED_DUE_MIN_CYCLES_: history.CLOSED_DUE_MIN_CYCLES_,\r\n            CLOSED_DUE_DATE_: history.CLOSED_DUE_DATE_,\r\n            CLOSED_DUE_HOURS_: history.CLOSED_DUE_HOURS_,\r\n            CLOSED_DUE_LANDINGS_: history.CLOSED_DUE_LANDINGS_,\r\n            CLOSED_DUE_CYCLES_: history.CLOSED_DUE_CYCLES_,\r\n            CLOSED_DUE_MAX_DATE_: history.CLOSED_DUE_MAX_DATE_,\r\n            CLOSED_DUE_MAX_HOURS_: history.CLOSED_DUE_MAX_HOURS_,\r\n            CLOSED_DUE_MAX_LANDINGS_: history.CLOSED_DUE_MAX_LANDINGS_,\r\n            CLOSED_DUE_MAX_CYCLES_: history.CLOSED_DUE_MAX_CYCLES_,\r\n            OPEN_BY_: history.OPEN_BY_,\r\n            CLOSED_BY_: history.CLOSED_BY_,\r\n            OPEN_ROUNDS_: history.OPEN_ROUNDS_,\r\n            CLOSED_ROUNDS_: history.CLOSED_ROUNDS_,\r\n            OPEN_DUE_MIN_ROUNDS_: history.OPEN_DUE_MIN_ROUNDS_,\r\n            OPEN_DUE_ROUNDS_: history.OPEN_DUE_ROUNDS_,\r\n            OPEN_DUE_MAX_ROUNDS_: history.OPEN_DUE_MAX_ROUNDS_,\r\n            CLOSED_DUE_MIN_ROUNDS_: history.CLOSED_DUE_MIN_ROUNDS_,\r\n            CLOSED_DUE_ROUNDS_: history.CLOSED_DUE_ROUNDS_,\r\n            CLOSED_DUE_MAX_ROUNDS_: history.CLOSED_DUE_MAX_ROUNDS_,\r\n            OPEN_EQP_CYCLES_: history.OPEN_EQP_CYCLES_,\r\n            CLOSED_EQP_CYCLES_: history.CLOSED_EQP_CYCLES_\r\n        });\r\n    }\r\n}\r\n\r\nasync function populateOutgoingTableFaults(tailNo) {\r\n    const { data } = await app.query.getTailBattalionAndCommandFromTailNumber({ params: { tailNumber: tailNo } });\r\n    if (data.length === 0) {\r\n        return;\r\n    }\r\n    const unitId = data[0].TAIL_UNIT_ID_;\r\n    const units = await db.read('MNT_TRN_FAULT_UNITS', {})\r\n    for (const unit of units) {\r\n        await db.record('FAULT_UNITS', {\r\n            FAULT_UNIT_ID_: unit.ID_,\r\n            FAULT_NO_: unit.FAULT_NO_,\r\n            FAULT_STS_: unit.FAULT_STS_,\r\n            FAULT_STATE_: unit.FAULT_STATE_,\r\n            UNIT_ID: unit.UNIT_ID,\r\n            ACC_STS_ID: unit.ACC_STS_ID,\r\n            ACC_132_STS_ID: unit.ACC_132_STS_ID,\r\n            INSP_ID: unit.INSP_ID,\r\n            FAULT_INFO_REMARKS_: unit.FAULT_INFO_REMARKS_,\r\n            FAULT_INFO_DATE_: unit.FAULT_INFO_DATE_,\r\n            FAULT_INFO_AIRCRAFT_HR_: unit.FAULT_INFO_AIRCRAFT_HR_,\r\n            FAULT_INFO_AIRCRAFT_CYCLES_: unit.FAULT_INFO_AIRCRAFT_CYCLES_,\r\n            FAULT_INFO_AIRCRAFT_LANDINGS_: unit.FAULT_INFO_AIRCRAFT_LANDINGS_,\r\n            FAULT_INFO_STS_ID: unit.FAULT_INFO_STS_ID,\r\n            FAULT_INFO_SYS_ID: unit.FAULT_INFO_SYS_ID,\r\n            FAULT_INFO_USR_ID: unit.FAULT_INFO_USR_ID,\r\n            FAULT_INFO_DISC_ID: unit.FAULT_INFO_DISC_ID,\r\n            FAULT_INFO_REC_ID: unit.FAULT_INFO_REC_ID,\r\n            FAULT_INFO_MEFF_ID: unit.FAULT_INFO_MEFF_ID,\r\n            FAULT_INFO_FG_ID: unit.FAULT_INFO_FG_ID,\r\n            FAULT_TI_VAL_VAL_: unit.FAULT_TI_VAL_VAL_,\r\n            FAULT_TI_VAL_USR_ID: unit.FAULT_TI_VAL_USR_ID,\r\n            FAULT_UNCORRECTED_REMARKS_: unit.FAULT_UNCORRECTED_REMARKS_,\r\n            FAULT_UNCORRECTED_DT_BEGIN_: unit.FAULT_UNCORRECTED_DT_BEGIN_,\r\n            FAULT_UNCORRECTED_DT_END: unit.FAULT_UNCORRECTED_DT_END,\r\n            FAULT_UNCORRECTED_REQ_: unit.FAULT_UNCORRECTED_REQ_,\r\n            FAULT_UNCORRECTED_DT_141_: unit.FAULT_UNCORRECTED_DT_141_,\r\n            FAULT_UNCORRECTED_DLY_RSN_ID: unit.FAULT_UNCORRECTED_DLY_RSN_ID,\r\n            FAULT_UNCORRECTED_USR_ID: unit.FAULT_UNCORRECTED_USR_ID,\r\n            CREATED_BY_: unit.CREATED_BY_,\r\n            CREATED_ON_: unit.CREATED_ON_,\r\n            MOD_BY_: unit.MOD_BY_,\r\n            MOD_ON_: unit.MOD_ON_,\r\n            TERM_: unit.TERM_,\r\n            PID_CREATED_BY_: unit.PID_CREATED_BY_,\r\n            FULL_NAME_CREATED_BY_: unit.FULL_NAME_CREATED_BY_,\r\n            PID_MOD_BY_: unit.PID_MOD_BY_,\r\n            FULL_NAME_MOD_BY_: unit.FULL_NAME_MOD_BY_,\r\n            TAIL_FLIGHT_ID: unit.TAIL_FLIGHT_ID,\r\n            CLOSE_DATE_: unit.CLOSE_DATE_,\r\n            PRNT_FAULT_UNIT_ID: unit.PRNT_FAULT_UNIT_ID,\r\n            FAULT_INFO_HAS_MOC: unit.FAULT_INFO_HAS_MOC,\r\n            FAULT_INFO_HAS_MTF: unit.FAULT_INFO_HAS_MTF,\r\n            OLD_TAIL_FLIGHT_ID_: unit.OLD_TAIL_FLIGHT_ID_,\r\n            FAULT_UNCORRECTED_INSP_ID_: unit.FAULT_UNCORRECTED_INSP_ID_,\r\n            FAULT_UNCORRECTED_REQ_ID_: unit.FAULT_UNCORRECTED_REQ_ID_,\r\n            FAULT_UNCORRECTED_WO_ID_: unit.FAULT_UNCORRECTED_WO_ID_,\r\n            FAULT_INFO_DELAY_: unit.FAULT_INFO_DELAY_,\r\n            FAULT_TI_VAL_DATE_: unit.FAULT_TI_VAL_DATE_,\r\n            BACKDATED_: unit.BACKDATED_,\r\n            FAULT_INFO_ROUNDS_: unit.FAULT_INFO_ROUNDS_,\r\n            IS_GENERATED_FROM_4_1_: unit.IS_GENERATED_FROM_4_1_,\r\n            FAULT_INFO_HAS_CORROSION: unit.FAULT_INFO_HAS_CORROSION,\r\n            FAULT_INFO_NLT_DATE_: unit.FAULT_INFO_NLT_DATE_,\r\n            FAULT_INFO_NLT_ACFT_HRS_: unit.FAULT_INFO_NLT_ACFT_HRS_,\r\n            FAULT_INFO_NLT_CYCLES_: unit.FAULT_INFO_NLT_CYCLES_,\r\n            FAULT_INFO_NLT_LANDINGS_: unit.FAULT_INFO_NLT_LANDINGS_,\r\n            FAULT_INFO_NLT_STATUS_UPGRD_ID: unit.FAULT_INFO_NLT_STATUS_UPGRD_ID,\r\n            FAULT_INFO_NLT_STATUS_BFR_UPGRD_ID: unit.FAULT_INFO_NLT_STATUS_BFR_UPGRD_ID,\r\n        })\r\n    }\r\n\r\n    const corrects = await db.read('MNT_TRN_FAULT_CORRECTS', {})\r\n    for (const correct of corrects) {\r\n        await db.record('FAULT_CORRECTS', {\r\n            FAULT_UNIT_ID_: correct.FAULT_UNIT_ID,\r\n            UNIT_ID_: unitId,\r\n            FAULT_CORRECT_ID_: correct.ID_,\r\n            DATE_: correct.DATE_,\r\n            ACT_DESC_: correct.ACT_DESC_,\r\n            AIRCRAFT_HR_: correct.AIRCRAFT_HR_,\r\n            AIRCRAFT_CYCLES_: correct.AIRCRAFT_CYCLES_,\r\n            AIRCRAFT_LANDINGS_: correct.AIRCRAFT_LANDINGS_,\r\n            AIRCRAFT_ROUNDS_: correct.AIRCRAFT_ROUNDS_,\r\n            ITEM_TYPE_: correct.ITEM_TYPE_,\r\n            ACT_ID: correct.ACT_ID,\r\n            FG_ID: correct.FG_ID,\r\n            CREATED_BY_: correct.CREATED_BY_,\r\n            CREATED_ON_: correct.CREATED_ON_,\r\n            MOD_BY_: correct.MOD_BY_,\r\n            MOD_ON_: correct.MOD_ON_,\r\n            TERM_: correct.TERM_,\r\n            LAST_RECORD_NO_: correct.LAST_RECORD_NO_,\r\n        })\r\n    }\r\n\r\n    const items = await db.read('MNT_TRN_FAULT_CORRECTING_ITEMS', {})\r\n    for (const item of items) {\r\n        const faultCorrect = await db.find('FAULT_CORRECTS', { FAULT_CORRECT_ID_: item.FLT_CORR_ID });\r\n        await db.record('FAULT_CORRECTING_ITEMS', {\r\n            FAULT_UNIT_ID_: faultCorrect.FAULT_UNIT_ID_,\r\n            UNIT_ID_: unitId,\r\n            FAULT_CORRECT_ID_: item.FLT_CORR_ID,\r\n            FAULT_CORRECTING_ITEM_ID_: item.ID_,\r\n            REL_ACT_: item.REL_ACT_,\r\n            ACT_: item.ACT_,\r\n            MNT_MAIN_HRS: item.MNT_MAIN_HRS,\r\n            GROUP_NO_: item.GROUP_NO_,\r\n            STS_ID: item.STS_ID,\r\n            USR_ID: item.USR_ID,\r\n            CAT_ID: item.CAT_ID,\r\n            TI_USR_ID: item.TI_USR_ID,\r\n            MAJOR_EVENT_ID: item.MAJOR_EVENT_ID,\r\n            CREATED_BY_: item.CREATED_BY_,\r\n            CREATED_ON_: item.CREATED_ON_,\r\n            MOD_BY_: item.MOD_BY_,\r\n            MOD_ON_: item.MOD_ON_,\r\n            TERM_: item.TERM_,\r\n            IDX_: item.IDX_,\r\n            RECORD_NO_: item.RECORD_NO_,\r\n        })\r\n    }\r\n\r\n    const activities = await db.read('MNT_TRN_FAULT_ACTIVITIES', {});\r\n    for (const activity of activities) {\r\n        await db.record('FAULT_ACTIVITIES', {\r\n            FAULT_UNIT_ID_: activity.FAULT_UNIT_ID,\r\n            UNIT_ID_: unitId,\r\n            FAULT_ACTIVITY_ID_: activity.ID_,\r\n            DATE_: activity.DATE_,\r\n            PID_: activity.PID_,\r\n            ACTION_: activity.ACTION_,\r\n            FIELD_: activity.FIELD_,\r\n            OLD_: activity.OLD_,\r\n            NEW_: activity.NEW_,\r\n            USER_ID_: activity.USER_ID_,\r\n            RECORD_: activity.RECORD_\r\n        })\r\n    }\r\n\r\n}",
+          "functionCode": "\r\nconst serverAddress = app.var.serverAddress.get();\r\nlet protocol = '';\r\nlet domain = '';\r\nif (serverAddress) {\r\n    const [_protocol, _domain] = serverAddress.split('://')\r\n    protocol = _protocol ? _protocol : 'http';\r\n    domain = _domain ? _domain : 'localhost:5008'\r\n}\r\n\r\nasync function downloadTail({ tail }) {\r\n    const result = await page.fetch.downloadTail({ downloadEntries: [{ \"Module\": \"ESNAAD_M\" }, { \"Module\": \"MIS_FM_SI\", \"Params\": [tail] }] });\r\n    const { Result, error, ErrorMessage, ErrorCode } = result;\r\n    if (ErrorCode === 'ADM.002.001') {\r\n        const action = await alertBox({\r\n            message: `Session is expired, or invalid permission`,\r\n            buttons: [{\r\n                id: 'login',\r\n                label: 'I would like to go back to login page',\r\n                icon: 'IoIosLogIn'\r\n            }, {\r\n                id: 'retry',\r\n                label: 'Please retry again',\r\n                icon: 'IoMdRefresh'\r\n            }]\r\n        })\r\n        if (action === 'login') {\r\n            return navigate('app/login');\r\n        }\r\n        if (action === 'retry') {\r\n            return await downloadTail({ tail })\r\n        }\r\n    }\r\n    if (error || ErrorMessage) {\r\n        await alertBox({\r\n            message: `Error ${error}`\r\n        })\r\n        return;\r\n    }\r\n    const downloadId = Result.DownloadId;\r\n    \r\n    const locked = await page.call.lockTail(tail);\r\n    if(locked){\r\n        await runDownload(downloadId);\r\n    }\r\n}\r\n\r\nmodule.exports = downloadTail\r\n\r\nconst MAX_ATTEMPT = 100;\r\nasync function runDownload(attachmentId) {\r\n    let attemp = 0\r\n    let isReady = false;\r\n    while (!isReady && attemp < MAX_ATTEMPT) {\r\n        const result = await checkIfDownloadIsReady(attachmentId);\r\n        const readyUnknown = result && typeof result === 'object' && 'success' in result && result.success;\r\n        const lineItems = result && typeof result === 'object' && 'lineItems' in result && result.lineItems;\r\n        isReady = utils.toBoolean(readyUnknown)\r\n        if (lineItems && Array.isArray(lineItems)) {\r\n            page.var.downloadLineItems.set(lineItems);\r\n            page.var.refreshGrid.set(Date.now())\r\n        }\r\n        attemp++;\r\n        log.debug('attempt', attemp, 'downloadIsReady ?', 'readyUnknown', readyUnknown, 'isReady', isReady)\r\n    }\r\n    if (isReady) {\r\n        await downloadTheFile(attachmentId);\r\n        navigate('app/authenticate');\r\n    }\r\n}\r\n\r\nfunction checkIfDownloadIsReady(attachmentId) {\r\n    return new Promise(resolve => {\r\n        setTimeout(() => {\r\n            fetch(`${protocol}://${domain}/EsnaadMAppFacade/CheckDownloadProgress?downloadId=${attachmentId}`, { credentials: 'include' }).then(response => {\r\n                if (!response.ok) {\r\n                    resolve({ success: false });\r\n                } else {\r\n                    response.json().then((json) => {\r\n                        if (json.Success) {\r\n                            const lineItems = json.Result.ModuleStatuses.map(module => {\r\n                                return module.TableStatuses.map(ts => {\r\n                                    return {\r\n                                        module: module.Module,\r\n                                        moduleStatus: module.Status,\r\n                                        table: ts.Table,\r\n                                        tableStatus: ts.Status\r\n                                    }\r\n                                })\r\n                            }).flat()\r\n                            resolve({ success: json.Result.Status === 'Completed', lineItems })\r\n                            return;\r\n                        }\r\n                        resolve({ success: false });\r\n                    })\r\n                }\r\n            }).catch(err => {\r\n                resolve({ success: false });\r\n            })\r\n        }, 1000);\r\n    })\r\n}\r\n\r\nasync function downloadTheFile(attachmentId) {\r\n    try {\r\n        const response = await fetch(`${protocol}://${domain}/home/DownloadEsnaadMData?downloadId=${attachmentId}`, { credentials: 'include' });\r\n        if (!response.ok) {\r\n            alert('Error' + response.statusText);\r\n        }\r\n        const blob = await response.blob();\r\n        const arrayBuffer = await blob.arrayBuffer();\r\n        await tools.saveSqlLite(arrayBuffer);\r\n        utils.setItem('synced-date', utils.dateToString(new Date()))\r\n        utils.setItem('database-size', (arrayBuffer.byteLength / (1024 * 1024)).toFixed(1))\r\n        utils.setItem('database-id', attachmentId);\r\n        const tailNumber = utils.getItem('tail-number');\r\n        await populateOutgoingTableFaults(tailNumber);\r\n        await populateOutgoingTableMissions(tailNumber);\r\n        await populateOutgoingTableInspections(tailNumber);\r\n        await db.commit();\r\n        await alertBox({\r\n            message: `The aircraft with tail number ${tailNumber} has been downloaded into the local database and is ready to use in offline mode.`,\r\n        })\r\n        app.var.tailNumber.set(tailNumber);\r\n    } catch (error) {\r\n        alertBox({\r\n            message: `Error downloading the file ${error}`,\r\n        })\r\n    }\r\n}\r\n\r\nasync function populateOutgoingTableMissions(tailNo) {\r\n    const { data } = await app.query.getTailBattalionAndCommandFromTailNumber({ params: { tailNumber: tailNo } });\r\n    if (data.length === 0) {\r\n        return;\r\n    }\r\n    const unitId = data[0].TAIL_UNIT_ID_\r\n    const missions = await db.read('OPS_TRN_MISSIONS', {});\r\n    for (const mission of missions) {\r\n        await db.record('MISSIONS', {\r\n            ABORT_REASON: mission.ABORT_REASON,\r\n            ABORT_REASON_ID: mission.ABORT_REASON_ID,\r\n            ACCESS_CODES_: mission.ACCESS_CODES_,\r\n            CALL_ID: mission.CALL_ID,\r\n            CANCEL_REASON: mission.CANCEL_REASON,\r\n            CANCEL_REASON_ID: mission.CANCEL_REASON_ID,\r\n            CANCEL_REASON_RMKS_: mission.CANCEL_REASON_RMKS_,\r\n            CREATED_BY_: mission.CREATED_BY_,\r\n            CREATED_ON_: mission.CREATED_ON_,\r\n            DATE_: mission.DATE_,\r\n            DESCRIPTION_: mission.DESCRIPTION_,\r\n            EXTERNAL_ID: mission.EXTERNAL_ID,\r\n            MISSION_ID_: mission.ID_,\r\n            MISSION_NO_: mission.MISSION_NO_,\r\n            MISS_PLAN_TYPE_: mission.MISS_PLAN_TYPE_,\r\n            MISS_SUB_TYPE_ID: mission.MISS_SUB_TYPE_ID,\r\n            MOD_BY_: mission.MOD_BY_,\r\n            MOD_ON_: mission.MOD_ON_,\r\n            PLTF_CFG_FUEL_UOM_ID: mission.PLTF_CFG_FUEL_UOM_ID,\r\n            PLTF_CFG_ID: mission.PLTF_CFG_ID,\r\n            PLTF_CFG_MNT_REM_: mission.PLTF_CFG_MNT_REM_,\r\n            PLTF_CFG_NO_OF_PASS_: mission.PLTF_CFG_NO_OF_PASS_,\r\n            PLTF_CFG_REQ_FUEL_: mission.PLTF_CFG_REQ_FUEL_,\r\n            ROUTE_: mission.ROUTE_,\r\n            SUBMT_BY_: mission.SUBMT_BY_,\r\n            SUBMT_ON_: mission.SUBMT_ON_,\r\n            SUPPORT_SUB_UNIT_ID: mission.SUPPORT_SUB_UNIT_ID,\r\n            TERM_: mission.TERM_,\r\n            UNIT_ID_: unitId\r\n        });\r\n    }\r\n\r\n    const wings = await db.read('OPS_TRN_WINGS', {});\r\n    for (const wing of wings) {\r\n        await db.record('WINGS', {\r\n            COY_ID: wing.COY_ID,\r\n            IDX_: wing.IDX_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            MISSION_WING_ID_: wing.ID_,\r\n            PLTF_ID: wing.PLTF_ID,\r\n            UNIT_ID_: unitId\r\n        })\r\n    }\r\n\r\n    const flights = await db.read('OPS_TRN_FLIGHTS', {});\r\n    for (const flight of flights) {\r\n        await db.record('FLIGHTS', {\r\n            BASE_FROM_ID: flight.BASE_FROM_ID,\r\n            BASE_TO_ID: flight.BASE_TO_ID,\r\n            CREATED_BY_: flight.CREATED_BY_,\r\n            CREATED_ON_: flight.CREATED_ON_,\r\n            ETA_: flight.ETA_,\r\n            ETD_: flight.ETD_,\r\n            IDX_: flight.IDX_,\r\n            MISSION_FLIGHT_ID_: flight.ID_,\r\n            MISSION_ID_: flight.MISSION_ID,\r\n            MOD_BY_: flight.MOD_BY_,\r\n            MOD_ON_: flight.MOD_ON_,\r\n            TERM_: flight.TERM_,\r\n            UNIT_ID_: unitId\r\n        });\r\n    }\r\n\r\n    const tailCrews = await db.read('OPS_TRN_TAIL_CREWS', {});\r\n    for (const tailCrew of tailCrews) {\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n        await db.record('TAIL_CREWS', {\r\n            ASSIGNED_: tailCrew.ASSIGNED_,\r\n            IS_ACTUAL_TAIL_ASSIGNED_: tailCrew.IS_ACTUAL_TAIL_ASSIGNED_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            MISSION_TAIL_CREW_ID_: tailCrew.ID_,\r\n            PLANNED_TAIL_ID: tailCrew.PLANNED_TAIL_ID,\r\n            TAIL_ID: tailCrew.TAIL_ID,\r\n            UNIT_ID_: unitId,\r\n            WING_ID: tailCrew.WING_ID\r\n        })\r\n    }\r\n\r\n    const missionCrews = await db.read('OPS_TRN_MISSION_CREW_PLAN', {});\r\n    for (const missionCrew of missionCrews) {\r\n        const tailCrew = await db.find('OPS_TRN_TAIL_CREWS', { ID_: missionCrew.TAIL_CREW_ID });\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n\r\n        await db.record('MISSION_CREW_PLANS', {\r\n            DUTY_SYMBOL_ID: missionCrew.DUTY_SYMBOL_ID,\r\n            FLIGHT_CREW_ID: missionCrew.FLIGHT_CREW_ID,\r\n            MISSION_CREW_PLAN_ID_: missionCrew.ID_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            SEAT_CONFIGURATION_ID_: missionCrew.SEAT_CONFIGURATION_ID_,\r\n            TAIL_CREW_ID: missionCrew.TAIL_CREW_ID,\r\n            UNIT_ID_: unitId\r\n        })\r\n    }\r\n\r\n    const tailFlights = await db.read('OPS_TRN_TAIL_FLIGHT', {});\r\n    for (const tailFlight of tailFlights) {\r\n        const tailCrew = await db.find('OPS_TRN_TAIL_CREWS', { ID_: tailFlight.TAIL_CREW_ID });\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n        await db.record('TAIL_FLIGHTS', {\r\n            ACTUAL_BASE_FROM_ID: tailFlight.ACTUAL_BASE_FROM_ID,\r\n            ACTUAL_BASE_TO_ID: tailFlight.ACTUAL_BASE_TO_ID,\r\n            ATA_: tailFlight.ATA_,\r\n            ATD_: tailFlight.ATD_,\r\n            CANCELLATION_REASON: tailFlight.CANCELLATION_REASON,\r\n            CANCELLATION_REASON_ID: tailFlight.CANCELLATION_REASON_ID,\r\n            CANCELLATION_REASON_RMKS_: tailFlight.CANCELLATION_REASON_RMKS_,\r\n            CRANK_TIME_: tailFlight.CRANK_TIME_,\r\n            FLIGHT_ID: tailFlight.FLIGHT_ID,\r\n            FLIGHT_STATUS_: tailFlight.FLIGHT_STATUS_,\r\n            IFFCODE_: tailFlight.IFFCODE_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            TAIL_CREW_ID: tailFlight.TAIL_CREW_ID,\r\n            TAIL_FLIGHT_ID_: tailFlight.ID_,\r\n            UNIT_ID_: unitId\r\n        })\r\n    }\r\n\r\n    const tailFlightRecords = await db.read('OPS_TRN_TAIL_FLIGHT_RECORD', {});\r\n    for (const tailFlightRecord of tailFlightRecords) {\r\n        const tailFlight = await db.find('OPS_TRN_TAIL_FLIGHT', { ID_: tailFlightRecord.TAIL_FLIGHT_ID });\r\n        const tailCrew = await db.find('OPS_TRN_TAIL_CREWS', { ID_: tailFlight.TAIL_CREW_ID });\r\n        const wing = await db.find('OPS_TRN_WINGS', { ID_: tailCrew.WING_ID });\r\n\r\n        await db.record('TAIL_FLIGHT_RECORDS', {\r\n            CREATED_BY_: tailFlightRecord.CREATED_BY_,\r\n            CREATED_ON_: tailFlightRecord.CREATED_ON_,\r\n            CYCLES_: tailFlightRecord.CYCLES_,\r\n            ENGINE_STARTS1_: tailFlightRecord.ENGINE_STARTS1_,\r\n            ENGINE_STARTS2_: tailFlightRecord.ENGINE_STARTS2_,\r\n            EXTERNAL_LOAD_: tailFlightRecord.EXTERNAL_LOAD_,\r\n            FLIGHT_MINS_: tailFlightRecord.FLIGHT_MINS_,\r\n            FULL_NAME_CREATED_BY_: tailFlightRecord.FULL_NAME_CREATED_BY_,\r\n            FULL_NAME_MOD_BY_: tailFlightRecord.FULL_NAME_MOD_BY_,\r\n            INTERNAL_LOAD_: tailFlightRecord.INTERNAL_LOAD_,\r\n            LANDINGS_: tailFlightRecord.LANDINGS_,\r\n            MISSION_CODE_: tailFlightRecord.MISSION_CODE_,\r\n            MISSION_ID_: wing.MISSION_ID,\r\n            MISSION_TAIL_FLIGHT_RECORD_ID_: tailFlightRecord.ID_,\r\n            MOD_BY_: tailFlightRecord.MOD_BY_,\r\n            MOD_ON_: tailFlightRecord.MOD_ON_,\r\n            PASSENGERS_: tailFlightRecord.PASSENGERS_,\r\n            PID_CREATED_BY_: tailFlightRecord.PID_CREATED_BY_,\r\n            PID_MOD_BY_: tailFlightRecord.PID_MOD_BY_,\r\n            ROUNDS_127_NAG_: tailFlightRecord.ROUNDS_127_NAG_,\r\n            ROUNDS_20_: tailFlightRecord.ROUNDS_20_,\r\n            ROUNDS_20_NAG_: tailFlightRecord.ROUNDS_20_NAG_,\r\n            ROUNDS_30_: tailFlightRecord.ROUNDS_30_,\r\n            ROUNDS_40_: tailFlightRecord.ROUNDS_40_,\r\n            ROUNDS_762_: tailFlightRecord.ROUNDS_762_,\r\n            ROUNDS_AM39_NAG_: tailFlightRecord.ROUNDS_AM39_NAG_,\r\n            ROUNDS_AS15TT_NAG_: tailFlightRecord.ROUNDS_AS15TT_NAG_,\r\n            ROUNDS_HELLFIRE_: tailFlightRecord.ROUNDS_HELLFIRE_,\r\n            ROUNDS_ROCKET_: tailFlightRecord.ROUNDS_ROCKET_,\r\n            ROUNDS_TORPEDO_NAG_: tailFlightRecord.ROUNDS_TORPEDO_NAG_,\r\n            ROUNDS_TOW_: tailFlightRecord.ROUNDS_TOW_,\r\n            RTA_: tailFlightRecord.RTA_,\r\n            RTD_: tailFlightRecord.RTD_,\r\n            SNAPSHOT_PLTF_CFG_ID_: tailFlightRecord.SNAPSHOT_PLTF_CFG_ID_,\r\n            TAAMS_FLIGHT_MINS_: tailFlightRecord.TAAMS_FLIGHT_MINS_,\r\n            TAIL_FLIGHT_ID: tailFlightRecord.TAIL_FLIGHT_ID,\r\n            TERM_: tailFlightRecord.TERM_,\r\n            UNIT_ID_: unitId,\r\n            VIP_CODE_ID_: tailFlightRecord.VIP_CODE_ID_\r\n        })\r\n    }\r\n}\r\n\r\nasync function populateOutgoingTableInspections(tailNo) {\r\n    const { data } = await app.query.getTailBattalionAndCommandFromTailNumber({ params: { tailNumber: tailNo } });\r\n    if (data.length === 0) {\r\n        return;\r\n    }\r\n    const unitId = data[0].TAIL_UNIT_ID_\r\n    const assignments = await db.read('MNT_TRN_INSPECTION_ASSIGNMENTS', {});\r\n    for (const assignment of assignments) {\r\n        const master = await db.find('MNT_TRN_INSPECTION_MASTERS', { ID_: assignment.INSP_MST_ID });\r\n        await db.record('ASSIGNMENTS', {\r\n            ASSIGNMENT_ID_: assignment.ID_,\r\n            INSP_MST_ID: master.ID_,\r\n            INSP_STAT_ID: assignment.INSP_STAT_ID,\r\n            UNIT_ID: unitId,\r\n\r\n            DUE_MIN_DATE_: assignment.DUE_MIN_DATE_,\r\n            DUE_DATE_: assignment.DUE_DATE_,\r\n            DUE_MAX_DATE_: assignment.DUE_MAX_DATE_,\r\n\r\n            DUE_MIN_HOURS_: assignment.DUE_MIN_HOURS_,\r\n            DUE_HOURS_: assignment?.DUE_HOURS_,\r\n            DUE_MAX_HOURS_: assignment.DUE_MAX_HOURS_,\r\n\r\n            DUE_MIN_LANDINGS_: assignment.DUE_MIN_LANDINGS_,\r\n            DUE_LANDINGS_: assignment.DUE_LANDINGS_,\r\n            DUE_MAX_LANDINGS_: assignment.DUE_MAX_LANDINGS_,\r\n\r\n            DUE_MIN_CYCLES_: assignment.DUE_MIN_CYCLES_,\r\n            DUE_CYCLES_: assignment.DUE_CYCLES_,\r\n            DUE_MAX_CYCLES_: assignment.DUE_MAX_CYCLES_,\r\n\r\n            DUE_MIN_ROUNDS_: assignment.DUE_MIN_ROUNDS_,\r\n            DUE_ROUNDS_: assignment.DUE_ROUNDS_,\r\n            DUE_MAX_ROUNDS_: assignment.DUE_MAX_ROUNDS_,\r\n\r\n            DUE_MIN_EQP_CYCLES_: assignment.DUE_MIN_EQP_CYCLES_,\r\n            DUE_EQP_CYCLES_: assignment.DUE_EQP_CYCLES_,\r\n            DUE_MAX_EQP_CYCLES_: assignment.DUE_MAX_EQP_CYCLES_,\r\n\r\n            INSP_NUMBER_: master.INSP_NUMBER_,\r\n            CREATED_BY_: assignment.CREATED_BY_,\r\n            CREATED_ON_: assignment.CREATED_ON_,\r\n            MOD_BY_: assignment.MOD_BY_,\r\n            MOD_ON_: assignment.MOD_ON_,\r\n            TERM_: assignment.TERM_,\r\n            ORDER_: assignment.ORDER_,\r\n            REQ_NO_: assignment.REQ_NO_,\r\n            IKT_ALLOC_STATUS_: assignment.IKT_ALLOC_STATUS_\r\n        })\r\n    }\r\n\r\n    const fmHistories = await db.read('MNT_HST_D18_FAULT_HISTORY', {});\r\n    for (const history of fmHistories) {\r\n        const fault = await db.find('MNT_TRN_FAULT_UNITS', { FAULT_NO_: history.FAULT_NO_ });\r\n\r\n        await db.record('INSPECTION_FAULT_HISTORY', {\r\n            FAULT_UNIT_ID_: fault.ID_,\r\n            UNIT_ID: unitId,\r\n            OPEN_DATE_: history.OPEN_DATE_,\r\n            OPEN_TOT_MINUTES_: history.OPEN_TOT_MINUTES_,\r\n            OPEN_LANDINGS_: history.OPEN_LANDINGS_,\r\n            OPEN_CYCLES_: history.OPEN_CYCLES_,\r\n            CLOSED_DATE_: history.CLOSED_DATE_,\r\n            CLOSED_TOT_MINUTES_: history.CLOSED_TOT_MINUTES_,\r\n            CLOSED_LANDINGS_: history.CLOSED_LANDINGS_,\r\n            CLOSED_CYCLES_: history.CLOSED_CYCLES_,\r\n            OPEN_DUE_MIN_DATE_: history.OPEN_DUE_MIN_DATE_,\r\n            OPEN_DUE_MIN_HOURS_: history.OPEN_DUE_MIN_HOURS_,\r\n            OPEN_DUE_MIN_LANDINGS_: history.OPEN_DUE_MIN_LANDINGS_,\r\n            OPEN_DUE_MIN_CYCLES_: history.OPEN_DUE_MIN_CYCLES_,\r\n            OPEN_DUE_DATE_: history.OPEN_DUE_DATE_,\r\n            OPEN_DUE_HOURS_: history.OPEN_DUE_HOURS_,\r\n            OPEN_DUE_LANDINGS_: history.OPEN_DUE_LANDINGS_,\r\n            OPEN_DUE_CYCLES_: history.OPEN_DUE_CYCLES_,\r\n            OPEN_DUE_MAX_DATE_: history.OPEN_DUE_MAX_DATE_,\r\n            OPEN_DUE_MAX_HOURS_: history.OPEN_DUE_MAX_HOURS_,\r\n            OPEN_DUE_MAX_LANDINGS_: history.OPEN_DUE_MAX_LANDINGS_,\r\n            OPEN_DUE_MAX_CYCLES_: history.OPEN_DUE_MAX_CYCLES_,\r\n            CLOSED_DUE_MIN_DATE_: history.CLOSED_DUE_MIN_DATE_,\r\n            CLOSED_DUE_MIN_HOURS_: history.CLOSED_DUE_MIN_HOURS_,\r\n            CLOSED_DUE_MIN_LANDINGS_: history.CLOSED_DUE_MIN_LANDINGS_,\r\n            CLOSED_DUE_MIN_CYCLES_: history.CLOSED_DUE_MIN_CYCLES_,\r\n            CLOSED_DUE_DATE_: history.CLOSED_DUE_DATE_,\r\n            CLOSED_DUE_HOURS_: history.CLOSED_DUE_HOURS_,\r\n            CLOSED_DUE_LANDINGS_: history.CLOSED_DUE_LANDINGS_,\r\n            CLOSED_DUE_CYCLES_: history.CLOSED_DUE_CYCLES_,\r\n            CLOSED_DUE_MAX_DATE_: history.CLOSED_DUE_MAX_DATE_,\r\n            CLOSED_DUE_MAX_HOURS_: history.CLOSED_DUE_MAX_HOURS_,\r\n            CLOSED_DUE_MAX_LANDINGS_: history.CLOSED_DUE_MAX_LANDINGS_,\r\n            CLOSED_DUE_MAX_CYCLES_: history.CLOSED_DUE_MAX_CYCLES_,\r\n            OPEN_BY_: history.OPEN_BY_,\r\n            CLOSED_BY_: history.CLOSED_BY_,\r\n            OPEN_ROUNDS_: history.OPEN_ROUNDS_,\r\n            CLOSED_ROUNDS_: history.CLOSED_ROUNDS_,\r\n            OPEN_DUE_MIN_ROUNDS_: history.OPEN_DUE_MIN_ROUNDS_,\r\n            OPEN_DUE_ROUNDS_: history.OPEN_DUE_ROUNDS_,\r\n            OPEN_DUE_MAX_ROUNDS_: history.OPEN_DUE_MAX_ROUNDS_,\r\n            CLOSED_DUE_MIN_ROUNDS_: history.CLOSED_DUE_MIN_ROUNDS_,\r\n            CLOSED_DUE_ROUNDS_: history.CLOSED_DUE_ROUNDS_,\r\n            CLOSED_DUE_MAX_ROUNDS_: history.CLOSED_DUE_MAX_ROUNDS_,\r\n            OPEN_EQP_CYCLES_: history.OPEN_EQP_CYCLES_,\r\n            CLOSED_EQP_CYCLES_: history.CLOSED_EQP_CYCLES_\r\n        });\r\n    }\r\n}\r\n\r\nasync function populateOutgoingTableFaults(tailNo) {\r\n    const { data } = await app.query.getTailBattalionAndCommandFromTailNumber({ params: { tailNumber: tailNo } });\r\n    if (data.length === 0) {\r\n        return;\r\n    }\r\n    const unitId = data[0].TAIL_UNIT_ID_;\r\n    const units = await db.read('MNT_TRN_FAULT_UNITS', {})\r\n    for (const unit of units) {\r\n        await db.record('FAULT_UNITS', {\r\n            FAULT_UNIT_ID_: unit.ID_,\r\n            FAULT_NO_: unit.FAULT_NO_,\r\n            FAULT_STS_: unit.FAULT_STS_,\r\n            FAULT_STATE_: unit.FAULT_STATE_,\r\n            UNIT_ID: unit.UNIT_ID,\r\n            ACC_STS_ID: unit.ACC_STS_ID,\r\n            ACC_132_STS_ID: unit.ACC_132_STS_ID,\r\n            INSP_ID: unit.INSP_ID,\r\n            FAULT_INFO_REMARKS_: unit.FAULT_INFO_REMARKS_,\r\n            FAULT_INFO_DATE_: unit.FAULT_INFO_DATE_,\r\n            FAULT_INFO_AIRCRAFT_HR_: unit.FAULT_INFO_AIRCRAFT_HR_,\r\n            FAULT_INFO_AIRCRAFT_CYCLES_: unit.FAULT_INFO_AIRCRAFT_CYCLES_,\r\n            FAULT_INFO_AIRCRAFT_LANDINGS_: unit.FAULT_INFO_AIRCRAFT_LANDINGS_,\r\n            FAULT_INFO_STS_ID: unit.FAULT_INFO_STS_ID,\r\n            FAULT_INFO_SYS_ID: unit.FAULT_INFO_SYS_ID,\r\n            FAULT_INFO_USR_ID: unit.FAULT_INFO_USR_ID,\r\n            FAULT_INFO_DISC_ID: unit.FAULT_INFO_DISC_ID,\r\n            FAULT_INFO_REC_ID: unit.FAULT_INFO_REC_ID,\r\n            FAULT_INFO_MEFF_ID: unit.FAULT_INFO_MEFF_ID,\r\n            FAULT_INFO_FG_ID: unit.FAULT_INFO_FG_ID,\r\n            FAULT_TI_VAL_VAL_: unit.FAULT_TI_VAL_VAL_,\r\n            FAULT_TI_VAL_USR_ID: unit.FAULT_TI_VAL_USR_ID,\r\n            FAULT_UNCORRECTED_REMARKS_: unit.FAULT_UNCORRECTED_REMARKS_,\r\n            FAULT_UNCORRECTED_DT_BEGIN_: unit.FAULT_UNCORRECTED_DT_BEGIN_,\r\n            FAULT_UNCORRECTED_DT_END: unit.FAULT_UNCORRECTED_DT_END,\r\n            FAULT_UNCORRECTED_REQ_: unit.FAULT_UNCORRECTED_REQ_,\r\n            FAULT_UNCORRECTED_DT_141_: unit.FAULT_UNCORRECTED_DT_141_,\r\n            FAULT_UNCORRECTED_DLY_RSN_ID: unit.FAULT_UNCORRECTED_DLY_RSN_ID,\r\n            FAULT_UNCORRECTED_USR_ID: unit.FAULT_UNCORRECTED_USR_ID,\r\n            CREATED_BY_: unit.CREATED_BY_,\r\n            CREATED_ON_: unit.CREATED_ON_,\r\n            MOD_BY_: unit.MOD_BY_,\r\n            MOD_ON_: unit.MOD_ON_,\r\n            TERM_: unit.TERM_,\r\n            PID_CREATED_BY_: unit.PID_CREATED_BY_,\r\n            FULL_NAME_CREATED_BY_: unit.FULL_NAME_CREATED_BY_,\r\n            PID_MOD_BY_: unit.PID_MOD_BY_,\r\n            FULL_NAME_MOD_BY_: unit.FULL_NAME_MOD_BY_,\r\n            TAIL_FLIGHT_ID: unit.TAIL_FLIGHT_ID,\r\n            CLOSE_DATE_: unit.CLOSE_DATE_,\r\n            PRNT_FAULT_UNIT_ID: unit.PRNT_FAULT_UNIT_ID,\r\n            FAULT_INFO_HAS_MOC: unit.FAULT_INFO_HAS_MOC,\r\n            FAULT_INFO_HAS_MTF: unit.FAULT_INFO_HAS_MTF,\r\n            OLD_TAIL_FLIGHT_ID_: unit.OLD_TAIL_FLIGHT_ID_,\r\n            FAULT_UNCORRECTED_INSP_ID_: unit.FAULT_UNCORRECTED_INSP_ID_,\r\n            FAULT_UNCORRECTED_REQ_ID_: unit.FAULT_UNCORRECTED_REQ_ID_,\r\n            FAULT_UNCORRECTED_WO_ID_: unit.FAULT_UNCORRECTED_WO_ID_,\r\n            FAULT_INFO_DELAY_: unit.FAULT_INFO_DELAY_,\r\n            FAULT_TI_VAL_DATE_: unit.FAULT_TI_VAL_DATE_,\r\n            BACKDATED_: unit.BACKDATED_,\r\n            FAULT_INFO_ROUNDS_: unit.FAULT_INFO_ROUNDS_,\r\n            IS_GENERATED_FROM_4_1_: unit.IS_GENERATED_FROM_4_1_,\r\n            FAULT_INFO_HAS_CORROSION: unit.FAULT_INFO_HAS_CORROSION,\r\n            FAULT_INFO_NLT_DATE_: unit.FAULT_INFO_NLT_DATE_,\r\n            FAULT_INFO_NLT_ACFT_HRS_: unit.FAULT_INFO_NLT_ACFT_HRS_,\r\n            FAULT_INFO_NLT_CYCLES_: unit.FAULT_INFO_NLT_CYCLES_,\r\n            FAULT_INFO_NLT_LANDINGS_: unit.FAULT_INFO_NLT_LANDINGS_,\r\n            FAULT_INFO_NLT_STATUS_UPGRD_ID: unit.FAULT_INFO_NLT_STATUS_UPGRD_ID,\r\n            FAULT_INFO_NLT_STATUS_BFR_UPGRD_ID: unit.FAULT_INFO_NLT_STATUS_BFR_UPGRD_ID,\r\n        })\r\n    }\r\n\r\n    const corrects = await db.read('MNT_TRN_FAULT_CORRECTS', {})\r\n    for (const correct of corrects) {\r\n        await db.record('FAULT_CORRECTS', {\r\n            FAULT_UNIT_ID_: correct.FAULT_UNIT_ID,\r\n            UNIT_ID_: unitId,\r\n            FAULT_CORRECT_ID_: correct.ID_,\r\n            DATE_: correct.DATE_,\r\n            ACT_DESC_: correct.ACT_DESC_,\r\n            AIRCRAFT_HR_: correct.AIRCRAFT_HR_,\r\n            AIRCRAFT_CYCLES_: correct.AIRCRAFT_CYCLES_,\r\n            AIRCRAFT_LANDINGS_: correct.AIRCRAFT_LANDINGS_,\r\n            AIRCRAFT_ROUNDS_: correct.AIRCRAFT_ROUNDS_,\r\n            ITEM_TYPE_: correct.ITEM_TYPE_,\r\n            ACT_ID: correct.ACT_ID,\r\n            FG_ID: correct.FG_ID,\r\n            CREATED_BY_: correct.CREATED_BY_,\r\n            CREATED_ON_: correct.CREATED_ON_,\r\n            MOD_BY_: correct.MOD_BY_,\r\n            MOD_ON_: correct.MOD_ON_,\r\n            TERM_: correct.TERM_,\r\n            LAST_RECORD_NO_: correct.LAST_RECORD_NO_,\r\n        })\r\n    }\r\n\r\n    const items = await db.read('MNT_TRN_FAULT_CORRECTING_ITEMS', {})\r\n    for (const item of items) {\r\n        const faultCorrect = await db.find('FAULT_CORRECTS', { FAULT_CORRECT_ID_: item.FLT_CORR_ID });\r\n        await db.record('FAULT_CORRECTING_ITEMS', {\r\n            FAULT_UNIT_ID_: faultCorrect.FAULT_UNIT_ID_,\r\n            UNIT_ID_: unitId,\r\n            FAULT_CORRECT_ID_: item.FLT_CORR_ID,\r\n            FAULT_CORRECTING_ITEM_ID_: item.ID_,\r\n            REL_ACT_: item.REL_ACT_,\r\n            ACT_: item.ACT_,\r\n            MNT_MAIN_HRS: item.MNT_MAIN_HRS,\r\n            GROUP_NO_: item.GROUP_NO_,\r\n            STS_ID: item.STS_ID,\r\n            USR_ID: item.USR_ID,\r\n            CAT_ID: item.CAT_ID,\r\n            TI_USR_ID: item.TI_USR_ID,\r\n            MAJOR_EVENT_ID: item.MAJOR_EVENT_ID,\r\n            CREATED_BY_: item.CREATED_BY_,\r\n            CREATED_ON_: item.CREATED_ON_,\r\n            MOD_BY_: item.MOD_BY_,\r\n            MOD_ON_: item.MOD_ON_,\r\n            TERM_: item.TERM_,\r\n            IDX_: item.IDX_,\r\n            RECORD_NO_: item.RECORD_NO_,\r\n        })\r\n    }\r\n\r\n    const activities = await db.read('MNT_TRN_FAULT_ACTIVITIES', {});\r\n    for (const activity of activities) {\r\n        await db.record('FAULT_ACTIVITIES', {\r\n            FAULT_UNIT_ID_: activity.FAULT_UNIT_ID,\r\n            UNIT_ID_: unitId,\r\n            FAULT_ACTIVITY_ID_: activity.ID_,\r\n            DATE_: activity.DATE_,\r\n            PID_: activity.PID_,\r\n            ACTION_: activity.ACTION_,\r\n            FIELD_: activity.FIELD_,\r\n            OLD_: activity.OLD_,\r\n            NEW_: activity.NEW_,\r\n            USER_ID_: activity.USER_ID_,\r\n            RECORD_: activity.RECORD_\r\n        })\r\n    }\r\n\r\n}",
           "schemaCode": "z.promise(z.void())",
           "inputSchemaCode": "z.object({\r\n    tail:z.string()\r\n})"
+        },
+        {
+          "name": "lockTail",
+          "id": "8d135eaf-2214-4faf-b65e-5bfa86eb0621",
+          "functionCode": "module.exports = async (tail) => {\r\n    const allTails = await page.fetch.findAllTails();\r\n    const t = allTails.Result.Tails.find(i => i.Tail === tail);\r\n    const unitId = t.UnitId;\r\n    const result = await page.fetch.lockTail({unitId,remarks:`Tail locked by EsnaadM at ${utils.ddMmmYyyyHhMm(new Date())}`});\r\n    if(result.Success === false){\r\n        await alertBox({message:`System cannot lock the tail. There is a mission having any of the following state: On Mission, Accomplished, or In Correction. To be able to lock the tail, you would need to debrief the mission.`,title:result.ErrorCode})\r\n        return false;\r\n    }\r\n    return true;\r\n}",
+          "schemaCode": "z.promise(z.boolean())",
+          "inputSchemaCode": "z.string()"
         }
       ],
       "containers": [
@@ -1571,8 +1867,7 @@
           "id": "5c33b7b7-5adb-47dc-9581-64b77c497a62",
           "type": "container",
           "children": [
-            "c38083dd-e88b-4a35-ac29-9d8b5c45e6bc",
-            "86ddf899-a902-48b6-9d51-07ba1de94773"
+            "c38083dd-e88b-4a35-ac29-9d8b5c45e6bc"
           ],
           "parent": "be27ebd2-0e51-453d-be04-5d6d23f46d58",
           "properties": {
@@ -1590,7 +1885,8 @@
           "children": [
             "ac5eee32-fc1c-48ce-98ab-35ad45c61058",
             "c87a9eb3-2fda-4d87-80bb-adb221410b93",
-            "ab41a499-f737-4038-b1c3-621650c6c8a0"
+            "ab41a499-f737-4038-b1c3-621650c6c8a0",
+            "89429980-6489-4b19-8e03-527c7a3929dd"
           ],
           "parent": "5c33b7b7-5adb-47dc-9581-64b77c497a62",
           "properties": {
@@ -1695,53 +1991,13 @@
           }
         },
         {
-          "id": "86ddf899-a902-48b6-9d51-07ba1de94773",
-          "type": "container",
-          "children": [
-            "f572c44c-5573-447b-9b63-1198e3248949",
-            "89429980-6489-4b19-8e03-527c7a3929dd"
-          ],
-          "parent": "5c33b7b7-5adb-47dc-9581-64b77c497a62",
-          "properties": {
-            "defaultStyle": {
-              "flexDirection": "row",
-              "gap": "10px"
-            }
-          }
-        },
-        {
-          "id": "f572c44c-5573-447b-9b63-1198e3248949",
-          "type": "container",
-          "children": [
-            "aed5caa6-bd2c-404e-8442-5d7e51bb3c96",
-            "3e9d527b-82cc-4432-98b7-49bee499d829"
-          ],
-          "parent": "86ddf899-a902-48b6-9d51-07ba1de94773",
-          "properties": {
-            "defaultStyle": {
-              "alignItems": "",
-              "justifyContent": "flex-end",
-              "paddingBottom": "10px"
-            },
-            "style": {
-              "formula": "const isPressed = page.var.buttonPressed.get() === 'syncing';\r\nmodule.exports = {\r\n    background : 'linear-gradient(0deg, #199535, #249E3F)',\r\n    borderRadius : 10,\r\n    width : 100,\r\n    height : 100,\r\n    color : 'white',\r\n    boxShadow : `0 5px 5px -3px rgba(0,0,0,0.3) ${isPressed?'inset':''}`\r\n}"
-            },
-            "onClick": {
-              "formula": "module.exports = async () => {\r\n    const result = await alertBox({ message: 'Are you sure you want to sync the data to server ?', buttons: [{ icon: 'IoMdSave', id: 'yes', label: 'Yes' }, { icon: 'IoMdExit', id: 'no', label: 'No' }], title: 'Sync data to Esnaad', icon: 'IoMdCloudUpload' })\r\n    if (result === 'yes') {\r\n        const buffer = await tools.readSqlLite();\r\n        const fileName = utils.getItem('db-file-name');\r\n        let index = parseInt(utils.getItem('db-file-name-index') ?? '0');\r\n        const blob = new Blob([buffer]);\r\n        const formData = new FormData();\r\n        formData.append('fileBase', blob, `esnaadM-${fileName}-v${index++}.db`);\r\n        const response = await fetch('http://localhost:5008/home/UploadEsnaadMData', {\r\n            method: 'POST',\r\n            cache: \"no-cache\",\r\n            credentials: 'include',\r\n            body: formData\r\n        });\r\n        utils.setItem('db-file-name-index', index.toString());\r\n        await alertBox({message:'Data succesfully sent to server'})\r\n    }\r\n\r\n}"
-            },
-            "onMouseDown": {
-              "formula": "module.exports = () => {\r\n    page.var.buttonPressed.set('syncing');\r\n}"
-            }
-          }
-        },
-        {
           "id": "89429980-6489-4b19-8e03-527c7a3929dd",
           "type": "container",
           "children": [
             "2ad569a4-aa27-45c6-b62b-538a7796fa2e",
             "e29ded9f-dd19-4982-a220-3f18970217d4"
           ],
-          "parent": "86ddf899-a902-48b6-9d51-07ba1de94773",
+          "parent": "c38083dd-e88b-4a35-ac29-9d8b5c45e6bc",
           "properties": {
             "defaultStyle": {
               "alignItems": "",
@@ -1812,7 +2068,7 @@
           "properties": {
             "defaultStyle": {},
             "title": {
-              "formula": "module.exports = 'Settings'"
+              "formula": "module.exports = 'App Syncing & Settings'"
             },
             "style": {
               "formula": "module.exports = {\r\n    textAlign : 'center'\r\n}"
@@ -1977,7 +2233,8 @@
             }
           ],
           "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.unknown(),\n\tErrorCode:z.unknown(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.unknown(),\n\tStackTrace:z.unknown(),\n\tResult:z.object({\n\t\tUserId:z.string(),\n\t\tPid:z.string(),\n\t\tFirstName:z.string(),\n\t\tMiddleName:z.unknown(),\n\t\tLastName:z.string(),\n\t\tIsAdmin:z.boolean(),\n\t\tAccessCodes:z.array(z.string()),\n\t\tFavMenus:z.array(z.object({\n\t\t\t\tLabel:z.string(),\n\t\t\t\tValue:z.string(),\n\t\t\t\tId:z.string(),\n\t\t\t\tSelected:z.boolean(),\n\t\t\t\tVersion:z.number()\n})),\n\t\tUserSettings:z.string(),\n\t\tUserPreference:z.unknown(),\n\t\tRank:z.string(),\n\t\tTokenId:z.string()\n})\n})",
-          "defaultValueFormula": ""
+          "defaultValueFormula": "",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nif(serverAddress){\r\n    const [protocol,domain] = serverAddress.split('://')\r\n    if(protocol && domain){\r\n        module.exports = {\r\n            protocol : protocol.toUpperCase() === 'HTTPS' ? 'https' : 'http',\r\n            domain : domain\r\n        }\r\n    }\r\n}"
         },
         {
           "id": "d887f768-8c53-4e5e-bb9d-fe9ef7606c88",
@@ -1998,14 +2255,15 @@
             }
           ],
           "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.unknown(),\n\tErrorCode:z.unknown(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.unknown(),\n\tStackTrace:z.unknown(),\n\tResult:z.unknown()\n})",
-          "defaultValueFormula": ""
+          "defaultValueFormula": "",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nif(serverAddress){\r\n    const [protocol,domain] = serverAddress.split('://')\r\n    if(protocol && domain){\r\n        module.exports = {\r\n            protocol : protocol.toUpperCase() === 'HTTPS' ? 'https' : 'http',\r\n            domain : domain\r\n        }\r\n    }\r\n}"
         }
       ],
       "callables": [
         {
           "name": "loginToEsnaad",
           "id": "db2b6427-0a17-47a1-a6be-22a337c3cd85",
-          "functionCode": "async function login({ userId, password }) {\r\n    const response = await page.fetch.loginAuthenticate({ password, userId });\r\n    if (response.error) {\r\n        await alertBox({\r\n            message: `Unable to reach server ${response.error}`\r\n        });\r\n        return;\r\n    }\r\n    if (response.ErrorCode) {\r\n        if (response.ErrorCode === 'ADM.001.004') {\r\n            await alertBox({\r\n                message: 'Invalid login userId or Password.'\r\n            });\r\n            return;\r\n        }\r\n        if (response.ErrorCode === 'ADM.001.008') {\r\n            const result = await alertBox({\r\n                message: 'Session is already active, should we force login ?',\r\n                buttons: [{\r\n                    id: 'yes',\r\n                    label: 'Yes force login and logout session in other device',\r\n                    icon: 'IoMdLogIn'\r\n                }, {\r\n                    id: 'no',\r\n                    label: 'No, cancel my action',\r\n                    icon: 'IoIosLogOut'\r\n                }]\r\n            });\r\n            if (result === 'yes') {\r\n                await page.fetch.forceLogout({ userId });\r\n                return await login({ userId, password });\r\n            }\r\n        }\r\n        return;\r\n    }\r\n    const { FirstName, MiddleName, LastName } = response.Result;\r\n    return { FirstName, MiddleName, LastName };\r\n}\r\n\r\n\r\nmodule.exports = async (params) => {\r\n    const result = await login({password:params.password,userId:params.userId});\r\n    if (result) {\r\n        // here we are navigateing \r\n        const { FirstName, MiddleName, LastName } = result;\r\n        const name = [FirstName, MiddleName, LastName];\r\n        navigate('app/download')\r\n    }\r\n};",
+          "functionCode": "async function login({ userId, password }) {\r\n    const response = await page.fetch.loginAuthenticate({ password, userId });\r\n    if (response.error) {\r\n        await alertBox({\r\n            message: `Unable to reach server ${response.error}`\r\n        });\r\n        return;\r\n    }\r\n    if (response.ErrorCode) {\r\n        if (response.ErrorCode === 'ADM.001.004') {\r\n            await alertBox({\r\n                message: 'Invalid login userId or Password.'\r\n            });\r\n            return;\r\n        }\r\n        if (response.ErrorCode === 'ADM.001.008') {\r\n            const result = await alertBox({\r\n                message: 'Session is already active, should we force login ?',\r\n                buttons: [{\r\n                    id: 'yes',\r\n                    label: 'Yes force login and logout session in other device',\r\n                    icon: 'IoMdLogIn'\r\n                }, {\r\n                    id: 'no',\r\n                    label: 'No, cancel my action',\r\n                    icon: 'IoIosLogOut'\r\n                }]\r\n            });\r\n            if (result === 'yes') {\r\n                await page.fetch.forceLogout({ userId });\r\n                return await login({ userId, password });\r\n            }\r\n        }\r\n        return;\r\n    }\r\n    const { FirstName, MiddleName, LastName } = response.Result;\r\n    return { FirstName, MiddleName, LastName };\r\n}\r\n\r\n\r\nmodule.exports = async (params) => {\r\n    const result = await login({password:params.password,userId:params.userId});\r\n    if (result) {\r\n        // here we are navigateing \r\n        const { FirstName, MiddleName, LastName } = result;\r\n        const name = [FirstName, MiddleName, LastName].filter(i => i).join(' ');\r\n        utils.setItem('synced-by',`${params.userId} - ${name}`)\r\n        navigate('app/download')\r\n    }\r\n};",
           "schemaCode": "z.promise(z.void())",
           "inputSchemaCode": "z.object({\r\n    userId:z.string(),\r\n    password:z.string()\r\n})"
         }
@@ -2046,26 +2304,25 @@
           "id": "7b147711-695a-4908-b28c-6a945d84a8be",
           "type": "form",
           "children": [
-            "84a252cc-ada6-4c9b-b28b-7312c21af8f0",
-            "729d644c-ac69-4ec2-b96d-ee3bef961bc3",
-            "ab922357-80d6-4be2-a9a7-1a60af90bff0"
+            "426bf50e-ea1a-4219-97c5-84ee9c81f2a7",
+            "f0650a7d-7bab-4dee-90f6-4fc0d0c973f5"
           ],
           "parent": "fcb1df06-2e33-467a-911a-2843312bc1ae",
           "properties": {
             "defaultStyle": {
               "gap": "10px",
-              "flexDirection": "row",
-              "alignItems": "flex-end",
+              "flexDirection": "column",
+              "alignItems": "",
               "justifyContent": ""
             },
             "schema": {
-              "formula": "module.exports = z.object({\r\n    userId:z.string().optional(),\r\n    password: z.string().optional()\r\n}).optional()"
+              "formula": "module.exports = z.object({\r\n    userId:z.string().optional(),\r\n    password: z.string().optional(),\r\n    changeServer : z.boolean().optional(),\r\n    serverAddress : z.string().optional()\r\n}).optional()"
             },
             "value": {
-              "formula": ""
+              "formula": "module.exports = {\r\n    changeServer : false,\r\n    serverAddress : 'HTTP://LOCALHOST:5008'\r\n}"
             },
             "onChange": {
-              "formula": "module.exports = async (value) => {\r\n    log.debug('calling','loginToEsnaad',value);\r\n    await page.call.loginToEsnaad({\r\n        password : value.password,\r\n        userId : value.userId\r\n    });\r\n}"
+              "formula": "module.exports = async (value) => {\r\n    log.debug('calling','loginToEsnaad',value);\r\n    utils.setItem('server-address',value.serverAddress);\r\n    app.var.serverAddress.set(value.serverAddress);\r\n    await page.call.loginToEsnaad({\r\n        password : value.password,\r\n        userId : value.userId\r\n    });\r\n}"
             }
           }
         },
@@ -2073,7 +2330,7 @@
           "id": "84a252cc-ada6-4c9b-b28b-7312c21af8f0",
           "type": "input",
           "children": [],
-          "parent": "7b147711-695a-4908-b28c-6a945d84a8be",
+          "parent": "f0650a7d-7bab-4dee-90f6-4fc0d0c973f5",
           "properties": {
             "defaultStyle": {},
             "label": {
@@ -2091,7 +2348,7 @@
           "id": "729d644c-ac69-4ec2-b96d-ee3bef961bc3",
           "type": "input",
           "children": [],
-          "parent": "7b147711-695a-4908-b28c-6a945d84a8be",
+          "parent": "f0650a7d-7bab-4dee-90f6-4fc0d0c973f5",
           "properties": {
             "defaultStyle": {},
             "label": {
@@ -2114,7 +2371,7 @@
           "children": [
             "8f363fcb-1416-4ab4-a8c1-9aa6f5122f90"
           ],
-          "parent": "7b147711-695a-4908-b28c-6a945d84a8be",
+          "parent": "f0650a7d-7bab-4dee-90f6-4fc0d0c973f5",
           "properties": {
             "defaultStyle": {
               "flexDirection": "row",
@@ -2182,6 +2439,80 @@
               "formula": ""
             }
           }
+        },
+        {
+          "id": "f0650a7d-7bab-4dee-90f6-4fc0d0c973f5",
+          "type": "container",
+          "children": [
+            "84a252cc-ada6-4c9b-b28b-7312c21af8f0",
+            "729d644c-ac69-4ec2-b96d-ee3bef961bc3",
+            "ab922357-80d6-4be2-a9a7-1a60af90bff0"
+          ],
+          "parent": "7b147711-695a-4908-b28c-6a945d84a8be",
+          "properties": {
+            "defaultStyle": {
+              "flexDirection": "row",
+              "alignItems": "flex-end",
+              "justifyContent": "",
+              "gap": "10px"
+            }
+          }
+        },
+        {
+          "id": "426bf50e-ea1a-4219-97c5-84ee9c81f2a7",
+          "type": "container",
+          "children": [
+            "8fdaa2f7-b7a7-4c01-be39-46306666b42d",
+            "fbf59b2b-1caa-4c7a-8aac-50ae4f671348"
+          ],
+          "parent": "7b147711-695a-4908-b28c-6a945d84a8be",
+          "properties": {
+            "defaultStyle": {
+              "flexDirection": "row",
+              "gap": "10px",
+              "alignItems": "center",
+              "justifyContent": ""
+            }
+          }
+        },
+        {
+          "id": "8fdaa2f7-b7a7-4c01-be39-46306666b42d",
+          "type": "checkbox",
+          "children": [],
+          "parent": "426bf50e-ea1a-4219-97c5-84ee9c81f2a7",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Change Server'"
+            },
+            "name": {
+              "formula": "module.exports = \"changeServer\""
+            }
+          }
+        },
+        {
+          "id": "fbf59b2b-1caa-4c7a-8aac-50ae4f671348",
+          "type": "input",
+          "children": [],
+          "parent": "426bf50e-ea1a-4219-97c5-84ee9c81f2a7",
+          "properties": {
+            "defaultStyle": {},
+            "style": {
+              "formula": "module.exports = {\r\n    flexGrow : 1\r\n}"
+            },
+            "name": {
+              "formula": "module.exports = 'serverAddress'"
+            },
+            "disabled": {
+              "formula": "const fc = formContext.value.get();\r\n\r\nmodule.exports = fc?.changeServer === false"
+            },
+            "required": {
+              "formula": "module.exports = true"
+            },
+            "placeholder": {
+              "formula": "module.exports = \"Please set Esnaad address here\""
+            }
+          }
         }
       ],
       "name": "app/login"
@@ -2189,57 +2520,89 @@
     {
       "queries": [],
       "id": "748b9d39-39cf-4b1e-a182-6555f2f0a3d3",
-      "variables": [],
-      "fetchers": [],
-      "callables": [],
+      "variables": [
+        {
+          "name": "settingsInfo",
+          "type": "state",
+          "id": "c9ac59ab-a4b3-43b6-9e71-a44e85c0229c",
+          "functionCode": "const tailNumber = utils.toString(utils.getItem('tail-number'))\r\nconst serverAddress = utils.toString(utils.getItem('server-address'))\r\nconst syncedDate = utils.toString(utils.getItem('synced-date'))\r\nconst databaseSize = utils.toString(utils.getItem('database-size'))\r\nconst syncedBy = utils.toString(utils.getItem('synced-by'))\r\nlet syncingHistory = [];\r\nconst _history = utils.getItem('syncing-history')\r\nif(Array.isArray(_history)){\r\n    syncingHistory = _history;\r\n}\r\nmodule.exports = {\r\n    tailNumber,\r\n    serverAddress,\r\n    syncedDate,\r\n    databaseSize,\r\n    syncedBy,\r\n    syncingHistory\r\n};\r\n",
+          "schemaCode": "z.object({\r\n    serverAddress : z.string().optional(),\r\n    syncedDate : z.string().optional(),\r\n    syncedBy : z.string().optional(),\r\n    tailNumber : z.string().optional(),\r\n    databaseSize : z.string().optional(),\r\n    lastTransactionCommitted : z.number().optional(),\r\n    syncingHistory : z.array(z.any()).optional()\r\n}).optional();"
+        }
+      ],
+      "fetchers": [
+        {
+          "id": "644f9b58-593b-4817-aa94-9e482fb2a6f1",
+          "name": "unlockTail",
+          "protocol": "http",
+          "domain": "localhost:5008",
+          "method": "post",
+          "contentType": "application/json",
+          "path": "TailManagement2/LockUnlock",
+          "headers": [],
+          "paths": [],
+          "data": [
+            {
+              "id": "23a94c72-c871-40e7-9a34-fec28d667c8d",
+              "isInput": true,
+              "name": "remarks",
+              "value": "\"Tail Unlocked By EsnaadM\""
+            },
+            {
+              "id": "81efcb81-6a03-4da9-86ff-95113e7582d6",
+              "isInput": false,
+              "name": "toLock",
+              "value": "false"
+            },
+            {
+              "id": "f107c4a5-a041-408a-80c4-759ee5e92191",
+              "isInput": true,
+              "name": "unitId",
+              "value": "110"
+            }
+          ],
+          "returnTypeSchemaCode": "z.object({\n\tSuccess:z.boolean(),\n\tErrorId:z.string(),\n\tErrorMessage:z.unknown(),\n\tErrorCode:z.unknown(),\n\tErrorCodes:z.unknown(),\n\tInnerExceptionMessage:z.unknown(),\n\tStackTrace:z.unknown(),\n\tResult:z.unknown()\n})",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nif(serverAddress){\r\n    const [protocol,domain] = serverAddress.split('://')\r\n    if(protocol && domain){\r\n        module.exports = {\r\n            protocol : protocol.toUpperCase() === 'HTTPS' ? 'https' : 'http',\r\n            domain : domain\r\n        }\r\n    }\r\n}"
+        }
+      ],
+      "callables": [
+        {
+          "name": "syncDatabase",
+          "id": "67a8bd6c-647e-4ea3-9b5c-b2bbccab8fe0",
+          "functionCode": "const serverAddress = app.var.serverAddress.get();\r\nlet protocol = '';\r\nlet domain = '';\r\nif(serverAddress){\r\n    const [_protocol,_domain] = serverAddress.split('://')\r\n    protocol = _protocol ? _protocol : 'http';\r\n    domain = _domain ? _domain : 'localhost:5008'\r\n}\r\n\r\nmodule.exports = async () => {\r\n    const result = await alertBox({ message: 'Are you sure you want to sync the data to server ?', buttons: [{ icon: 'IoMdSave', id: 'yes', label: 'Yes' }, { icon: 'IoMdExit', id: 'no', label: 'No' }], title: 'Sync data to Esnaad', icon: 'IoMdCloudUpload' })\r\n    if (result === 'yes') {\r\n        const buffer = await tools.readSqlLite();\r\n        const fileName = utils.getItem('database-id');\r\n        let index = parseInt(utils.toString(utils.getItem('database-index')) ?? '0');\r\n        const blob = new Blob([buffer]);\r\n        const formData = new FormData();\r\n        const fileNameId = `esnaadM-${fileName}-v${index++}.db`;\r\n        formData.append('fileBase', blob, fileNameId);\r\n        const response = await fetch(`${protocol}://${domain}/home/UploadEsnaadMData`, {\r\n            method: 'POST',\r\n            cache: \"no-cache\",\r\n            credentials: 'include',\r\n            body: formData\r\n        });\r\n        let syncingHistory = [];\r\n        const history = utils.getItem('syncing-history');\r\n        if(history && Array.isArray(history)){\r\n            syncingHistory = history;\r\n        }\r\n        syncingHistory.unshift({date:utils.dateToString(new Date()),file:fileNameId,status:response.status,message:response.statusText,syncedBy:'TOPIK'})\r\n        utils.setItem('syncing-history',syncingHistory);\r\n        utils.setItem('database-index', index.toString());\r\n        const settingsInfo = {...page.var.settingsInfo.get(),syncingHistory}\r\n        page.var.settingsInfo.set(settingsInfo);\r\n        await alertBox({message:response.status === 200 ? 'The data has been successfully synchronized with the server.' : 'The data failed to be synchronized with the server.'})\r\n        return response.status === 200\r\n    }\r\n\r\n}",
+          "schemaCode": "z.promise(z.boolean())",
+          "inputSchemaCode": "z.void()"
+        }
+      ],
       "containers": [
         {
           "id": "0f9b386e-dab0-4bf8-8cfb-ae27e14028dc",
           "type": "container",
           "children": [
             "7d205036-7455-4c63-90dd-54f7251c69c9",
-            "a1d54413-274e-4675-befc-d584f5cd4c61"
+            "a1d54413-274e-4675-befc-d584f5cd4c61",
+            "b63f3743-a52c-41b7-bfe4-60dcb4202c9e"
           ],
           "properties": {
             "defaultStyle": {
               "alignItems": "",
-              "justifyContent": ""
+              "justifyContent": "",
+              "gap": "10px"
             }
           }
         },
         {
           "id": "a1d54413-274e-4675-befc-d584f5cd4c61",
           "type": "container",
-          "children": [
-            "eeeaf97c-d057-4057-9d47-8e55c2c19fec"
-          ],
+          "children": [],
           "parent": "0f9b386e-dab0-4bf8-8cfb-ae27e14028dc",
           "properties": {
             "defaultStyle": {
               "flexDirection": "column",
-              "alignItems": "center",
-              "justifyContent": "center"
+              "alignItems": "",
+              "justifyContent": ""
             },
             "style": {
-              "formula": "module.exports = {\r\n    flexGrow : 1\r\n}"
-            }
-          }
-        },
-        {
-          "id": "eeeaf97c-d057-4057-9d47-8e55c2c19fec",
-          "type": "button",
-          "children": [],
-          "parent": "a1d54413-274e-4675-befc-d584f5cd4c61",
-          "properties": {
-            "defaultStyle": {},
-            "label": {
-              "formula": "module.exports = 'Delete All Data and Restore Factory Settings'"
-            },
-            "icon": {
-              "formula": "module.exports = \"IoMdTrash\""
-            },
-            "onClick": {
-              "formula": "module.exports = async () => {\r\n    const result = await alertBox({\r\n        message : 'Are you sure you want to delete all data and restore factory settings ?',\r\n        icon : 'IoIosTrash',\r\n        title : 'Confirmation',\r\n        buttons : [{id:'Yes',label:'Yes',icon : 'IoIosTrash'},{id:'Cancel',label:'Cancel',icon : 'IoIosExit'}]\r\n    });\r\n    if(result === 'Cancel'){\r\n        return;\r\n    }\r\n    await tools.deleteSqlLite()\r\n}"
+              "formula": ""
             }
           }
         },
@@ -2256,6 +2619,390 @@
               "formula": "module.exports = {\r\n    title : 'Settings',\r\n    onBackClicked : () => {\r\n        navigate('app/home')\r\n    }\r\n}"
             },
             "defaultStyle": {}
+          }
+        },
+        {
+          "id": "b63f3743-a52c-41b7-bfe4-60dcb4202c9e",
+          "type": "container",
+          "children": [
+            "a9df037d-5838-4cd9-b032-ce1695eab130",
+            "4c39d2a9-e761-497d-a8b9-891915084a72",
+            "fa373b2a-dd85-434e-9735-1b620f80dc56"
+          ],
+          "parent": "0f9b386e-dab0-4bf8-8cfb-ae27e14028dc",
+          "properties": {
+            "defaultStyle": {
+              "flexDirection": "column",
+              "gap": "10px"
+            },
+            "style": {
+              "formula": "module.exports = {\r\n    padding : 10,\r\n    flexGrow : 1\r\n}"
+            }
+          }
+        },
+        {
+          "id": "a9df037d-5838-4cd9-b032-ce1695eab130",
+          "type": "titleBox",
+          "children": [
+            "fefecdce-d305-4199-985b-e469281b4ecc",
+            "3558d9fa-b161-4f3f-bf41-c49a7366d4ff",
+            "b2778c30-c443-4e7c-bcef-94a3aec31397"
+          ],
+          "parent": "b63f3743-a52c-41b7-bfe4-60dcb4202c9e",
+          "properties": {
+            "defaultStyle": {
+              "gap": "10px",
+              "flexDirection": "row"
+            },
+            "title": {
+              "formula": "module.exports = 'Application Information'"
+            },
+            "style": {
+              "formula": "module.exports = {\r\n    padding : 10\r\n}"
+            }
+          }
+        },
+        {
+          "id": "927bf282-014a-46f1-a011-a27f24796e51",
+          "type": "dateTime",
+          "children": [],
+          "parent": "3558d9fa-b161-4f3f-bf41-c49a7366d4ff",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = \"Synced from Esnaad :\""
+            },
+            "value": {
+              "formula": "module.exports = page.var.settingsInfo.get().syncedDate;"
+            },
+            "disabled": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "424f1b20-fe93-4c70-865e-82a2bd7dc913",
+          "type": "input",
+          "children": [],
+          "parent": "b2778c30-c443-4e7c-bcef-94a3aec31397",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Synced By :'"
+            },
+            "value": {
+              "formula": "module.exports = page.var.settingsInfo.get().syncedBy"
+            },
+            "disabled": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "fefecdce-d305-4199-985b-e469281b4ecc",
+          "type": "container",
+          "children": [
+            "9393b042-80e7-45ec-9373-cc6006f593da",
+            "581b5e28-2e02-4e14-a209-1440cb5ec17c"
+          ],
+          "parent": "a9df037d-5838-4cd9-b032-ce1695eab130",
+          "properties": {
+            "defaultStyle": {
+              "gap": "10px"
+            },
+            "labelPosition": {
+              "formula": "module.exports = 'left'"
+            },
+            "labelWidth": {
+              "formula": "module.exports = 100;"
+            },
+            "style": {
+              "formula": "module.exports = {\r\n    width : '33.33%'\r\n}"
+            }
+          }
+        },
+        {
+          "id": "581b5e28-2e02-4e14-a209-1440cb5ec17c",
+          "type": "input",
+          "children": [],
+          "parent": "fefecdce-d305-4199-985b-e469281b4ecc",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Tail Number :'"
+            },
+            "value": {
+              "formula": "module.exports = page.var.settingsInfo.get().tailNumber"
+            },
+            "disabled": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "217beec0-c8dd-4b48-a414-f9baa13d1974",
+          "type": "container",
+          "children": [
+            "63c6dc84-70c9-43ce-a9cc-2b99e151b0e6"
+          ],
+          "parent": "fde27ab8-c290-405c-8ddd-0080b695860a",
+          "properties": {
+            "defaultStyle": {}
+          }
+        },
+        {
+          "id": "63c6dc84-70c9-43ce-a9cc-2b99e151b0e6",
+          "type": "input",
+          "children": [],
+          "parent": "217beec0-c8dd-4b48-a414-f9baa13d1974",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = \"Server Address\""
+            }
+          }
+        },
+        {
+          "id": "3558d9fa-b161-4f3f-bf41-c49a7366d4ff",
+          "type": "container",
+          "children": [
+            "927bf282-014a-46f1-a011-a27f24796e51",
+            "446d6490-21ab-4aee-8294-de254562fe6f"
+          ],
+          "parent": "a9df037d-5838-4cd9-b032-ce1695eab130",
+          "properties": {
+            "defaultStyle": {
+              "gap": "10px"
+            },
+            "style": {
+              "formula": "module.exports = {\r\n    width : '33.33%'\r\n}"
+            },
+            "labelPosition": {
+              "formula": "module.exports = 'left'"
+            },
+            "labelWidth": {
+              "formula": "module.exports = 140"
+            }
+          }
+        },
+        {
+          "id": "9393b042-80e7-45ec-9373-cc6006f593da",
+          "type": "input",
+          "children": [],
+          "parent": "fefecdce-d305-4199-985b-e469281b4ecc",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Server Address :'"
+            },
+            "value": {
+              "formula": "module.exports = page.var.settingsInfo.get().serverAddress"
+            },
+            "disabled": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "b2778c30-c443-4e7c-bcef-94a3aec31397",
+          "type": "container",
+          "children": [
+            "424f1b20-fe93-4c70-865e-82a2bd7dc913",
+            "050a3896-83ff-44ae-8e6b-1e1a7533006a",
+            "52b8c152-6ca0-4d92-9abd-fea676bdba63"
+          ],
+          "parent": "a9df037d-5838-4cd9-b032-ce1695eab130",
+          "properties": {
+            "defaultStyle": {
+              "gap": "10px"
+            },
+            "labelPosition": {
+              "formula": "module.exports = 'left'"
+            },
+            "labelWidth": {
+              "formula": "module.exports = 180"
+            },
+            "style": {
+              "formula": "module.exports = {\r\n    width : '33.33%'\r\n}"
+            }
+          }
+        },
+        {
+          "id": "446d6490-21ab-4aee-8294-de254562fe6f",
+          "type": "input",
+          "children": [],
+          "parent": "3558d9fa-b161-4f3f-bf41-c49a7366d4ff",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Database size'"
+            },
+            "value": {
+              "formula": "module.exports = page.var.settingsInfo.get().databaseSize + ' MB';"
+            },
+            "disabled": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "050a3896-83ff-44ae-8e6b-1e1a7533006a",
+          "type": "dateTime",
+          "children": [],
+          "parent": "b2778c30-c443-4e7c-bcef-94a3aec31397",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Last Trasaction Committed'"
+            },
+            "disabled": {
+              "formula": "module.exports = true"
+            }
+          }
+        },
+        {
+          "id": "52b8c152-6ca0-4d92-9abd-fea676bdba63",
+          "type": "container",
+          "children": [
+            "bc8a487d-c421-43ea-b103-4010a17b09cd"
+          ],
+          "parent": "b2778c30-c443-4e7c-bcef-94a3aec31397",
+          "properties": {
+            "defaultStyle": {
+              "flexDirection": "row"
+            }
+          }
+        },
+        {
+          "id": "bc8a487d-c421-43ea-b103-4010a17b09cd",
+          "type": "button",
+          "children": [],
+          "parent": "52b8c152-6ca0-4d92-9abd-fea676bdba63",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Export Database'"
+            }
+          }
+        },
+        {
+          "id": "4c39d2a9-e761-497d-a8b9-891915084a72",
+          "type": "titleBox",
+          "children": [
+            "7b8b603f-e1d5-432e-ba8c-4b87f67d6983",
+            "dcab6c62-c59b-4b97-b2dd-f6869c2815c9"
+          ],
+          "parent": "b63f3743-a52c-41b7-bfe4-60dcb4202c9e",
+          "properties": {
+            "defaultStyle": {
+              "gap": "10px"
+            },
+            "title": {
+              "formula": "module.exports = 'Syncing History'"
+            },
+            "dimension": {
+              "formula": "module.exports = {\r\n    flexGrow : 1\r\n}"
+            }
+          }
+        },
+        {
+          "id": "fa373b2a-dd85-434e-9735-1b620f80dc56",
+          "type": "titleBox",
+          "children": [
+            "b4a5c4bb-cf62-408b-8ba9-ce1aba194f9c"
+          ],
+          "parent": "b63f3743-a52c-41b7-bfe4-60dcb4202c9e",
+          "properties": {
+            "defaultStyle": {
+              "alignItems": "center",
+              "justifyContent": ""
+            },
+            "title": {
+              "formula": "module.exports = 'Reset Application'"
+            }
+          }
+        },
+        {
+          "id": "b4a5c4bb-cf62-408b-8ba9-ce1aba194f9c",
+          "type": "button",
+          "children": [],
+          "parent": "fa373b2a-dd85-434e-9735-1b620f80dc56",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = \"Reset Application and Delete database\""
+            },
+            "icon": {
+              "formula": "module.exports = 'IoMdTrash'"
+            },
+            "onClick": {
+              "formula": "module.exports = async () => {\r\n    const result = await alertBox({\r\n        message : 'Are you sure you want to delete all data and restore factory settings ?',\r\n        icon : 'IoIosTrash',\r\n        title : 'Confirmation',\r\n        buttons : [{id:'Yes',label:'Yes',icon : 'IoIosTrash'},{id:'Cancel',label:'Cancel',icon : 'IoIosExit'}]\r\n    });\r\n    if(result === 'Cancel'){\r\n        return;\r\n    }\r\n    await tools.deleteSqlLite();\r\n    await utils.clearStorage();\r\n    window.location.reload();\r\n}"
+            }
+          }
+        },
+        {
+          "id": "7b8b603f-e1d5-432e-ba8c-4b87f67d6983",
+          "type": "container",
+          "children": [
+            "a225b431-b721-4231-aea1-00612a426e32",
+            "a63efc75-668a-4160-9317-fbb73400d278"
+          ],
+          "parent": "4c39d2a9-e761-497d-a8b9-891915084a72",
+          "properties": {
+            "defaultStyle": {
+              "alignItems": "",
+              "justifyContent": "center",
+              "flexDirection": "row",
+              "gap": "10px"
+            }
+          }
+        },
+        {
+          "id": "a225b431-b721-4231-aea1-00612a426e32",
+          "type": "button",
+          "children": [],
+          "parent": "7b8b603f-e1d5-432e-ba8c-4b87f67d6983",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Sync Database'"
+            },
+            "onClick": {
+              "formula": "\r\nmodule.exports = async () => {\r\n    await page.call.syncDatabase();\r\n}"
+            }
+          }
+        },
+        {
+          "id": "a63efc75-668a-4160-9317-fbb73400d278",
+          "type": "button",
+          "children": [],
+          "parent": "7b8b603f-e1d5-432e-ba8c-4b87f67d6983",
+          "properties": {
+            "defaultStyle": {},
+            "label": {
+              "formula": "module.exports = 'Sync Database and Unlock Tail'"
+            },
+            "onClick": {
+              "formula": "\r\nmodule.exports = async () => {\r\n    const success = await page.call.syncDatabase();\r\n    if (success) {\r\n        await unLockTail()\r\n    }\r\n}\r\nasync function unLockTail() {\r\n    const unitId = app.var.appContext.get().tail.unitId;\r\n    const unlockTailResponse = await page.fetch.unlockTail({ remarks: `Tail Unlocked by EsnaadM at ${utils.ddMmmYyyyHhMm(new Date())}`, unitId: unitId })\r\n    if (unlockTailResponse.Success === false && unlockTailResponse.ErrorCode === 'ADM.002.001') {\r\n        const success = await navigatePanel('@sys/login-to-esnaad');\r\n        if (success) {\r\n            return await unLockTail();\r\n        }\r\n    } else {\r\n        return await alertBox({ message: 'Succesfully Unlock tail in Esnaad' });;\r\n    }\r\n\r\n}"
+            }
+          }
+        },
+        {
+          "id": "dcab6c62-c59b-4b97-b2dd-f6869c2815c9",
+          "type": "queryGrid",
+          "children": [],
+          "parent": "4c39d2a9-e761-497d-a8b9-891915084a72",
+          "properties": {
+            "defaultStyle": {},
+            "query": {
+              "formula": "const syncingHistory = page.var.settingsInfo.get().syncingHistory;\r\nmodule.exports = async params => {\r\n    return utils.arrayToQueryResult(syncingHistory,params,['date','file','status','message','syncedBy'])\r\n}"
+            },
+            "config": {
+              "formula": "module.exports = {\n  \"date\": {\n    \"hidden\": false,\n    \"title\": \"Date\",\n    \"cellValueMapper\": \"module.exports = val => {\\r\\n    return utils.ddMmmYyyyHhMm(utils.toString(val.cellValue))\\r\\n}\",\n    \"minWidth\": 150,\n    \"maxWidth\": 150\n  },\n  \"file\": {\n    \"hidden\": false,\n    \"title\": \"File\"\n  },\n  \"status\": {\n    \"hidden\": false,\n    \"title\": \"Status\",\n    \"minWidth\": 50,\n    \"maxWidth\": 50\n  },\n  \"message\": {\n    \"hidden\": false,\n    \"title\": \"Message\"\n  },\n  \"syncedBy\": {\n    \"hidden\": false,\n    \"title\": \"Synced By\",\n    \"minWidth\": 120,\n    \"maxWidth\": 120\n  }\n};"
+            },
+            "itemToKey": {
+              "formula": "module.exports = p => p?.file"
+            }
           }
         }
       ],
@@ -9978,7 +10725,7 @@
           "properties": {
             "defaultStyle": {},
             "validator": {
-              "formula": "module.exports = async () => {\r\n    debugger;\r\n    const form = formContext.value.get();\r\n    if (form === undefined || form.pilotsAndCrews === undefined || form.pilotsAndCrews.length < 2 ) {\r\n        return 'At least 2 crews is required';\r\n    }\r\n    \r\n    const errors = [];\r\n    for (const pilotCrew of form.pilotsAndCrews){\r\n        const crew = await db.find('OPS_MST_FLIGHT_CREWS',{ID_:pilotCrew.crewId});\r\n        const person = await db.find('ADM_TRN_USER_PROFILES',{ID_:crew.PERSON_ID});\r\n        const name = [person.F_NAME_,person.M_NAME_,person.L_NAME_].filter(i => i).join(' ')\r\n        \r\n        if(pilotCrew.hours.filter(i => i.dsId > 0 || i.fsId > 0 || i.hr > 0 || (!utils.isEmpty(i.sId))).length < 1){\r\n            errors.push(`<div><span style=\"font-weight:bold\">${name}'s</span> duty information is incomplete</div>`);\r\n        }\r\n        let segmentIndex = 1;\r\n        for(const hour of pilotCrew.hours){\r\n            const hasAnyValue = hour.dsId > 0 || hour.fsId > 0 || hour.hr > 0 || (!utils.isEmpty(hour.sId))\r\n            const isComplete = hour.dsId > 0 && hour.fsId > 0 && hour.hr > 0 && (!utils.isEmpty(hour.sId))\r\n            if(hasAnyValue && (!isComplete)){\r\n                const missingSymbol = [];\r\n                if(!(hour.dsId > 0)){\r\n                    missingSymbol.push('DS');\r\n                }\r\n                if(!(hour.fsId > 0)){\r\n                    missingSymbol.push('FS');\r\n                }\r\n                if(!(hour.hr > 0)){\r\n                    missingSymbol.push('HR');\r\n                }\r\n                if(utils.isEmpty(hour.sId)){\r\n                    missingSymbol.push('S');\r\n                }\r\n                errors.push(`<div><span style=\"font-weight:bold\">${name}</span> segment #${segmentIndex} is missing <span style=\"font-style:italic\">${missingSymbol.join(', ')}</span></div>`);\r\n            }\r\n            segmentIndex++;\r\n        }\r\n    }\r\n\r\n    return errors.join('');\r\n}"
+              "formula": "module.exports = async () => {\r\n    const form = formContext.value.get();\r\n    if (form === undefined || form.pilotsAndCrews === undefined || form.pilotsAndCrews.length < 2 ) {\r\n        return 'At least 2 crews is required';\r\n    }\r\n    \r\n    const errors = [];\r\n    for (const pilotCrew of form.pilotsAndCrews){\r\n        const crew = await db.find('OPS_MST_FLIGHT_CREWS',{ID_:pilotCrew.crewId});\r\n        const person = await db.find('ADM_TRN_USER_PROFILES',{ID_:crew.PERSON_ID});\r\n        const name = [person.F_NAME_,person.M_NAME_,person.L_NAME_].filter(i => i).join(' ')\r\n        \r\n        if(pilotCrew.hours.filter(i => i.dsId > 0 || i.fsId > 0 || i.hr > 0 || (!utils.isEmpty(i.sId))).length < 1){\r\n            errors.push(`<div><span style=\"font-weight:bold\">${name}'s</span> duty information is incomplete</div>`);\r\n        }\r\n        let segmentIndex = 1;\r\n        for(const hour of pilotCrew.hours){\r\n            const hasAnyValue = hour.dsId > 0 || hour.fsId > 0 || hour.hr > 0 || (!utils.isEmpty(hour.sId))\r\n            const isComplete = hour.dsId > 0 && hour.fsId > 0 && hour.hr > 0 && (!utils.isEmpty(hour.sId))\r\n            if(hasAnyValue && (!isComplete)){\r\n                const missingSymbol = [];\r\n                if(!(hour.dsId > 0)){\r\n                    missingSymbol.push('DS');\r\n                }\r\n                if(!(hour.fsId > 0)){\r\n                    missingSymbol.push('FS');\r\n                }\r\n                if(!(hour.hr > 0)){\r\n                    missingSymbol.push('HR');\r\n                }\r\n                if(utils.isEmpty(hour.sId)){\r\n                    missingSymbol.push('S');\r\n                }\r\n                errors.push(`<div><span style=\"font-weight:bold\">${name}</span> segment #${segmentIndex} is missing <span style=\"font-style:italic\">${missingSymbol.join(', ')}</span></div>`);\r\n            }\r\n            segmentIndex++;\r\n        }\r\n    }\r\n\r\n    return errors.join('');\r\n}"
             },
             "name": {
               "formula": "module.exports = 'pilotCrewValidator'"
@@ -31979,6 +32726,13 @@
       "schemaCode": "z.object({\r\n\tID_:z.number().nullable().optional(),\r\n\tVERSION_:z.number().nullable().optional(),\r\n\tEMAIL_:z.string().nullable().optional(),\r\n\tF_NAME_:z.string().nullable().optional(),\r\n\tL_NAME_:z.string().nullable().optional(),\r\n\tPHONE_:z.any(),\r\n\tLST_LOG_:z.string().nullable().optional(),\r\n\tREG_STS_:z.string().nullable().optional(),\r\n\tPID_:z.string().nullable().optional(),\r\n\tSEX_TYPE_:z.string().nullable().optional(),\r\n\tDOB_:z.string().nullable().optional(),\r\n\tUSR_TYPE_:z.string().nullable().optional(),\r\n\tUSER_ID_:z.string().nullable().optional(),\r\n\tACTIVE_PERSONNEL_:z.number().nullable().optional(),\r\n\tUSER_SETTINGS_:z.string().nullable().optional(),\r\n\tRANK_ID:z.number().nullable().optional(),\r\n\tPOS_ID:z.number().nullable().optional(),\r\n\tCOUNTRY_ID:z.number().nullable().optional(),\r\n\tMIL_UNIT_ID:z.number().nullable().optional(),\r\n\tCREATED_BY_:z.any(),\r\n\tCREATED_ON_:z.any(),\r\n\tMOD_BY_:z.string().nullable().optional(),\r\n\tMOD_ON_:z.string().nullable().optional(),\r\n\tTERM_:z.any(),\r\n\tM_NAME_:z.string().nullable().optional(),\r\n\tMOBILE_:z.string().nullable().optional(),\r\n\tEXT_:z.string().nullable().optional(),\r\n\tMILITARY_NO_:z.string().nullable().optional(),\r\n\tREG_STS_MODIFIED_DATE_:z.any(),\r\n\tREG_STS_MODIFIED_USER_ID:z.any(),\r\n\tDES_BU_ID_:z.any(),\r\n\tDEPARTMENT_ID_:z.number().nullable().optional(),\r\n\tIS_AGREE_ROLE_ADMIN_EULA_:z.number().nullable().optional(),\r\n\tDEFAULT_DASHBOARD_:z.number().nullable().optional(),\r\n\tLAST_PROMOTION_DATE_:z.any(),\r\n\tNEXT_PROMOTION_DATE_:z.any(),\r\n\tNATIONALITY_:z.any(),\r\n\tIS_MILITARY_:z.number().nullable().optional(),\r\n\tPOSITION_:z.string().nullable().optional(),\r\n\tDEACTIVATED_:z.number().nullable().optional(),\r\n\tF_NAME_AR_:z.any(),\r\n\tM_NAME_AR_:z.any(),\r\n\tL_NAME_AR_:z.any(),\r\n\tREASON_ID:z.any(),\r\n\tIS_AUTO_:z.number().nullable().optional()\r\n}).optional()"
     },
     {
+      "name": "serverAddress",
+      "type": "state",
+      "id": "c202ce7c-ccf3-4c86-9c8e-b93a831b72da",
+      "functionCode": "const serverAddress = utils.toString(utils.getItem('server-address'));\r\nmodule.exports = serverAddress;",
+      "schemaCode": "z.string().optional()"
+    },
+    {
       "name": "tailNumber",
       "type": "state",
       "id": "19f56552-4c2f-40d9-a9a3-084e519ab28b",
@@ -32066,6 +32820,6 @@
       "schemaCode": "z.object({\n\tID_:z.number().nullable().optional(),\n\tSHORT_NAME_:z.string().nullable().optional(),\n\tNAME_:z.string().nullable().optional(),\n\tPLTF_ID:z.number().nullable().optional(),\n\tUNIT_ID:z.number().nullable().optional()\n})"
     }
   ],
-  "version": 1866,
-  "lastUpdate": "2025-03-18T14:11:49"
+  "version": 2425,
+  "lastUpdate": "2025-03-19T13:49:52"
 }

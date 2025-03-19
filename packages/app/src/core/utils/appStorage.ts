@@ -22,7 +22,7 @@ export async function saveAppMeta(meta: Record<string, unknown>) {
     await saveToOPFS(FILE_META, encodeFromString(JSON.stringify(meta)));
 }
 
-export async function setItem(key: string, value: string | number | null | Record<string, unknown>) {
+export async function setItem(key: string, value: string | number | null | Record<string, unknown> | Array<unknown>) {
     config[key] = value;
     await saveConfig(config);
 }

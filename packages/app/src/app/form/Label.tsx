@@ -1,5 +1,5 @@
 import type {MouseEvent} from "react";
-import {CSSProperties, ForwardedRef, forwardRef, PropsWithChildren} from "react";
+import {createContext, CSSProperties, ForwardedRef, forwardRef, PropsWithChildren, useContext} from "react";
 import {motion} from "framer-motion";
 
 export const Label = forwardRef(function LabelContainer(props: PropsWithChildren<{
@@ -12,21 +12,29 @@ export const Label = forwardRef(function LabelContainer(props: PropsWithChildren
         isBusy?: boolean
     }>, ref: ForwardedRef<HTMLLabelElement>) {
         const {style, label, styleLabel, errorMessage, onMouseEnter, onMouseLeave, isBusy} = props;
-
-        return <label ref={ref} style={{
+        const labelContext = useContext(LabelContext);
+        const labelHorizontal = labelContext?.labelPosition === 'left'
+        const containerStyle = {
             display: 'flex',
-            flexDirection: 'column',
             position: 'relative',
             overflow: 'hidden',
-            ...style
-        }} title={errorMessage} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-            {label && <div style={{
-                padding: '0 5px',
-                fontSize: 'small',
-                lineHeight: 1.2,
-                color: errorMessage ? '#C00000' : 'unset', ...styleLabel
-            }}>{label}
-            </div>}
+            ...style,
+            flexDirection: labelHorizontal ? 'row' : 'column',
+            alignItems : labelHorizontal ? 'center' : 'unset',
+        } as CSSProperties
+
+        const labelStyle = {
+            padding: '0 5px',
+            fontSize: 'small',
+            lineHeight: 1.2,
+            color: errorMessage ? '#C00000' : 'unset', ...styleLabel,
+        } as CSSProperties
+
+        if(labelHorizontal && labelContext?.labelWidth) {
+            labelStyle.width = labelContext?.labelWidth;
+        }
+        return <label ref={ref} style={containerStyle} title={errorMessage} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+            {label && <div style={labelStyle}>{label}</div>}
             {props.children}
             {isBusy === true &&
                 <motion.div style={{
@@ -44,3 +52,5 @@ export const Label = forwardRef(function LabelContainer(props: PropsWithChildren
         </label>
     }
 );
+
+export const LabelContext = createContext<{labelPosition?:'top'|'left',labelWidth? : number}>({});

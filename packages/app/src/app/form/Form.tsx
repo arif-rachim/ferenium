@@ -90,7 +90,6 @@ export const Form = forwardRef(function Form(props: {
     }
 
     const formIsValid = async () => {
-        debugger;
         const formValue = localValue.get();
         const validatorKeys = validators.get().map(i => i.name);
         const errorsValue: Record<string, string> = {};

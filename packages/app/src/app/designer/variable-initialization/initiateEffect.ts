@@ -16,7 +16,7 @@ export function initiateEffect(props: {
     app: FormulaDependencyParameter,
     page: FormulaDependencyParameter,
     alertBox: ModalBox,
-    tools: { deleteSqlLite: () => Promise<void>, saveSqlLite: (buffer: ArrayBuffer) => Promise<void> },
+    tools: { deleteSqlLite: () => Promise<void>, saveSqlLite: (buffer: ArrayBuffer) => Promise<void>, readSqlLite : () => Promise<ArrayBuffer> },
 }) {
     const {
         navigate,

@@ -1,2 +1,3 @@
 node_modules
 .idea
+/packages/app/public/data/database.db.bak

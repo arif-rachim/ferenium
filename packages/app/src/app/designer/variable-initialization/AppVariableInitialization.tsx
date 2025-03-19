@@ -21,6 +21,7 @@ import {useModalBox} from "./useModalBox.tsx";
 import {useSaveSqlLite} from "../../../core/hooks/useSaveSqlLite.ts";
 import {useDeleteSqlLite} from "../../../core/hooks/useDeleteSqlLite.ts";
 import {ClosePanelContext, useNavigatePanel} from "../../../core/hooks/useNavigatePanel.ts";
+import {useReadSqlLite} from "../../../core/hooks/modal/useReadSqlLite.ts";
 
 export type QueryTypeParam = {
     params?: Record<string, SqlValue>,
@@ -54,7 +55,8 @@ export function AppVariableInitialization(props: PropsWithChildren) {
     const alertBox = useModalBox();
     const saveSqlLite = useSaveSqlLite();
     const deleteSqlLite = useDeleteSqlLite();
-    const tools = {saveSqlLite, deleteSqlLite};
+    const readSqlLite = useReadSqlLite();
+    const tools = {saveSqlLite, deleteSqlLite, readSqlLite};
 
     const validatorsApplicationComputed = useComputed<Array<{ variableId: string, validator: ZodType }>>(() => {
         return createValidator(allApplicationVariablesSignal.get(), errorMessage);

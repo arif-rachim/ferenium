@@ -19,7 +19,6 @@ export const ValidationInput = forwardRef(function ValidationPrompt(props: Props
         useEffect(() => {
             if (formContext) {
                 return formContext.onChange(validationName, (props) => {
-                    debugger;
                     if(props.isChanged){
 
                         const errors = {...formContext.errors.get()};

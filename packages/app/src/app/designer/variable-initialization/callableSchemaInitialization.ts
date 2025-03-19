@@ -23,7 +23,7 @@ export function callableInitialization(props: {
     navigatePanel: (path: string, param?: Record<string, unknown>) => Promise<unknown>,
     alertBox: ModalBox,
     closePanel: (params?: unknown) => void,
-    tools: { deleteSqlLite: () => Promise<void>, saveSqlLite: (arrayBuffer: ArrayBuffer) => Promise<void> }
+    tools: { deleteSqlLite: () => Promise<void>, saveSqlLite: (arrayBuffer: ArrayBuffer) => Promise<void>, readSqlLite : () => Promise<ArrayBuffer> }
 }) {
     const {allCallables, app, page, navigate, tools, alertBox, navigatePanel, closePanel} = props;
 

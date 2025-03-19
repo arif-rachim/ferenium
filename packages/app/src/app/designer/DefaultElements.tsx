@@ -1,6 +1,6 @@
 import {element, Element} from "./LayoutBuilderProps.ts";
 import {z, ZodFunction, ZodObject, ZodOptional, ZodRawShape, ZodTuple, ZodType, ZodTypeAny} from "zod";
-import {CSSProperties, ForwardedRef, forwardRef, LegacyRef, MutableRefObject} from "react";
+import {CSSProperties, ForwardedRef, forwardRef, LegacyRef, MutableRefObject, useMemo} from "react";
 import {Icon} from "../../core/components/icon/Icon.ts";
 import {Button} from "../button/Button.tsx";
 import {PageSelectionPropertyEditor} from "../data/PageSelectionPropertyEditor.tsx";
@@ -43,6 +43,7 @@ import {PageSelectionWithMapperPropertyEditor} from "../data/PageSelectionWithMa
 import {TimeInput} from "../form/input/date/TimeInput.tsx";
 import {GrValidate} from "react-icons/gr";
 import {createLogger} from "../../core/utils/logger.ts";
+import {LabelContext} from "../form/Label.tsx";
 
 const ZodSqlValue = z.union([z.number(), z.string(), z.instanceof(Uint8Array), z.null()]);
 const log = createLogger('DefaultElements');
@@ -56,10 +57,12 @@ export const DefaultElements: Record<string, Element> = {
             onMouseDown: z.function().returns(z.void()),
             onMouseUp: z.function().returns(z.void()),
             hidden: z.boolean().optional(),
-            dataElementId: z.string()
+            dataElementId: z.string(),
+            labelPosition: z.enum(['left', 'top']).optional(),
+            labelWidth: z.number().optional()
         },
         component: (props, ref) => {
-            const {container, onClick, style, onMouseDown, onMouseUp, hidden} = props;
+            const {container, onClick, style, onMouseDown, onMouseUp, hidden, labelPosition, labelWidth} = props;
             return <LayoutContainer ref={ref}
                                     dataElementId={props.dataElementId}
                                     container={container}
@@ -68,6 +71,8 @@ export const DefaultElements: Record<string, Element> = {
                                     onMouseDown={onMouseDown}
                                     onMouseUp={onMouseUp}
                                     hidden={hidden}
+                                    labelPosition={labelPosition}
+                                    labelWidth={labelWidth}
             />
         }
     }),
@@ -393,6 +398,7 @@ export const DefaultElements: Record<string, Element> = {
         },
         component: (props, ref) => {
             const {inputStyle, style, label, error, name, value, disabled, onChange, validator, required} = props;
+
             return <DateInput ref={ref as MutableRefObject<HTMLLabelElement>}
                               style={style as CSSProperties}
                               inputStyle={inputStyle as CSSProperties}
@@ -802,7 +808,7 @@ export const DefaultElements: Record<string, Element> = {
                 value: z.union([z.string(), z.number()]).optional(),
                 selectedRows: z.array(z.union([z.string(), z.number()]))
             })).returns(z.void()),
-            visibleColumns : z.record(z.boolean()),
+            visibleColumns: z.record(z.boolean()),
             enableMultipleSelection: z.union([z.boolean(), z.function().args(z.record(ZodSqlValue).optional()).returns(z.boolean())]).optional(),
         },
         component: (props, ref) => {
@@ -1042,25 +1048,30 @@ const LayoutContainer = forwardRef(function LayoutContainer(props: {
     onMouseDown: () => void,
     onMouseUp: () => void,
     dataElementId: string,
-    hidden?: boolean
+    hidden?: boolean,
+    labelPosition?: 'left' | 'top',
+    labelWidth?: number
 }, ref) {
-    const {container, onClick, onMouseUp, onMouseDown, style, hidden} = props;
+    const {container, onClick, onMouseUp, onMouseDown, style, hidden, labelPosition, labelWidth} = props;
     const containerStyle = useContainerStyleHook(style);
     const {elements, displayMode} = useContainerLayoutHook(container);
     const isHidden = hidden === true;
     const showElement = !isHidden;
+    const labelContext = useMemo(() => ({labelPosition, labelWidth}), [labelPosition, labelWidth]);
 
     return <ContainerRendererIdContext.Provider value={props.dataElementId}>
         {showElement &&
-            <div ref={ref as LegacyRef<HTMLDivElement>}
-                 style={containerStyle}
-                 data-element-id={props.dataElementId}
-                 onClick={() => (displayMode.get() === 'view' && onClick ? onClick() : null)}
-                 onMouseDown={() => (displayMode.get() === 'view' && onMouseDown ? onMouseDown() : null)}
-                 onMouseUp={() => (displayMode.get() === 'view' && onMouseUp ? onMouseUp() : null)}
-            >
-                {elements}
-            </div>
+            <LabelContext.Provider value={labelContext}>
+                <div ref={ref as LegacyRef<HTMLDivElement>}
+                     style={containerStyle}
+                     data-element-id={props.dataElementId}
+                     onClick={() => (displayMode.get() === 'view' && onClick ? onClick() : null)}
+                     onMouseDown={() => (displayMode.get() === 'view' && onMouseDown ? onMouseDown() : null)}
+                     onMouseUp={() => (displayMode.get() === 'view' && onMouseUp ? onMouseUp() : null)}
+                >
+                    {elements}
+                </div>
+            </LabelContext.Provider>
         }
     </ContainerRendererIdContext.Provider>
 })
