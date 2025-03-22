@@ -35,7 +35,7 @@ export function initiateEffect(props: {
             continue;
         }
 
-        const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', 'log', wrapWithTryCatch(v.functionCode)];
+        const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', 'log', v.functionCode];
         const log = createLogger(`Effect>${v?.name}>${v?.id}`);
         try {
             const func = new Function(...params) as (...args: unknown[]) => void
@@ -55,8 +55,4 @@ export function initiateEffect(props: {
     return () => {
         destructorCallbacks.forEach(d => d());
     }
-}
-
-function wrapWithTryCatch(code:string){
-    return `try{${code}}catch(err){log.error(err)}`
 }

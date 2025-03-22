@@ -52,7 +52,15 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         value?: string | number,
         selectedRows: Array<string | number>
     }) => void,
-    visibleColumns?: Record<string, boolean>
+    visibleColumns?: Record<string, boolean>,
+    cellStyleMapper?: (props: {
+        cellValue: SqlValue,
+        rowIndex: number,
+        rowData: Record<string, SqlValue>,
+        columnName: string,
+        gridData: Array<Record<string, SqlValue>>,
+        initialStyle : CSSProperties
+    }) => CSSProperties
 }>(function QueryGrid(props, ref) {
     const referenceRef = useForwardedRef<HTMLDivElement>(ref);
     const {
@@ -73,7 +81,8 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         selectedRows,
         onMultipleSelectionChange,
         onClickOutside,
-        visibleColumns
+        visibleColumns,
+        cellStyleMapper
     } = props;
 
     const rowPerPage = pageable ? props.rowPerPage ? props.rowPerPage : 20 : Number.MAX_SAFE_INTEGER
@@ -203,6 +212,7 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
                          enableMultipleSelection={enableMultipleSelection}
                          selectedRows={selectedRows}
                          onMultipleSelectionChange={onMultipleSelectionChange}
+                         cellStyleMapper={cellStyleMapper}
 
             />
         </div>

@@ -253,7 +253,7 @@ export type ColumnsConfig = Record<string, {
 }>
 
 
-function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, col: string, visibleColumns: Record<string, boolean | undefined>={}) {
+function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, col: string, visibleColumns: Record<string, boolean | undefined> = {}) {
 
 
     let minWidth: CSSProperties['minWidth'] | undefined = undefined;
@@ -274,7 +274,7 @@ function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, co
         }
         if (config.hidden !== undefined) {
             hide = config.hidden;
-        }else if (isVisible !== undefined){
+        } else if (isVisible !== undefined) {
             hide = !isVisible
         }
 
@@ -334,7 +334,15 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
         value?: string | number,
         selectedRows: Array<string | number>
     }) => void,
-    visibleColumns?: Record<string, boolean>
+    visibleColumns?: Record<string, boolean>,
+    cellStyleMapper?: (props: {
+        cellValue: SqlValue,
+        rowIndex: number,
+        rowData: Record<string, SqlValue>,
+        columnName: string,
+        gridData: Array<Record<string, SqlValue>>,
+        initialStyle : CSSProperties
+    }) => CSSProperties
 }) {
     const {
         columns: columnsProps,
@@ -353,7 +361,8 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
         enableMultipleSelection,
         selectedRows,
         onMultipleSelectionChange,
-        visibleColumns
+        visibleColumns,
+        cellStyleMapper
     } = props;
 
     const hasMultipleSelection = typeof enableMultipleSelection === 'function' ? true : enableMultipleSelection === true;
@@ -664,6 +673,7 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                             let mappedValue: ReactNode | Promise<ReactNode> | undefined = value;
                             let valueParams = {value};
                             const lastIndex = colIndex === (filteredColumns.length - 1);
+
                             if (columnsConfig !== undefined && columnsConfig !== null && typeof columnsConfig === 'object' && col in columnsConfig) {
                                 const config = columnsConfig[col];
                                 const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
@@ -722,7 +732,6 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                             let renderer = <CellRenderer value={mappedValue}/>;
                             if (rendererPageId) {
                                 const page = allPagesSignal.get().find(p => p.id === rendererPageId);
-
                                 if (page) {
                                     renderer = <PageViewer
                                         elements={elements}
@@ -733,15 +742,25 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
                                     />
                                 }
                             }
-                            return <div style={{
+                            const initialStyle = {
                                 display: 'table-cell',
                                 verticalAlign: 'middle',
                                 borderBottom: lastRow ? BORDER : BORDER,
                                 borderRight: lastIndex ? 'unset' : BORDER,
                                 overflow: 'hidden',
                                 minWidth,
-                                maxWidth
-                            }} key={`${colIndex}:${rowIndex}`}>
+                                maxWidth,
+                            } as CSSProperties
+                            const cellStyle = cellStyleMapper ? cellStyleMapper({
+                                cellValue: value as string,
+                                rowIndex,
+                                rowData: item,
+                                columnName: col,
+                                gridData: data,
+                                initialStyle : initialStyle
+                            }) : initialStyle;
+
+                            return <div style={cellStyle} key={`${colIndex}:${rowIndex}`}>
                                 <div style={{minHeight: 22, display: 'flex', flexDirection: 'column'}}>{renderer}</div>
                             </div>
                         })}
@@ -790,5 +809,5 @@ function CellRenderer(props: { value: ReactNode | Promise<ReactNode> }) {
     }, [propsValue]);
 
     return <div style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', padding: '0px 10px'}}
-                title={value?.toString()} dangerouslySetInnerHTML={{__html: utils.toString(value) ?? ''}}/>
+                dangerouslySetInnerHTML={{__html: utils.toString(value) ?? ''}}/>
 }

@@ -410,6 +410,7 @@ export const DefaultElements: Record<string, Element> = {
                               disabled={disabled}
                               validator={validator}
                               required={required}
+
             />
         }
     }),
@@ -754,7 +755,8 @@ export const DefaultElements: Record<string, Element> = {
             }
             title = title ?? 'Add text here'
             return <div ref={ref as LegacyRef<HTMLDivElement>}
-                        style={{flexShrink: 0, lineHeight: 1.1, ...style, minHeight: 12}}>{title}</div>
+                        style={{flexShrink: 0, lineHeight: 1.1, ...style, minHeight: 12}}
+                        dangerouslySetInnerHTML={{__html: title}}></div>
         }
     }),
     queryGrid: element({
@@ -810,6 +812,14 @@ export const DefaultElements: Record<string, Element> = {
             })).returns(z.void()),
             visibleColumns: z.record(z.boolean()),
             enableMultipleSelection: z.union([z.boolean(), z.function().args(z.record(ZodSqlValue).optional()).returns(z.boolean())]).optional(),
+            cellStyleMapper: z.function().args(z.object({
+                cellValue: ZodSqlValue,
+                rowIndex: z.number(),
+                rowData: z.record(z.unknown()),
+                columnName: z.string(),
+                gridData: z.array(z.record(ZodSqlValue)),
+                initialStyle: cssPropertiesSchema
+            })).returns(cssPropertiesSchema).optional()
         },
         component: (props, ref) => {
             const {
@@ -828,7 +838,8 @@ export const DefaultElements: Record<string, Element> = {
                 enableMultipleSelection,
                 selectedRows,
                 onMultipleSelectionChange,
-                visibleColumns
+                visibleColumns,
+                cellStyleMapper
             } = props;
             return <QueryGrid ref={ref as ForwardedRef<HTMLDivElement>} query={query} style={style}
                               columnsConfig={config}
@@ -840,6 +851,9 @@ export const DefaultElements: Record<string, Element> = {
                               selectedRows={selectedRows}
                               onMultipleSelectionChange={onMultipleSelectionChange}
                               visibleColumns={visibleColumns}
+                              //@ts-ignore
+                              cellStyleMapper={cellStyleMapper}
+
             />
         },
         propertyEditor: {
@@ -966,6 +980,33 @@ export const DefaultElements: Record<string, Element> = {
                             return result;
                         }, {} as ZodRawShape);
                         returnTypeZod = z.object(param) as ZodType;
+                    }
+                    return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
+                })
+            },
+            cellStyleMapper: {
+                label: 'cellStyleMapper',
+                component: createCustomPropertyEditor((props) => {
+                    let {element, gridTemporalColumns, propertyName} = props;
+                    gridTemporalColumns = gridTemporalColumns ?? [];
+                    let returnTypeZod: ZodFunction<ZodTuple, ZodTypeAny> | undefined = undefined;
+                    if (element) {
+                        returnTypeZod = element.property[propertyName] as ZodFunction<ZodTuple, ZodTypeAny>
+                    }
+                    if (gridTemporalColumns) {
+                        const param = gridTemporalColumns.reduce((result, key) => {
+                            result[key] = ZodSqlValue.optional();
+                            return result;
+                        }, {} as ZodRawShape);
+                        returnTypeZod = z.function().args(z.object({
+                            cellValue: ZodSqlValue,
+                            rowIndex: z.number(),
+                            rowData: z.object(param),
+                            //@ts-ignore
+                            columnName: z.enum(gridTemporalColumns),
+                            gridData: z.array(z.object(param)),
+                            initialStyle: cssPropertiesSchema
+                        })).returns(cssPropertiesSchema) as unknown as ZodFunction<ZodTuple, ZodTypeAny>;
                     }
                     return returnTypeZod as ZodFunction<ZodTuple, ZodTypeAny>;
                 })

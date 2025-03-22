@@ -46,12 +46,12 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
         background: 'linear-gradient(0deg,#666,#555)'
     }}>
         <div style={{
-            // maxWidth: 1200,
-            // maxHeight: 800,
-            // borderRadius: 20,
-            padding: 5,
-            background: 'white',
-            boxShadow: '0px 15px 20px -4px rgba(0,0,0,0.5)',
+            maxWidth: 1400,
+            maxHeight: 850,
+            borderRadius: 20,
+            border : '5px solid #666',
+            background: 'linear-gradient(0deg,#FAFAFA,#FFFFFF)',
+            boxShadow: '0px 25px 20px -10px rgba(0,0,0,0.3) ',
             display: 'flex',
             width: '100%',
             height: '100%',
@@ -66,12 +66,11 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                             <PageVariableInitialization>
                                 <ClosePanelContext.Provider value={context.navigateBack}>
                                     <motion.div layout={'position'} style={{
-                                        // borderRadius: 15,
+                                        borderRadius: 15,
                                         flexGrow: 1,
                                         display: 'flex',
                                         flexDirection: 'column',
                                         overflow: 'hidden',
-                                        background: 'white',
                                         position: 'relative',
                                         top: 0,
                                         left: 0
