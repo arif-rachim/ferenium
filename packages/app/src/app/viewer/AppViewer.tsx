@@ -46,10 +46,10 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
         background: 'linear-gradient(0deg,#666,#555)'
     }}>
         <div style={{
-            maxWidth: 1400,
-            maxHeight: 850,
-            borderRadius: 20,
-            border : '5px solid #666',
+            // maxWidth: 1400,
+            // maxHeight: 850,
+            // borderRadius: 20,
+            // border : '5px solid #666',
             background: 'linear-gradient(0deg,#FAFAFA,#FFFFFF)',
             boxShadow: '0px 25px 20px -10px rgba(0,0,0,0.3) ',
             display: 'flex',
