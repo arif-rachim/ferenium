@@ -91,9 +91,7 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
         const typeIsString = typeof value === 'string';
         const val = typeIsString ? format_ddMMMyyyy(newDate) : newDate;
         await handleValueChange(val as T)
-        if(formContext?.focusNext){
-            formContext?.focusNext()
-        }
+
     }
     const onFocusRef = useRef(onFocus);
     onFocusRef.current = onFocus;

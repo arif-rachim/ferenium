@@ -14,7 +14,7 @@ export type QueryTypeResult = {
     totalPage?: number,
     currentPage?: number
 }
-
+export const DEFAULT_ROW_PER_PAGE = 30;
 export const QueryGrid = forwardRef<HTMLDivElement | null, {
     query: QueryType,
     style?: CSSProperties,
@@ -54,11 +54,11 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
     }) => void,
     visibleColumns?: Record<string, boolean>,
     cellStyleMapper?: (props: {
-        cellValue: SqlValue,
+        cellValue: string | number | null  | undefined,
         rowIndex: number,
-        rowData: Record<string, SqlValue>,
+        rowData: Record<string, unknown>,
         columnName: string,
-        gridData: Array<Record<string, SqlValue>>,
+        gridData: Array<Record<string, unknown>>,
         initialStyle : CSSProperties
     }) => CSSProperties
 }>(function QueryGrid(props, ref) {
@@ -85,7 +85,7 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         cellStyleMapper
     } = props;
 
-    const rowPerPage = pageable ? props.rowPerPage ? props.rowPerPage : 20 : Number.MAX_SAFE_INTEGER
+    const rowPerPage = pageable ? props.rowPerPage ? props.rowPerPage : DEFAULT_ROW_PER_PAGE : Number.MAX_SAFE_INTEGER
     const [queryResult, setQueryResult] = useState<QueryTypeResult>({
         columns: [],
         data: [],

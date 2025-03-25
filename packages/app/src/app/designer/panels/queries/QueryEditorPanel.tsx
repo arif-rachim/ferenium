@@ -21,6 +21,7 @@ import {composeArraySchema} from "../../variable-initialization/dbSchemaInitiali
 import {useNameRefactor} from "../../../../core/hooks/useNameRefactor.ts";
 import {queryPagination} from "../../queryPagination.ts";
 import {QueryParamsObject} from "../database/queryDb.ts";
+import {DEFAULT_ROW_PER_PAGE} from "../../../data/QueryGrid.tsx";
 
 export default function QueryEditorPanel(props: {
     queryId?: string,
@@ -131,7 +132,7 @@ export default function QueryEditorPanel(props: {
             params,
             filter: filterSignal.get(),
             currentPage: page ?? 1,
-            pageSize: 50,
+            pageSize: DEFAULT_ROW_PER_PAGE,
             sort: []
         });
         const prevTableData = tableDataSignal.get();
@@ -146,7 +147,7 @@ export default function QueryEditorPanel(props: {
                 params,
                 filter: filterSignal.get(),
                 currentPage: page ?? 1,
-                pageSize: 50,
+                pageSize: DEFAULT_ROW_PER_PAGE,
                 sort: []
             });
             querySignal.set({...query, schemaCode: composeArraySchema(allData.data)})

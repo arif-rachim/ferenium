@@ -1,5 +1,6 @@
 import sqlite from "./sqlite.ts";
 import {ParamsObject, SqlValue} from "sql.js";
+import {DEFAULT_ROW_PER_PAGE} from "../../../data/QueryGrid.tsx";
 
 export type QueryParamsObject = Record<string, SqlValue | { value: SqlValue, type: 'like' | 'equal' }>;
 
@@ -7,7 +8,7 @@ export async function queryDb(sql: string, page?: {
     size: number,
     number: number
 }, params?: ParamsObject, filter?: QueryParamsObject, sort?: Array<{ column: string, direction: 'asc' | 'desc' }>) {
-    const {size, number} = page ?? {size: 50, number: 0};
+    const {size, number} = page ?? {size: DEFAULT_ROW_PER_PAGE, number: 0};
     const dynamicFilterParam = filter ?? {};
     const dynamicFilterQuery: string[] = [];
     const combinedParams = {} as ParamsObject;

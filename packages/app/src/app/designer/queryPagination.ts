@@ -1,5 +1,6 @@
 import {ParamsObject, SqlValue} from "sql.js";
 import {queryDb, QueryParamsObject} from "./panels/database/queryDb.ts";
+import {DEFAULT_ROW_PER_PAGE} from "../data/QueryGrid.tsx";
 
 export async function queryPagination(props: {
     query: string,
@@ -11,7 +12,7 @@ export async function queryPagination(props: {
 }) {
     const {query, params, currentPage, pageSize, filter, sort} = props;
     const {columns, values, page} = await queryDb(query, {
-        size: pageSize ?? 50,
+        size: pageSize ?? DEFAULT_ROW_PER_PAGE,
         number: currentPage
     }, params, filter, sort)
 

@@ -293,6 +293,15 @@ export const DefaultElements: Record<string, Element> = {
                               required={required}
                               placeholder={placeholder}
             />
+        },
+        propertyEditor: {
+            name: {
+                label: 'name',
+                component: createCustomPropertyEditor((props) => {
+                    //@ts-ignore
+                    return z.enum(props.formKeys ?? [])
+                })
+            }
         }
     }),
     validation: element({
@@ -339,6 +348,15 @@ export const DefaultElements: Record<string, Element> = {
                                   required={required}
                                   validator={validator}
             />
+        },
+        propertyEditor: {
+            name: {
+                label: 'name',
+                component: createCustomPropertyEditor((props) => {
+                    //@ts-ignore
+                    return z.enum(props.formKeys ?? [])
+                })
+            }
         }
     }),
     radio: element({
@@ -412,6 +430,15 @@ export const DefaultElements: Record<string, Element> = {
                               required={required}
 
             />
+        },
+        propertyEditor: {
+            name: {
+                label: 'name',
+                component: createCustomPropertyEditor((props) => {
+                    //@ts-ignore
+                    return z.enum(props.formKeys ?? [])
+                })
+            }
         }
     }),
     dateTime: element({
@@ -443,6 +470,15 @@ export const DefaultElements: Record<string, Element> = {
                                   required={required}
                                   validator={validator}
             />
+        },
+        propertyEditor: {
+            name: {
+                label: 'name',
+                component: createCustomPropertyEditor((props) => {
+                    //@ts-ignore
+                    return z.enum(props.formKeys ?? [])
+                })
+            }
         }
     }),
     timeMinute: element({
@@ -478,6 +514,15 @@ export const DefaultElements: Record<string, Element> = {
                               required={required}
                               validator={validator}
             />
+        },
+        propertyEditor: {
+            name: {
+                label: 'name',
+                component: createCustomPropertyEditor((props) => {
+                    //@ts-ignore
+                    return z.enum(props.formKeys ?? [])
+                })
+            }
         }
     }),
     range: element({
@@ -615,6 +660,13 @@ export const DefaultElements: Record<string, Element> = {
             />
         },
         propertyEditor: {
+            name: {
+                label: 'name',
+                component: createCustomPropertyEditor((props) => {
+                    //@ts-ignore
+                    return z.enum(props.formKeys ?? [])
+                })
+            },
             config: {
                 label: 'config',
                 component: ConfigPropertyEditor
@@ -726,16 +778,17 @@ export const DefaultElements: Record<string, Element> = {
             hidden: z.boolean().optional(),
             allowOnFormBusy: z.boolean().optional(),
             allowOnFormDisabled: z.boolean().optional(),
+            disabled: z.boolean().optional()
         },
         component: (props, ref) => {
-            const {onClick, style, type, hidden, icon, allowOnFormBusy, allowOnFormDisabled} = props;
+            const {onClick, style, type, hidden, icon, allowOnFormBusy, allowOnFormDisabled, disabled} = props;
             let {label} = props;
             label = label ?? 'Add label here';
             delete style.background;
 
             return <Button style={style} ref={ref as LegacyRef<HTMLButtonElement>}
                            onClick={onClick} type={type} icon={icon} hidden={hidden} allowOnFormBusy={allowOnFormBusy}
-                           allowOnFormDisabled={allowOnFormDisabled}>
+                           allowOnFormDisabled={allowOnFormDisabled} disabled={disabled}>
                 {label}
             </Button>
         }
@@ -987,8 +1040,7 @@ export const DefaultElements: Record<string, Element> = {
             cellStyleMapper: {
                 label: 'cellStyleMapper',
                 component: createCustomPropertyEditor((props) => {
-                    let {element, gridTemporalColumns, propertyName} = props;
-                    gridTemporalColumns = gridTemporalColumns ?? [];
+                    const {element, gridTemporalColumns, propertyName} = props;
                     let returnTypeZod: ZodFunction<ZodTuple, ZodTypeAny> | undefined = undefined;
                     if (element) {
                         returnTypeZod = element.property[propertyName] as ZodFunction<ZodTuple, ZodTypeAny>

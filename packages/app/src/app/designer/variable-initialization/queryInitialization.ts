@@ -2,6 +2,7 @@ import {Query} from "../panels/database/getTables.ts";
 import {zodSchemaToJson} from "../../../core/utils/zodSchemaToJson.ts";
 import {QueryType} from "./AppVariableInitialization.tsx";
 import {queryPagination} from "../queryPagination.ts";
+import {DEFAULT_ROW_PER_PAGE} from "../../data/QueryGrid.tsx";
 
 export function queryInitialization(allQueries: Array<Query>): Record<string, QueryType> {
     const queries: Record<string, QueryType> = {};
@@ -14,7 +15,7 @@ export function queryInitialization(allQueries: Array<Query>): Record<string, Qu
                     filter: filter ?? {},
                     sort: sort ?? [],
                     params: params ?? {},
-                    pageSize: rowPerPage ?? 50,
+                    pageSize: rowPerPage ?? DEFAULT_ROW_PER_PAGE,
                     currentPage: page || 1,
                 }).then(result => {
                     resolve(result);

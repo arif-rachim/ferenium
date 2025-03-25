@@ -124,7 +124,7 @@ export const cssPropertiesSchema = z.object({
     columnRuleWidth: cssLength.optional(),
     columnSpan: z.string().optional(),
     columnWidth: cssLength.optional(),
-    columns: z.number().optional(),
+    columns: z.string().optional(),
     contain: z.string().optional(),
     content: z.string().optional(),
     counterIncrement: z.string().optional(),

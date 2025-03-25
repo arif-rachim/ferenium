@@ -262,6 +262,7 @@ function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, co
     if (columnsConfig !== undefined && columnsConfig !== null && typeof columnsConfig === 'object' && col in columnsConfig) {
         const config = columnsConfig[col];
         const isVisible = visibleColumns && col in visibleColumns ? visibleColumns[col] : undefined;
+
         if (!isEmpty(config.minWidth)) {
             {
                 minWidth = config.minWidth;
@@ -272,10 +273,10 @@ function extractWidthAndHiddenField(columnsConfig: ColumnsConfig | undefined, co
                 maxWidth = config.maxWidth;
             }
         }
-        if (config.hidden !== undefined) {
-            hide = config.hidden;
-        } else if (isVisible !== undefined) {
+        if (isVisible !== undefined) {
             hide = !isVisible
+        } else if (config.hidden !== undefined) {
+            hide = config.hidden;
         }
 
     }
@@ -336,11 +337,11 @@ export function SimpleTable<T extends Record<string, SqlValue>>(props: {
     }) => void,
     visibleColumns?: Record<string, boolean>,
     cellStyleMapper?: (props: {
-        cellValue: SqlValue,
+        cellValue: string | number | null | undefined,
         rowIndex: number,
-        rowData: Record<string, SqlValue>,
+        rowData: Record<string, unknown>,
         columnName: string,
-        gridData: Array<Record<string, SqlValue>>,
+        gridData: Array<Record<string, unknown>>,
         initialStyle : CSSProperties
     }) => CSSProperties
 }) {

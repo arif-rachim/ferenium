@@ -24,7 +24,7 @@ import {useSignalEffect} from "react-hook-signal";
 export const Button = forwardRef(function Button(props: DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> & {
     icon?: IconType,
     allowOnFormBusy?: boolean,
-    allowOnFormDisabled?: boolean
+    allowOnFormDisabled?: boolean,
 }, ref) {
     const {
         style,
