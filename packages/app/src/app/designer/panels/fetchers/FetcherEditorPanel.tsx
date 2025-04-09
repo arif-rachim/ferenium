@@ -23,6 +23,7 @@ import type {ChangeEvent} from "react";
 import {useNameRefactor} from "../../../../core/hooks/useNameRefactor.ts";
 import {createLogger} from "../../../../core/utils/logger.ts";
 import untrack = Signal.subtle.untrack;
+import {utils} from "../../../../core/utils/utils.ts";
 
 const LABEL_WIDTH = 60;
 const log = createLogger('FetcherEditorPanel')
@@ -210,36 +211,24 @@ export function FetcherEditorPanel(props: { fetcherId?: string, panelId: string,
             log.error(err);
         }
 
-
         const {address, requestInit} = createRequest(fetcher, {});
         logTestMessage(`[Request] ${address}`);
         logTestMessage(`[Request] ${JSON.stringify(requestInit)}`);
-        let contentType: string = '';
-        let response: Response | null = null;
-        try {
-            response = await fetch(address, requestInit);
-            contentType = response.headers.get('Content-Type') ?? '';
-        } catch (err) {
-            if (err !== undefined && err !== null && typeof err === 'object' && 'message' in err) {
-                logTestMessage(`[Response] ${err.message}`)
-            }
-        }
-        if (response === null) {
+        const response = await utils.fetch(address, requestInit);
+        logTestMessage(`[Response] ${JSON.stringify(response)}`);
+        if(response.error){
             return;
         }
-        logTestMessage(`[Response] ${response.statusText} ${contentType}`);
-        if (contentType && contentType.includes('application/json')) {
-            // its json we can do something here
-            const json = await response.json();
+        if (response.contentType?.includes('application/json')) {
+            const json = await response.data as Record<string, unknown>;
             responseData.set(JSON.stringify(json));
             const ts = naiveJsonToTs(json, 1);
             logTestMessage(`[Response] ${ts}`);
-
             const newFetcher = {...fetcherSignal.get()};
             newFetcher.returnTypeSchemaCode = ts
             fetcherSignal.set(newFetcher);
         } else {
-            const text = await response.text();
+            const text = await response.data as string;
             logTestMessage(`[Response] ${text}`);
         }
     }

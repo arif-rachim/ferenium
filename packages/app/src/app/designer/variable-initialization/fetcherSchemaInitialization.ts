@@ -1,9 +1,10 @@
 import {Fetcher} from "../AppDesigner.tsx";
 import {zodSchemaToJson} from "../../../core/utils/zodSchemaToJson.ts";
 import {isEmpty} from "../../../core/utils/isEmpty.ts";
-import {createRequest} from "../createRequest.ts";
+import {createRequest, FetcherConfig} from "../createRequest.ts";
 import {FetchType, FormulaDependencyParameter} from "./AppVariableInitialization.tsx";
 import {createLogger} from "../../../core/utils/logger.ts";
+import {utils} from "../../../core/utils/utils.ts";
 
 export function composeFetcherSchema(allFetchers: Array<Fetcher>) {
     const fetchersSchema = allFetchers.map(i => {
@@ -29,7 +30,7 @@ export function composeFetcherSchema(allFetchers: Array<Fetcher>) {
             return result;
         }, paths)
         const type = '{' + paths.join(',') + '}'
-        return `${i.name} : (props?:${type}) => Promise<${schema} & {error?:string}>`
+        return `${i.name} : (props?:${type},config?:{mapRequest?: (props: { request: Record<string, unknown>, body?: ${type}}) => { request: Record<string, unknown>, body?: Record<string, unknown> }}) => Promise<{error?:string,data?:${schema},contentType?:string}>`
     })
 
     return `{${fetchersSchema.join(',')}}`
@@ -49,7 +50,7 @@ export function fetcherInitialization(props: {
 
 
     for (const fetcherValue of allFetchers) {
-        fetchers[fetcherValue.name] = async (inputs?: Record<string, unknown>) => {
+        fetchers[fetcherValue.name] = async (inputs?: Record<string, unknown>, config?: FetcherConfig) => {
             try {
                 const fetcher = {...fetcherValue};
                 const module: {
@@ -88,13 +89,8 @@ export function fetcherInitialization(props: {
                 } catch (err) {
                     log.error(err);
                 }
-
-                const {address, requestInit} = createRequest(fetcher, inputs ?? {});
-                const response = await fetch(address, requestInit);
-                if (!response.ok) {
-                    return {error: 'Network response was not ok: ' + response.statusText}
-                }
-                return await response.json();
+                const {address, requestInit} = createRequest(fetcher, inputs ?? {}, config);
+                return await utils.fetch(address, requestInit);
             } catch (error: unknown) {
                 const err = error as Error;
                 return {error: err.message}

@@ -7,8 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsc && node rename.cjs && electron .",
-    "export" : "makensis.exe installer.nsi",
-    "build": "echo \"Compiling Electron\" && tsc && node rename.cjs && npx @electron/packager . --platform=win32 --arch=x64 --icon=dist/icons/win/icon.ico --out=./build --overwrite"
+    "export": "makensis.exe installer.nsi",
+    "#build": "echo \"Compiling Electron\" && tsc && node rename.cjs && npx @electron/packager . --platform=win32 --arch=x64 --icon=dist/icons/win/icon.ico --out=./build --overwrite",
+    "build": "echo \"Compiling Electron\" && tsc && node rename.cjs"
   },
   "author": "a.arif.r@gmail.com",
   "license": "ISC",

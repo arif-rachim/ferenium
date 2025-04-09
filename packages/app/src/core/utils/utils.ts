@@ -16,6 +16,8 @@ import {startPad} from "./startPad.ts";
 import {toBoolean} from "./toBoolean.ts";
 import {arrayToQueryResult} from "./arrayToQueryResult.ts";
 import {clear, getItem, removeItem, setItem} from "./appStorage.ts";
+import {fetcher} from "./fetcher.ts";
+import {encryptObject} from "./encryptObject.ts";
 
 export const utils = {
     toDate: toDate,
@@ -38,5 +40,7 @@ export const utils = {
     setItem: setItem,
     getItem: getItem,
     removeItem: removeItem,
-    clearStorage: clear
+    clearStorage: clear,
+    fetch: fetcher,
+    encryptObject: encryptObject,
 }

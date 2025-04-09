@@ -1,6 +1,9 @@
 import {Fetcher, FetcherParameter} from "./AppDesigner.tsx";
+export type FetcherConfig = {
+    mapRequest?: (props: { request: Record<string, unknown>, body?: Record<string, unknown> }) => { request: Record<string, unknown>, body?: Record<string, unknown> }
+}
 
-export function createRequest(fetcher: Fetcher, inputs: Record<string, unknown>) {
+export function createRequest(fetcher: Fetcher, inputs: Record<string, unknown>, config?: FetcherConfig) {
     const url = `${fetcher.protocol}://${fetcher.domain}`;
 
     function populateTemplate(template: string, parameters: Record<string, string>) {
@@ -40,7 +43,7 @@ export function createRequest(fetcher: Fetcher, inputs: Record<string, unknown>)
     }
 
     const address = `${url}/${trimSlashes(path.trim())}`
-    const requestInit: RequestInit = {
+    let requestInit: RequestInit = {
         method: fetcher.method,
         cache: 'no-cache',
         credentials: 'include',
@@ -55,12 +58,32 @@ export function createRequest(fetcher: Fetcher, inputs: Record<string, unknown>)
 
     const hasContent = ['post', 'patch', 'put'].includes(fetcher.method);
     if (hasContent) {
+        let body:Record<string, unknown> = {};
+        let bodyString = '';
         if (fetcher.contentType === 'application/x-www-form-urlencoded') {
-            requestInit.body = objectToUrlEncodedString(fetcher.data.reduce(toRecord(true, inputs), {}))
+            body = fetcher.data.reduce(toRecord(true, inputs), {});
         }
         if (fetcher.contentType === 'application/json') {
-            requestInit.body = JSON.stringify(fetcher.data.reduce(toRecord(false, inputs), {}))
+            body = fetcher.data.reduce(toRecord(false, inputs), {});
+        }
+        if (config && config.mapRequest) {
+            const params = config.mapRequest({request: requestInit as Record<string, unknown>, body: body});
+            requestInit = params.request as RequestInit;
+            body = params.body || {};
+        }
+        if (fetcher.contentType === 'application/x-www-form-urlencoded') {
+            bodyString = objectToUrlEncodedString(body as Record<string, string>)
+        }
+        if (fetcher.contentType === 'application/json') {
+            bodyString = JSON.stringify(body)
+        }
+        requestInit.body = bodyString;
+    } else {
+        if (config && config.mapRequest) {
+            const params = config.mapRequest({request: requestInit as Record<string, unknown>});
+            requestInit = params.request as RequestInit;
         }
     }
+
     return {address, requestInit};
 }

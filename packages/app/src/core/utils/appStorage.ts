@@ -22,7 +22,7 @@ export async function saveAppMeta(meta: Record<string, unknown>) {
     await saveToOPFS(FILE_META, encodeFromString(JSON.stringify(meta)));
 }
 
-export async function setItem(key: string, value: string | number | null | Record<string, unknown> | Array<unknown>) {
+export async function setItem(key: string, value: string | number | null | Record<string, unknown> | Array<unknown> | boolean) {
     config[key] = value;
     await saveConfig(config);
 }
@@ -120,13 +120,13 @@ async function loadApp() {
         return meta as Record<string, unknown>
     }
     const networkBuffer = await loadFromNetwork(FILE_META);
-    if (networkBuffer) {
+    if (networkBuffer && networkBuffer.length > 0) {
         const meta = JSON.parse(decodeToString(networkBuffer));
         const current = infoSignal.get()
         infoSignal.set({...current,appMeta:{type:'network',path:FILE_META,version:meta.version,lastUpdate:meta.lastUpdate}})
         return meta as Record<string, unknown>
     }
-    return undefined;
+    return {};
 }
 
 async function saveConfig(config: Record<string, unknown>) {

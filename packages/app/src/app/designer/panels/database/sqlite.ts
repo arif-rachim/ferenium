@@ -85,25 +85,27 @@ const initSqlJs = self['initSqlJs'];
 
 async function getDatabase(fileName: string) {
     let db: Database | undefined = undefined;
+
     if (fileName in database && database[fileName]) {
         db = database[fileName];
     } else {
         try {
-            let data = await loadFromFile(fileName);
+            let data:Uint8Array<ArrayBufferLike>|undefined = await loadFromFile(fileName);
             if(data){
                 const current = infoSignal.get()
                 infoSignal.set({...current,database:{type:'file',path:fileName}})
             }
             if (!data) {
                 const res = await loadFromOPFS(fileName);
-                data = res?.data;
+                data = res && res.data && res.data.length > 0 ? res.data : undefined;
                 if(data){
                     const current = infoSignal.get()
                     infoSignal.set({...current,database:{type:'opfs',path:fileName}})
                 }
             }
             if (!data) {
-                data = await loadFromNetwork(fileName);
+                const res = await loadFromNetwork(fileName);
+                data = res && res.length > 0 ? res : undefined;
                 if(data){
                     const current = infoSignal.get()
                     infoSignal.set({...current,database:{type:'network',path:fileName}})

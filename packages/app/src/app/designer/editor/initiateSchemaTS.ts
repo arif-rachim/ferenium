@@ -116,7 +116,7 @@ declare const tools: {
 `
 }
 
-function composeLog(){
+function composeLog() {
     return `
 declare const log: {
     info : (...params:any[]) => void,
@@ -159,18 +159,18 @@ declare const utils: {
     uniqueNumber : () => number,
     startPad : (value:number|string,length:number,char?:string) => string,
     arrayToQueryResult : (array:Record,config:{params?: Record,page?: number,filter?: Record,sort?: Array<{ column: string, direction: 'asc' | 'desc' }>,rowPerPage?: number},columns:string[]) => {error?: string,data?: Record[],columns?: string[],totalPage?: number,currentPage?: number} 
-    setItem: (key: string, value: string | number | null | Record<string, unknown>) => Promise<void>,
+    setItem: (key: string, value: string | number | boolean | null | Record<string, unknown>) => Promise<void>,
     getItem: (key:string) => unknown,
     removeItem: (key:string) => Promise<void>,
-    clearStorage: () => Promise<void>
+    clearStorage: () => Promise<void>,
+    fetch: (url:string,options?:RequestInit) => Promise<{error?:string,data:ArrayBuffer|string|Record<string,unknown>}>,
+    encryptObject : (value:Record) => ({ts:number,v:string})
 };
 `
 }
 
 function composeForm(formSchema?: string) {
-    // if (formSchema && formSchema.length > 0) {
-    //     formSchema = formSchema || `Record<string, unknown>`;
-        return `
+    return `
             declare const formContext : {
                 value: Signal.State<${formSchema}>,
                 initialValue: ${formSchema},

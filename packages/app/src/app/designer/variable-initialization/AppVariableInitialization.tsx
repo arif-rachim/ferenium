@@ -32,7 +32,11 @@ export type QueryTypeParam = {
 }
 export type QueryType = (props: QueryTypeParam) => Promise<QueryTypeResult>
 
-export type FetchType = (inputs?: Record<string, unknown>) => Promise<Record<string, unknown> & { error?: string }>
+export type FetchType = (inputs?: Record<string, unknown>) => Promise<{
+    error?: string,
+    data?: unknown,
+    contentType?: string
+}>
 export type FormulaDependencyParameter = {
     var?: Record<string, AnySignal<unknown>>,
     call?: Record<string, (...args: unknown[]) => unknown>,
