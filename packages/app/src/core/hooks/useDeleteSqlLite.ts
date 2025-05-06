@@ -1,22 +1,18 @@
 import sqlite from "../../app/designer/panels/database/sqlite.ts";
-import {getTables} from "../../app/designer/panels/database/getTables.ts";
-import {useUpdateApplication} from "./useUpdateApplication.ts";
 import {useModalBox} from "../../app/designer/variable-initialization/useModalBox.tsx";
+import {useUpdateApplication} from "./useUpdateApplication.ts";
 
 export function useDeleteSqlLite() {
-    const updateApplication = useUpdateApplication();
     const showModal = useModalBox();
-    return async function deleteSqlLite() {
-        const confirm = await showModal({title:"Delete confirmation",message:'Are you sure you want to delete the database ?',icon:'IoIosAlert',buttons:[{id:'Yes',label:'Yes',icon:"IoIosSchool"},{id:'No',label:'No',icon:'IoIosExit'}]});
+    const updateApp = useUpdateApplication();
+    return async function deleteSqlLite(fileName:string) {
+        const confirm = await showModal({title:"Delete confirmation",message:`Are you sure you want to delete the ${fileName} ?`,icon:'IoIosAlert',buttons:[{id:'Yes',label:'Yes',icon:"IoIosSchool"},{id:'No',label:'No',icon:'IoIosExit'}]});
         if(confirm === 'No'){
             return;
         }
-        const result = await sqlite({type: 'deleteFromFile'});
-        if (!result.errors) {
-            const result = await getTables();
-            updateApplication(old => {
-                old.tables = result;
-            });
-        }
+        await sqlite({type: 'deleteFromFile',fileName});
+        updateApp(original => {
+            original.databases = original.databases.filter(i => i !== fileName);
+        })
     }
 }

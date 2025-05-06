@@ -168,7 +168,7 @@ export function Dashboard<T extends Record<string, Panel>>(props: PropsWithChild
                                 display: noPanel ? 'none' : 'flex',
                                 flexDirection: 'column',
                                 flexShrink: 0,
-                                width: 200,
+                                width: 300,
                                 overflow: 'auto',
                                 borderLeft: BORDER
                             }
@@ -292,7 +292,8 @@ function RenderPanel<T extends SelectedPanelType>(props: {
                     display: isFocused ? 'flex' : 'none',
                     flexDirection: 'column',
                     overflow: 'auto',
-                    borderTop: BORDER
+                    borderTop: BORDER,
+                    flexGrow:1,
                 }} key={panel.id}>
                     <div style={{
                         display: 'flex',
@@ -313,7 +314,7 @@ function RenderPanel<T extends SelectedPanelType>(props: {
                         </RenderIcon>
 
                     </div>
-                    <div style={{display: 'flex', flexDirection: 'column', overflow: 'auto'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', overflow: 'auto',flexGrow:1}}>
                         <Component/>
                     </div>
                 </div>

@@ -4,7 +4,7 @@ import {DEFAULT_ROW_PER_PAGE} from "../../../data/QueryGrid.tsx";
 
 export type QueryParamsObject = Record<string, SqlValue | { value: SqlValue, type: 'like' | 'equal' }>;
 
-export async function queryDb(sql: string, page?: {
+export async function queryDb(fileName: string, sql: string, page?: {
     size: number,
     number: number
 }, params?: ParamsObject, filter?: QueryParamsObject, sort?: Array<{ column: string, direction: 'asc' | 'desc' }>) {
@@ -42,7 +42,9 @@ export async function queryDb(sql: string, page?: {
     const hasFilter = dynamicFilterQuery.length > 0;
 
     if (hasFilter) {
-        sql = `SELECT * FROM (${sql}) AS T WHERE ${dynamicFilterQuery.join(' AND ')}`;
+        sql = `SELECT *
+               FROM (${sql}) AS T
+               WHERE ${dynamicFilterQuery.join(' AND ')}`;
     }
 
     const sortStrings: string[] = [];
@@ -59,12 +61,15 @@ export async function queryDb(sql: string, page?: {
         if (hasFilter) {
             sql = `${sql} ORDER BY ${sortStrings.join(', ')}`;
         } else {
-            sql = `SELECT * FROM (${sql}) ORDER BY ${sortStrings.join(', ')}`;
+            sql = `SELECT *
+                   FROM (${sql})
+                   ORDER BY ${sortStrings.join(', ')}`;
         }
     }
 
-    const count = `SELECT COUNT(*) AS total_rows FROM (${sql}) AS sub`
-    const countResponse = await sqlite({type: 'executeQuery', query: count, params: combinedParams});
+    const count = `SELECT COUNT(*) AS total_rows
+                   FROM (${sql}) AS sub`
+    const countResponse = await sqlite({type: 'executeQuery', query: count, params: combinedParams, fileName});
     let totalRows = 0;
     if (!countResponse.errors) {
         const value = countResponse.value as { values: number[][] }
@@ -73,7 +78,7 @@ export async function queryDb(sql: string, page?: {
     const limit = size;
     const offset = (number - 1) * limit;
     const pageRecords = `${sql} LIMIT ${limit} OFFSET ${offset}`;
-    const queryResponse = await sqlite({type: 'executeQuery', query: pageRecords, params: combinedParams});
+    const queryResponse = await sqlite({type: 'executeQuery', query: pageRecords, params: combinedParams, fileName});
     let columns: string[] = [];
     let values: SqlValue[][] = [];
     if (!queryResponse.errors) {

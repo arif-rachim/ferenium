@@ -16,15 +16,15 @@ export function useRefactorPageName() {
     return function refactorPageName(props: { currentName: string, newName: string }) {
         updateApplication(application => {
             const app = structuredClone(application);
-            let codesToCheck: Array<{ functionCode: string, id: string, name: string }> = []
+            const codesToCheck: Array<{ functionCode: string, id: string, name: string }> = []
             const {currentName, newName} = props;
 
-            codesToCheck = codesToCheck.concat(app.variables);
-            codesToCheck = codesToCheck.concat(app.callables);
+            codesToCheck.push(...app.variables);
+            codesToCheck.push(...app.callables);
 
             app.pages.forEach(p => {
-                codesToCheck = codesToCheck.concat(p.variables);
-                codesToCheck = codesToCheck.concat(p.callables);
+                codesToCheck.push(...p.variables);
+                codesToCheck.push(...p.callables);
             });
 
             const propsToCheck: Array<Record<string, ContainerPropertyType>> = []
@@ -33,10 +33,10 @@ export function useRefactorPageName() {
                     propsToCheck.push(p.properties)
                 })
             })
-            const regex = new RegExp(`navigate\\(\\s*['"]${currentName.replace(/\//g, '\\/')}['"]\\s*(,\\s*\\{[^}]*\\})?\\s*\\)`, 'g');
+            const regexNavigate = new RegExp(`\\b(navigate(?:Panel)?\\w*)\\s*\\(\\s*['"]${currentName.replace(/\//g, '\\/')}['"]\\s*(,\\s*\\{[^}]*\\})?\\s*\\)`, 'g');
 
             codesToCheck.forEach(v => {
-                const matches = v.functionCode.matchAll(regex);
+                const matches = v.functionCode.matchAll(regexNavigate);
                 for (const match of matches) {
                     const originalText = match[0];
                     const newText = originalText.replace(currentName, newName);
@@ -46,7 +46,7 @@ export function useRefactorPageName() {
 
             propsToCheck.forEach(v => {
                 Object.keys(v).forEach(key => {
-                    const matches = (v[key].formula ?? '').matchAll(regex);
+                    const matches = (v[key].formula ?? '').matchAll(regexNavigate);
                     for (const match of matches) {
                         const originalText = match[0];
                         const newText = originalText.replace(currentName, newName);

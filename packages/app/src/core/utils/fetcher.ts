@@ -1,9 +1,10 @@
 const disableElectronApi = false;
+type ContentType = 'application/json' | 'application/octet-stream' | 'application/pdf' | 'application/zip';
 
 export async function fetcher(url: string, options?: RequestInit): Promise<{
     error?: string,
-    data?: unknown,
-    contentType?: string
+    data?: ArrayBuffer | string | Record<string, any>,
+    contentType?: ContentType
 }> {
     if (!disableElectronApi && 'electronAPI' in window && window.electronAPI && typeof window.electronAPI === 'object' && 'fetch' in window.electronAPI && window.electronAPI.fetch && typeof window.electronAPI.fetch === 'function') {
         const opt = options as Record<string, unknown>;
@@ -32,7 +33,7 @@ export async function fetcher(url: string, options?: RequestInit): Promise<{
         if (!response.ok) {
             return {error: response.statusText}
         }
-        const contentType = response.headers.get('Content-Type') ?? '';
+        const contentType = response.headers.get('Content-Type') as ContentType;
         let type: 'blob' | 'json' | 'text' = 'text'
         if (contentType.toLowerCase().includes('application/json')) {
             type = 'json'

@@ -16,7 +16,6 @@ import {
     FormulaDependencyParameter,
     QueryType
 } from "../../../designer/variable-initialization/AppVariableInitialization.tsx";
-import {ColumnsConfig} from "../../../designer/panels/database/TableEditor.tsx";
 import {Container} from "../../../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
 import {useShowPopUp} from "../../../../core/hooks/useShowPopUp.tsx";
@@ -28,12 +27,13 @@ import {
 } from "../../../designer/variable-initialization/PageVariableInitialization.tsx";
 import {PageViewer} from "../../../viewer/PageViewer.tsx";
 import {guid} from "../../../../core/utils/guid.ts";
-import {createLogger} from "../../../../core/utils/logger.ts";
 import {dbSchemaInitialization} from "../../../designer/variable-initialization/dbSchemaInitialization.ts";
 import {useModalBox} from "../../../designer/variable-initialization/useModalBox.tsx";
 import {useSignalEffect} from "react-hook-signal";
 import {colors} from "../../../../core/style/colors.ts";
 import {useNavigatePanel} from "../../../../core/hooks/useNavigatePanel.ts";
+import {createLogger, wrapWithLog} from "../../../../core/utils/logger.ts";
+import {ColumnsConfig} from "../../../designer/panels/database/SimpleTable.tsx";
 
 const defaultRowDataToText = (data: unknown) => {
     if (typeof data === "string") {
@@ -44,7 +44,7 @@ const defaultRowDataToText = (data: unknown) => {
 
 const db = dbSchemaInitialization();
 
-
+const log = createLogger('select-input-error');
 export const SelectInput = forwardRef(function SelectInput(props: {
     name?: string,
     value?: string | number | null,
@@ -140,21 +140,20 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         let renderer: ReactNode | undefined = undefined;
         if (rendererPageId && rendererPageDataMapperFormula) {
             let valueParams = {value: text};
-            const log = createLogger(`SelectInput>${name}>rowDataToRenderer`);
             try {
                 const app: FormulaDependencyParameter | undefined = appSignal ? appSignal.get() : undefined;
                 const page: FormulaDependencyParameter | undefined = pageSignal ? pageSignal.get() : undefined;
-                const fun = new Function('module', 'app', 'page', 'utils', 'log', 'db', 'alertBox', 'navigate', 'navigatePanel', rendererPageDataMapperFormula)
+                const fun = new Function('module', 'app', 'page', 'utils',  'db', 'alertBox', 'navigate', 'navigatePanel', wrapWithLog(rendererPageDataMapperFormula))
                 const module: {
                     exports: (props: unknown) => unknown
                 } = {
                     exports: () => {
                     }
                 };
-                fun.call(null, module, app, page, utils, log, db, alertBox, navigate, navigatePanel)
+                fun.call(null, module, app, page, utils, db, alertBox, navigate, navigatePanel)
                 valueParams = module.exports(localValue) as unknown as typeof valueParams;
             } catch (err) {
-                log.error(err);
+                log.error(err,rendererPageDataMapperFormula);
             }
             const page = allPagesSignal.get().find(p => p.id === rendererPageId);
             if (page) {
@@ -209,7 +208,7 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                               rowPerPage={10}
                               paginationButtonCount={3}
                               onFocusedRowChange={closePanel}
-                              style={popupStyle}
+                              style={{background:'white',...popupStyle}}
                               focusedRow={localValue}
                               container={container}
                               filterable={filterable}

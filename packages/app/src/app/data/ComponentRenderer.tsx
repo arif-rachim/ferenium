@@ -3,12 +3,11 @@ import {Page} from "../designer/AppDesigner.tsx";
 import {useAppContext} from "../../core/hooks/useAppContext.ts";
 import {useSignal, useSignalEffect} from "react-hook-signal";
 import {PageViewer} from "../viewer/PageViewer.tsx";
-import {createLogger} from "../../core/utils/logger.ts";
 import {useWhichChange} from "../../core/hooks/useWhichChange.ts";
+import {createLogger} from "../../core/utils/logger.ts";
 
 export const ComponentRenderer = memo(forwardRef(ComponentRendererFC));
-const log = createLogger('ComponentRenderer');
-
+const log = createLogger('component-renderer');
 function useCheckIfPropsIsChanged<T extends Record<string, unknown>>(next:T){
     const prevValueRef = useRef<Record<string, unknown>>();
     const nextValueRef = useRef(next);
@@ -69,7 +68,7 @@ function ComponentRendererFC(props: {
         const componentId = componentIdSignal.get();
         const page = allPages.find(p => p.id === componentId);
         if(page === undefined){
-            log.error('Ops cannot find pages for ',componentId);
+            log.error('Ops cannot find pages for',componentId);
         }
         return page;
     });

@@ -4,7 +4,8 @@ import {useAppContext} from "../hooks/useAppContext.ts";
 import {Application} from "../../app/designer/AppDesigner.tsx";
 import {createLogger} from "./logger.ts";
 
-const log = createLogger("useLoadExtractJsonFromZip")
+const log = createLogger("extract-json-from-zip-error");
+
 export function useLoadExtractJsonFromZip() {
     const ref = useRef<HTMLInputElement>();
     const {applicationSignal} = useAppContext();

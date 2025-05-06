@@ -17,6 +17,7 @@ import {wrapWithZObjectIfNeeded} from "../../../../core/utils/wrapWithZObjectIfN
 import {useNameRefactor} from "../../../../core/hooks/useNameRefactor.ts";
 import {PanelIsFocusedContext} from "../../../Dashboard.tsx";
 import {useShowErrorsDialogBox} from "../../../../core/hooks/useShowErrorsDialogBox.tsx";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
 
 /**
  * Represents a panel for editing variables.
@@ -84,7 +85,7 @@ export function VariableEditorPanel(props: {
 
     function validateForm(): [boolean, Partial<Record<keyof Variable, Array<string>>>] {
         function nameIsDuplicate(name: string, id: string) {
-            return allVariablesSignal.get().filter(v => v.id !== id).find(v => v.name === name) !== undefined;
+            return isNotEmpty(allVariablesSignal.get().filter(v => v.id !== id).find(v => v.name === name));
         }
 
         const errors: Partial<Record<keyof Variable, Array<string>>> = {};

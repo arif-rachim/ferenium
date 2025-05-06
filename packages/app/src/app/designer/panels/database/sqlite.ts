@@ -1,80 +1,95 @@
 import type {BindParams, Database, ParamsObject, SqlValue} from "sql.js";
-import {utils} from "../../../../core/utils/utils.ts";
-import {createLogger} from "../../../../core/utils/logger.ts";
-import {deleteFile, loadFromFile, saveToFile} from "../../../../core/utils/electronApi.ts";
+import * as electronApi from "../../../../core/utils/electronApi.ts";
 import {deleteOPFS, loadFromOPFS, saveToOPFS} from "../../../../core/utils/opfsApi.ts";
 import {loadFromNetwork} from "../../../../core/utils/networkApi.ts";
 import {infoSignal} from "../../../../core/utils/info.ts";
+import {createLogger} from "../../../../core/utils/logger.ts";
+import {dateToString} from "../../../../core/utils/dateFormat.ts";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
 
-const defaultFileName = 'database.db';
-const log = createLogger('sqlite.ts');
+const log = createLogger('sqlite')
+
+//const defaultFileName = 'database.db';
 
 interface SaveToOPFS {
     type: 'saveToFile',
-    binaryArray: Uint8Array,
-    fileName?: string
+    binaryArray: Uint8Array<ArrayBuffer>,
+    fileName: string
 }
 
 interface PersistChanges {
     type: 'persistChanges',
-    fileName?: string
+    fileName: string
 }
 
 interface DeleteFromOPFS {
     type: 'deleteFromFile',
-    fileName?: string
+    fileName: string
 }
 
 interface LoadFromOPFS {
     type: 'loadFromFile',
-    fileName?: string
+    fileName: string
 }
 
 interface ExecuteQuery {
     type: 'executeQuery',
     query: string,
     params?: BindParams,
-    fileName?: string
+    fileName: string
 }
 
 type Payload = SaveToOPFS | LoadFromOPFS | ExecuteQuery | DeleteFromOPFS | PersistChanges;
 
+
+async function saveToFile(fileName: string, binaryArray: Uint8Array<ArrayBuffer>) {
+    return electronApi.saveToFile(fileName + '.db', binaryArray);
+}
+
+async function loadFromFile(fileName: string) {
+    return electronApi.loadFromFile(fileName + '.db');
+}
+
+async function deleteFile(fileName: string) {
+    return electronApi.deleteFile(fileName + '.db');
+}
+
 export default async function sqlite(payload: Payload): Promise<{ errors?: string, value?: unknown }> {
     if (payload.type === 'saveToFile') {
-        await saveToFile(payload.fileName ?? defaultFileName, payload.binaryArray);
-        const result = await saveToOPFS(payload.fileName ?? defaultFileName, payload.binaryArray)
+        await saveToFile(payload.fileName, payload.binaryArray);
+        const result = await saveToOPFS(payload.fileName, payload.binaryArray)
         return {value: undefined, errors: result.success ? undefined : 'Unable to save file'}
     }
     if (payload.type === 'loadFromFile') {
-        const data = await loadFromFile(payload.fileName ?? defaultFileName);
+        const data = await loadFromFile(payload.fileName);
         if (data) {
             return {value: data}
         }
-        const result = await loadFromOPFS(payload.fileName ?? defaultFileName);
+        const result = await loadFromOPFS(payload.fileName);
         if (result.success) {
             return {value: result.data}
         }
-        const networkData = await loadFromNetwork(payload.fileName ?? defaultFileName);
+        const networkData = await loadFromNetwork(payload.fileName);
         if (networkData) {
             return {value: networkData}
         }
     }
     if (payload.type === 'executeQuery') {
         const result = await executeQuery({
-            fileName: payload.fileName ?? defaultFileName,
+            fileName: payload.fileName,
             query: payload.query,
             params: payload.params
         });
         return {value: {columns: result.columns, values: result.values}, errors: result.errors}
     }
     if (payload.type === 'deleteFromFile') {
-        await deleteFile(payload.fileName ?? defaultFileName);
-        await deleteOPFS(payload.fileName ?? defaultFileName);
-        delete database[payload.fileName ?? defaultFileName];
+        await deleteFile(payload.fileName);
+        await deleteOPFS(payload.fileName);
+        delete database[payload.fileName];
         return {value: undefined, errors: undefined}
     }
     if (payload.type === 'persistChanges') {
-        await persistDb(payload.fileName ?? defaultFileName);
+        await persistDb(payload.fileName);
         return {value: undefined, errors: undefined}
     }
     return {errors: 'Unable to identify payload type', value: ''}
@@ -83,35 +98,35 @@ export default async function sqlite(payload: Payload): Promise<{ errors?: strin
 const database: Record<string, Database> = {};
 const initSqlJs = self['initSqlJs'];
 
-async function getDatabase(fileName: string) {
+export async function getDatabase(fileName: string) {
     let db: Database | undefined = undefined;
 
     if (fileName in database && database[fileName]) {
         db = database[fileName];
     } else {
         try {
-            let data:Uint8Array<ArrayBufferLike>|undefined = await loadFromFile(fileName);
-            if(data){
+            let data: Uint8Array<ArrayBufferLike> | undefined = await loadFromFile(fileName);
+            if (data) {
                 const current = infoSignal.get()
-                infoSignal.set({...current,database:{type:'file',path:fileName}})
+                infoSignal.set({...current, database: {type: 'file', path: fileName}})
             }
             if (!data) {
                 const res = await loadFromOPFS(fileName);
                 data = res && res.data && res.data.length > 0 ? res.data : undefined;
-                if(data){
+                if (data) {
                     const current = infoSignal.get()
-                    infoSignal.set({...current,database:{type:'opfs',path:fileName}})
+                    infoSignal.set({...current, database: {type: 'opfs', path: fileName}})
                 }
             }
             if (!data) {
                 const res = await loadFromNetwork(fileName);
                 data = res && res.length > 0 ? res : undefined;
-                if(data){
+                if (data) {
                     const current = infoSignal.get()
-                    infoSignal.set({...current,database:{type:'network',path:fileName}})
+                    infoSignal.set({...current, database: {type: 'http', path: fileName}})
                 }
             }
-            if (data) {
+            if (data && data.length > 0) {
                 log.debug('[DB]opening db', fileName);
                 const SQL = await initSqlJs({
                     locateFile: file => `${file}`
@@ -120,8 +135,8 @@ async function getDatabase(fileName: string) {
                 db = new SQL.Database(data);
                 Object.assign(database, {[fileName]: db});
             }
-        } catch (error) {
-            log.error(error);
+        } catch (err) {
+            log.error(err);
         }
     }
     return db;
@@ -140,17 +155,17 @@ function cleanUpParams(params?: BindParams): BindParams | undefined {
     if (Array.isArray(params)) {
         return params.map((v: unknown) => {
             if (v instanceof Date) {
-                return utils.dateToString(v)
+                return dateToString(v)
             }
             return v;
         }) as SqlValue[]
     }
-    if (params !== null && params !== undefined && typeof params === 'object') {
+    if (isNotEmpty(params) && typeof params === 'object') {
         return Object.keys(params).reduce((result, key) => {
             if (params && key in params) {
                 const v = params[key] as unknown;
                 if (v instanceof Date) {
-                    result[key] = utils.dateToString(v) as string
+                    result[key] = dateToString(v) as string
                 } else {
                     result[key] = v as SqlValue;
                 }
@@ -171,23 +186,20 @@ async function executeQuery({query, params, fileName}: {
     columns: string[],
     values: SqlValue[][]
 }> {
-    log.debug('[ExecuteQuery]', query)
+    log.debug(query)
     const db = await getDatabase(fileName);
-    if (db !== undefined) {
+    if (isNotEmpty(db)) {
         try {
             params = cleanUpParams(params);
-            log.debug('[ExecuteQuery] invoking ', query, params)
             const result = db.exec(query, params);
 
             if (result.length > 0) {
                 const {columns, values} = result.pop()!;
-                log.debug('[ExecuteQuery] result ', values.length, 'records', 'columns', columns, 'values', values);
                 return {
                     columns,
                     values
                 }
             } else {
-                log.debug('[ExecuteQuery] result ', result.length, 'records')
             }
             return {
                 columns: [],
@@ -195,6 +207,7 @@ async function executeQuery({query, params, fileName}: {
             }
         } catch (err) {
             const error = err as { message: string };
+            log.error(err)
             return {
                 errors: error.message,
                 columns: [],
@@ -203,7 +216,7 @@ async function executeQuery({query, params, fileName}: {
         }
     }
     return {
-        errors: "DB Is undefined",
+        errors: 'DB is not initialized',
         columns: [],
         values: []
     }

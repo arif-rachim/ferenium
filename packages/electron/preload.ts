@@ -9,5 +9,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     maximize: () => ipcRenderer.invoke('maximize'),
     minimize: () => ipcRenderer.invoke('minimize'),
     restore: () => ipcRenderer.invoke('restore'),
-    fetch: (url: string, options: Record<string, unknown>, formData?: Record<string, unknown>) => ipcRenderer.invoke('fetch-request', url, options, formData)
+    fetch: (url: string, options: Record<string, unknown>, formData?: Record<string, unknown>) => ipcRenderer.invoke('fetch-request', url, options, formData),
+    log: (level: 'info' | 'warn' | 'error' | 'debug', name: string, ...messages: unknown[]) => ipcRenderer.invoke('log', level, name, messages),
 });

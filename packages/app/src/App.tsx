@@ -3,8 +3,9 @@ import {useEffect, useState} from "react";
 import AppViewer from "./app/viewer/AppViewer.tsx";
 import {openDevTools} from "./core/utils/electronApi.ts";
 import {saveAppMeta} from "./core/utils/appStorage.ts";
+import {TableContext, useGetTables} from "./app/designer/panels/database/getTables.ts";
 
-export function App(props:{meta:Record<string, unknown>}) {
+export function App(props: { meta: Record<string, unknown> }) {
     const [value, setValue] = useState<Application>(() => {
         const val = props.meta;
         if (val) {
@@ -20,39 +21,50 @@ export function App(props:{meta:Record<string, unknown>}) {
     });
     const [designMode, setDesignMode] = useState(false);
     useEffect(() => {
-        function onF10(event:KeyboardEvent) {
-            if(event.code === 'F10'){
+        function onF10(event: KeyboardEvent) {
+            if (event.code === 'F10') {
                 setDesignMode(!designMode);
             }
         }
-        function onF5(event:KeyboardEvent) {
-            if(event.code === 'F5'){
+
+        function onF5(event: KeyboardEvent) {
+            if (event.code === 'F5') {
                 location.reload();
             }
         }
 
-        async function onF12(event:KeyboardEvent) {
-            if(event.code === 'F12'){
+        async function onF12(event: KeyboardEvent) {
+            if (event.code === 'F12') {
                 await openDevTools()
             }
         }
-        window.addEventListener('keydown',onF10)
-        window.addEventListener('keydown',onF12)
-        window.addEventListener('keydown',onF5)
+
+        window.addEventListener('keydown', onF10)
+        window.addEventListener('keydown', onF12)
+        window.addEventListener('keydown', onF5)
         return () => {
-            window.removeEventListener('keydown',onF10)
-            window.removeEventListener('keydown',onF12)
-            window.removeEventListener('keydown',onF5)
+            window.removeEventListener('keydown', onF10)
+            window.removeEventListener('keydown', onF12)
+            window.removeEventListener('keydown', onF5)
         }
     }, [designMode]);
-    return <div style={{display: 'flex', width: '100%', height: '100%', flexDirection: 'column'}}>
-        {designMode && <AppDesigner value={value} onChange={async (val) => {
-            setValue(val);
-            saveAppMeta(val).then()
-        }}/>}
-        {!designMode && <AppViewer value={value} onChange={async (val) => {
-            setValue(val);
-            saveAppMeta(val).then()
-        }} startingPage={'app/home'}/>}
-    </div>
+
+    const tablesSignal = useGetTables(value)
+
+    return <TableContext.Provider value={tablesSignal}>
+        <div style={{display: 'flex', width: '100%', height: '100%', flexDirection: 'column'}}>
+            {designMode && <AppDesigner value={value} onChange={async (val) => {
+                if (JSON.stringify(value) !== JSON.stringify(val)) {
+                    setValue(val);
+                    saveAppMeta(val).then()
+                }
+            }}/>}
+            {!designMode && <AppViewer value={value} onChange={async (val) => {
+                if (JSON.stringify(value) !== JSON.stringify(val)) {
+                    setValue(val);
+                    saveAppMeta(val).then()
+                }
+            }} startingPage={'app/home'}/>}
+        </div>
+    </TableContext.Provider>
 }

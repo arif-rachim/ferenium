@@ -7,7 +7,7 @@ import {PageSelectionPropertyEditor} from "../data/PageSelectionPropertyEditor.t
 import {Container} from "./AppDesigner.tsx";
 import {ContainerRendererIdContext} from "./panels/design/ContainerRenderer.tsx";
 import {QueryGrid} from "../data/QueryGrid.tsx";
-import {ConfigPropertyEditor} from "./editor/ConfigPropertyEditor.tsx";
+import {CardViewType, ConfigPropertyEditor} from "./editor/ConfigPropertyEditor.tsx";
 import {IconType} from "react-icons";
 import {cssLength, cssPropertiesSchema, iconSchema} from "./cssPropertiesSchema.ts";
 import {ComponentRenderer} from "../data/ComponentRenderer.tsx";
@@ -42,11 +42,11 @@ import {BsMenuButtonWide} from "react-icons/bs";
 import {PageSelectionWithMapperPropertyEditor} from "../data/PageSelectionWithMapperPropertyEditor.tsx";
 import {TimeInput} from "../form/input/date/TimeInput.tsx";
 import {GrValidate} from "react-icons/gr";
-import {createLogger} from "../../core/utils/logger.ts";
 import {LabelContext} from "../form/Label.tsx";
+import {createLogger} from "../../core/utils/logger.ts";
 
 const ZodSqlValue = z.union([z.number(), z.string(), z.instanceof(Uint8Array), z.null()]);
-const log = createLogger('DefaultElements');
+const log = createLogger('elements-error');
 export const DefaultElements: Record<string, Element> = {
     container: element({
         shortName: 'Container',
@@ -843,7 +843,7 @@ export const DefaultElements: Record<string, Element> = {
                 currentPage: z.number(),
                 index: z.number()
             })).returns(z.promise(z.void())).optional(),
-            refreshQueryKey: z.string().optional(),
+            refreshQueryKey: z.union([z.string(),z.number()]).optional(),
             onRowDoubleClick: z.function().args(z.object({
                 value: z.record(ZodSqlValue),
                 data: z.array(z.record(ZodSqlValue)),
@@ -872,7 +872,10 @@ export const DefaultElements: Record<string, Element> = {
                 columnName: z.string(),
                 gridData: z.array(z.record(ZodSqlValue)),
                 initialStyle: cssPropertiesSchema
-            })).returns(cssPropertiesSchema).optional()
+            })).returns(cssPropertiesSchema).optional(),
+            cardContainerStyleMapper: z.function().args(z.object({
+                cardView:z.enum(['SM_SCREEN','MD_SCREEN','LG_SCREEN','XL_SCREEN'])
+            })).returns(cssPropertiesSchema).optional(),
         },
         component: (props, ref) => {
             const {
@@ -892,7 +895,8 @@ export const DefaultElements: Record<string, Element> = {
                 selectedRows,
                 onMultipleSelectionChange,
                 visibleColumns,
-                cellStyleMapper
+                cellStyleMapper,
+                cardContainerStyleMapper
             } = props;
             return <QueryGrid ref={ref as ForwardedRef<HTMLDivElement>} query={query} style={style}
                               columnsConfig={config}
@@ -906,6 +910,7 @@ export const DefaultElements: Record<string, Element> = {
                               visibleColumns={visibleColumns}
                               //@ts-ignore
                               cellStyleMapper={cellStyleMapper}
+                              cardContainerStyleMapper={cardContainerStyleMapper as (props:{cardView:CardViewType}) => CSSProperties}
 
             />
         },

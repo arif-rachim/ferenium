@@ -5,12 +5,14 @@ import {createNewBlankPage} from "./createNewBlankPage.ts";
 export function createNewBlankApplication(): Application {
     return {
         id: guid(),
+        version: 0,
+        lastUpdate: '',
         name: '',
         pages: [createNewBlankPage({name: 'home'})],
-        tables: [],
         callables: [],
         variables: [],
         fetchers: [],
-        queries: []
+        queries: [],
+        databases: []
     }
 }

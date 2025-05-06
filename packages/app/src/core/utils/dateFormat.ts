@@ -1,6 +1,4 @@
-import {createLogger} from "./logger.ts";
 
-const log = createLogger('dateFormat');
 const pad = (d: number): string => {
     const a = Math.abs(d);
     return a <= 9 ? `0${a}` : `${a}`
@@ -46,7 +44,6 @@ export function toDate(date?: unknown): Date | undefined {
             }
         }
     } catch (err) {
-        log.error(err);
     }
 }
 

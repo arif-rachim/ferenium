@@ -1,4 +1,6 @@
 import {Fetcher, FetcherParameter} from "./AppDesigner.tsx";
+import {isNotEmpty} from "../../core/utils/isNotEmpty.ts";
+
 export type FetcherConfig = {
     mapRequest?: (props: { request: Record<string, unknown>, body?: Record<string, unknown> }) => { request: Record<string, unknown>, body?: Record<string, unknown> }
 }
@@ -11,7 +13,7 @@ export function createRequest(fetcher: Fetcher, inputs: Record<string, unknown>,
             // remove any extra whitespace from the parameter name
             const paramName = p1.trim();
             // return the parameter value or the original placeholder
-            return parameters[paramName] !== undefined ? parameters[paramName] : match
+            return isNotEmpty(parameters[paramName]) ? parameters[paramName] : match
         })
     }
 

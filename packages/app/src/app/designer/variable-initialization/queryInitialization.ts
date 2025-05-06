@@ -11,6 +11,7 @@ export function queryInitialization(allQueries: Array<Query>): Record<string, Qu
             const {params, page, filter, sort, rowPerPage} = props;
             return new Promise(resolve => {
                 queryPagination({
+                    fileName : queryValue.fileName,
                     query: queryValue.query,
                     filter: filter ?? {},
                     sort: sort ?? [],

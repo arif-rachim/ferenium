@@ -1,10 +1,10 @@
 import {LayoutBuilderProps} from "../../app/designer/LayoutBuilderProps.ts";
 import {useComputed, useSignal, useSignalEffect} from "react-hook-signal";
 import {createNewBlankApplication} from "../../app/designer/createNewBlankApplication.ts";
-import {Query, Table} from "../../app/designer/panels/database/getTables.ts";
+import {Query, TableContext} from "../../app/designer/panels/database/getTables.ts";
 import {Signal} from "signal-polyfill";
 import {ErrorType} from "../ErrorType.ts";
-import {useEffect, useMemo} from "react";
+import {useContext, useEffect, useMemo, useRef} from "react";
 import {
     Application,
     Callable,
@@ -14,9 +14,7 @@ import {
     Variable,
     VariableInstance
 } from "../../app/designer/AppDesigner.tsx";
-import {createLogger} from "../utils/logger.ts";
 
-const log = createLogger('useAppInitiator');
 const navigationStack: Array<{ path: string, param?: unknown }> = [];
 
 export function useAppInitiator(props: LayoutBuilderProps & {
@@ -27,8 +25,8 @@ export function useAppInitiator(props: LayoutBuilderProps & {
 
     const allApplicationCallablesSignal = useComputed(() => applicationSignal.get().callables ?? []);
     const allPagesSignal = useComputed<Array<Page>>(() => applicationSignal.get().pages ?? []);
+    const allTablesSignal = useContext(TableContext)!;
 
-    const allTablesSignal = useComputed<Array<Table>>(() => applicationSignal.get().tables ?? []);
     const allApplicationQueriesSignal = useComputed(() => applicationSignal.get().queries ?? []);
     useSignalEffect(() => {
         const allPages = allPagesSignal.get();
@@ -43,7 +41,6 @@ export function useAppInitiator(props: LayoutBuilderProps & {
     const activePageId = useMemo(() => {
         const allPages = allPagesSignal.get() ?? [];
         const pageId = allPages.find(p => p.name === startingPage)?.id ?? '';
-        log.debug('activePageId', startingPage, ' is ', pageId);
         return pageId;
     }, [allPagesSignal, startingPage])
 
@@ -79,27 +76,38 @@ export function useAppInitiator(props: LayoutBuilderProps & {
     const allCallablesSignal = useComputed(() => [...allPageCallablesSignal.get(), ...allApplicationCallablesSignal.get()])
     const {value, onChange} = props;
     useEffect(() => {
-        validateAndFixAppMeta(value);
-        applicationSignal.set(value);
-        if (value && value.pages && value.pages.length > 0) {
+        const newVal = validateAndFixAppMeta(value);
+        if(newVal !== value){
+            applicationSignal.set(newVal);
+        }
+        if (newVal && newVal.pages && newVal.pages.length > 0) {
             const currentActivePageId = activePageIdSignal.get();
-            const hasSelection = value.pages.findIndex(i => i.id === currentActivePageId) >= 0;
+            const hasSelection = newVal.pages.findIndex(i => i.id === currentActivePageId) >= 0;
             if (!hasSelection) {
                 allErrorsSignal.set([]);
                 variableInitialValueSignal.set({});
-                activePageIdSignal.set(value.pages[0].id);
+                activePageIdSignal.set(newVal.pages[0].id);
             }
         }
     }, [activePageIdSignal, allErrorsSignal, applicationSignal, value, variableInitialValueSignal]);
-
+    const isInit = useRef(true);
     useSignalEffect(() => {
-        onChange(applicationSignal.get());
+        const application = applicationSignal.get();
+        if(isInit.current){
+            isInit.current = false;
+            return;
+        }
+        onChange(application);
     })
 
     const navigate = useMemo(() => {
         return async function navigate(path: string, param?: Record<string, unknown> & {
             transientNavigation?: boolean
         }) {
+            const isDesignMode = uiDisplayModeSignal.get() === 'design'
+            if(isDesignMode) {
+                return;
+            }
             const page = allPagesSignal.get().find(p => p.name === path);
             if (page === undefined) {
                 return;
@@ -163,21 +171,27 @@ export function useAppInitiator(props: LayoutBuilderProps & {
     };
 }
 
-function validateAndFixAppMeta(value: Application): Application {
+function validateAndFixAppMeta(val: Application): Application {
+    const value = structuredClone(val);
     const pages = value?.pages ?? []
+    let isChanged = false;
     for (const p of pages) {
-        for (const parent of p.containers) {
-            if (!parent.children) {
-                p.containers.splice(p.containers.indexOf(parent), 1);
+        // we iterate every container in the pages
+        for (const container of p.containers) {
+            // if it doesnt have children then we need to remove in the container
+            if (!container.children) {
+                p.containers.splice(p.containers.indexOf(container), 1);
+                isChanged = true;
                 continue;
             }
-            for (const child of parent.children) {
+            for (const child of container.children) {
                 const isOrphan = p.containers.findIndex(c => c.id === child) <= 0;
                 if (isOrphan) {
+                    isChanged = true;
                     p.containers.push({
                         type: 'title',
                         children: [],
-                        parent: parent.id,
+                        parent: container.id,
                         id: child,
                         properties: {
                             title: {
@@ -189,6 +203,5 @@ function validateAndFixAppMeta(value: Application): Application {
             }
         }
     }
-
-    return value;
+    return isChanged ? value : val;
 }

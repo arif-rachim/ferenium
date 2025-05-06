@@ -56,7 +56,7 @@ export function CallablePanel() {
             if (scope === 'application') {
                 const callables = allApplicationCallablesSignal.get().filter(i => i.id !== callable.id);
                 updateApplication(app => {
-                    app.callables = callables;
+                    app.callables = [...callables];
                 })
             } else {
                 const callables = allPageCallablesSignal.get().filter(i => i.id !== callable.id);

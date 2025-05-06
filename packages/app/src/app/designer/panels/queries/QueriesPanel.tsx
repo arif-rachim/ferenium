@@ -57,7 +57,7 @@ export function QueriesPanel() {
             if (scope === 'application') {
                 const queries = allApplicationQueriesSignal.get().filter(i => i.id !== query.id);
                 updateApplication(app => {
-                    app.queries = queries;
+                    app.queries = [...queries];
                 })
             } else {
                 const queries = allPageQueriesSignal.get().filter(i => i.id !== query.id);

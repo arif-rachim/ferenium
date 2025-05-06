@@ -21,12 +21,13 @@ import {createRequest} from "../../createRequest.ts";
 import {Query, Table} from "../database/getTables.ts";
 import type {ChangeEvent} from "react";
 import {useNameRefactor} from "../../../../core/hooks/useNameRefactor.ts";
-import {createLogger} from "../../../../core/utils/logger.ts";
-import untrack = Signal.subtle.untrack;
 import {utils} from "../../../../core/utils/utils.ts";
+import {createLogger} from "../../../../core/utils/logger.ts";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
+import untrack = Signal.subtle.untrack;
 
 const LABEL_WIDTH = 60;
-const log = createLogger('FetcherEditorPanel')
+const log = createLogger('fetching-error');
 export function FetcherEditorPanel(props: { fetcherId?: string, panelId: string, scope: 'page' | 'application' }) {
     const {
         allPageFetchersSignal,
@@ -111,7 +112,7 @@ export function FetcherEditorPanel(props: { fetcherId?: string, panelId: string,
 
     function validateForm(): [boolean, Partial<Record<keyof Fetcher, Array<string>>>] {
         function nameIsDuplicate(name: string, id: string) {
-            return allPageFetchersSignal.get().filter(v => v.id !== id).find(v => v.name === name) !== undefined;
+            return isNotEmpty(allPageFetchersSignal.get().filter(v => v.id !== id).find(v => v.name === name));
         }
 
         const errors: Partial<Record<keyof Fetcher, Array<string>>> = {};

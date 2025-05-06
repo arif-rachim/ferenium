@@ -3,8 +3,8 @@ import {zodSchemaToJson} from "../../../core/utils/zodSchemaToJson.ts";
 import {isEmpty} from "../../../core/utils/isEmpty.ts";
 import {createRequest, FetcherConfig} from "../createRequest.ts";
 import {FetchType, FormulaDependencyParameter} from "./AppVariableInitialization.tsx";
-import {createLogger} from "../../../core/utils/logger.ts";
 import {utils} from "../../../core/utils/utils.ts";
+import {createLogger} from "../../../core/utils/logger.ts";
 
 export function composeFetcherSchema(allFetchers: Array<Fetcher>) {
     const fetchersSchema = allFetchers.map(i => {
@@ -35,7 +35,7 @@ export function composeFetcherSchema(allFetchers: Array<Fetcher>) {
 
     return `{${fetchersSchema.join(',')}}`
 }
-
+const log = createLogger('fetcher-error');
 export function fetcherInitialization(props: {
     allFetchers: Array<Fetcher>,
     app: FormulaDependencyParameter,
@@ -64,7 +64,6 @@ export function fetcherInitialization(props: {
                         data?: Record<string, unknown>,
                     }
                 } = {exports: {}};
-                const log = createLogger('fetcherInitialization');
                 try {
                     const params = ['module', 'app', 'page', fetcher.functionCode ?? ''];
                     const fun = new Function(...params)

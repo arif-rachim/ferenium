@@ -1,6 +1,6 @@
 export async function saveToOPFS(
     fileName: string,
-    binaryArray: Uint8Array,
+    binaryArray: Uint8Array<ArrayBuffer>,
 ): Promise<{
     success: boolean
 }> {
@@ -17,7 +17,7 @@ export async function saveToOPFS(
 
 }
 
-export async function loadFromOPFS(fileName: string): Promise<{ success: boolean, data?: Uint8Array }> {
+export async function loadFromOPFS(fileName: string): Promise<{ success: boolean, data?: Uint8Array<ArrayBuffer> }> {
     const root = await navigator.storage.getDirectory();
     try {
         const fileHandle = await root.getFileHandle(fileName);
@@ -27,7 +27,17 @@ export async function loadFromOPFS(fileName: string): Promise<{ success: boolean
     } catch (err) {
         return {success: false}
     }
+}
 
+export async function loadFromOPFSLite(fileName: string): Promise<Uint8Array<ArrayBuffer>|undefined> {
+    const root = await navigator.storage.getDirectory();
+    try {
+        const fileHandle = await root.getFileHandle(fileName);
+        const file = await fileHandle.getFile();
+        const arrayBuffer = await file.arrayBuffer();
+        return new Uint8Array(arrayBuffer);
+    } catch (err) {
+    }
 }
 
 export async function deleteOPFS(fileName: string): Promise<{ success: boolean }> {

@@ -20,10 +20,18 @@ label, input, button, option, select, body, textarea {
     font-size: 14px;
     transition: background-color 0.25s ease-in-out;
 }
-input:focus, textarea:focus,textarea:focus,select:focus,div.table-row:focus {
+
+input:focus, textarea:focus,textarea:focus,select:focus,div.table-row:focus,tr:focus {
     background: yellow;
     outline: none;
+}
+div.table-row.card-view:focus {
+    background: unset;
+}
 
+table,thead,tbody,tfoot,tr,th,td {
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
 input[type="number"]::-webkit-outer-spin-button,

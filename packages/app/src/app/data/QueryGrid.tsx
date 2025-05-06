@@ -1,11 +1,13 @@
 import {QueryType} from "../designer/variable-initialization/AppVariableInitialization.tsx";
 import {CSSProperties, forwardRef, useCallback, useEffect, useRef, useState} from "react";
-import {ColumnsConfig, SimpleTable, SimpleTableFooter} from "../designer/panels/database/TableEditor.tsx";
 import {Container} from "../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
 import {queryGridColumnsTemporalColumnsSignal} from "../designer/editor/queryGridColumnsTemporalColumnsSignal.ts";
 import {useForwardedRef} from "../../core/hooks/useForwardedRef.ts";
 import {DivWithClickOutside} from "../designer/components/DivWithClickOutside.tsx";
+import {ColumnsConfig, SimpleTable} from "../designer/panels/database/SimpleTable.tsx";
+import {SimpleTableFooter} from "../designer/panels/database/SimpleTableFooter.tsx";
+import {CardViewType} from "../designer/editor/ConfigPropertyEditor.tsx";
 
 export type QueryTypeResult = {
     error?: string,
@@ -29,7 +31,7 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         index: number
     }) => (Promise<void> | void),
     container: Container,
-    refreshQueryKey?: string,
+    refreshQueryKey?: string|number,
     onRowDoubleClick?: (props: {
         value: Record<string, SqlValue>,
         data: Array<Record<string, SqlValue>>,
@@ -60,7 +62,8 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         columnName: string,
         gridData: Array<Record<string, unknown>>,
         initialStyle : CSSProperties
-    }) => CSSProperties
+    }) => CSSProperties,
+    cardContainerStyleMapper?: (props:{cardView:CardViewType}) => CSSProperties
 }>(function QueryGrid(props, ref) {
     const referenceRef = useForwardedRef<HTMLDivElement>(ref);
     const {
@@ -82,7 +85,8 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
         onMultipleSelectionChange,
         onClickOutside,
         visibleColumns,
-        cellStyleMapper
+        cellStyleMapper,
+        cardContainerStyleMapper
     } = props;
 
     const rowPerPage = pageable ? props.rowPerPage ? props.rowPerPage : DEFAULT_ROW_PER_PAGE : Number.MAX_SAFE_INTEGER
@@ -146,16 +150,16 @@ export const QueryGrid = forwardRef<HTMLDivElement | null, {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     flexGrow: 1,
-                                    background: 'white',
                                     ...style
                                 }}>
         <div style={{display: 'flex', flexDirection: 'column', overflow: 'auto', flexGrow: 1}}>
-            <SimpleTable columns={queryResult.columns ?? []}
+            <SimpleTable columns={queryResult.columns}
                          visibleColumns={visibleColumns}
                          data={queryResult.data as Array<Record<string, SqlValue>>}
                          itemToKey={itemToKey}
                          columnsConfig={columnsConfig}
                          focusedRow={focusedRow}
+                         cardContainerStyleMapper={cardContainerStyleMapper}
                          onFocusedRowChange={(value: Record<string, SqlValue>) => {
                              const data = queryResult.data ?? [];
                              if (onFocusedRowChange) {

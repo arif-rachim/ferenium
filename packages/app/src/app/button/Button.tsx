@@ -17,6 +17,7 @@ import {FormContext} from "../form/Form.tsx";
 import {IconType} from "../../core/components/icon/IconElement.tsx";
 import * as Io from "react-icons/io";
 import {useSignalEffect} from "react-hook-signal";
+import {isNotEmpty} from "../../core/utils/isNotEmpty.ts";
 
 /**
  * A custom Button component.
@@ -57,8 +58,8 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
     }, [disabled]);
 
     useSignalEffect(() => {
-        const isBusy = formContext !== undefined && formContext.isBusy.get();
-        let isDisabled = formContext !== undefined && formContext.isDisabled.get();
+        const isBusy = isNotEmpty(formContext) && formContext.isBusy.get();
+        let isDisabled = isNotEmpty(formContext) && formContext.isDisabled.get();
         const isChanged = formContext?.isChanged.get();
         if (type === 'submit' || type === 'reset') {
             isDisabled = isDisabled || !isChanged;

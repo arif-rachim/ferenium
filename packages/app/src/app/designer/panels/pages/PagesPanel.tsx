@@ -16,6 +16,7 @@ import {guid} from "../../../../core/utils/guid.ts";
 import {useRefactorPageName} from "../../../../core/hooks/useRefactorPageName.ts";
 import {AppDesignerContext} from "../../AppDesignerContext.ts";
 import {dragElementCloneDragImage} from "../../builder/dragElementCloneDragImage.ts";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
 
 
 type TreeNode = {
@@ -221,8 +222,8 @@ function RenderTree(props: {
     } = props;
     const {activeDropZoneIdSignal} = useAppContext<AppDesignerContext>();
     return Object.keys(data).sort((a, b) => {
-        const aNodeIsFolder = data[a].pageId !== undefined;
-        const bNodeIsFolder = data[b].pageId !== undefined;
+        const aNodeIsFolder = isNotEmpty(data[a].pageId);
+        const bNodeIsFolder = isNotEmpty(data[b].pageId);
         if (aNodeIsFolder && !bNodeIsFolder) {
             return 1;
         }

@@ -19,7 +19,7 @@ export function useUpdateFetcher(scope: 'page' | 'application') {
             updatePage({type: 'fetcher', fetchers: fetchers});
         } else {
             updateApplication(original => {
-                original.fetchers = fetchers
+                original.fetchers = [...fetchers]
             })
         }
     }

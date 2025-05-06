@@ -30,8 +30,12 @@ export function useContainerStyleHook(style: CSSProperties) {
             })
         }else{
             // this is required otherwise container will look silly
-            style.minWidth = 0;
-            style.minHeight = 0;
+            if(!style.minWidth){
+                style.minWidth = 0;
+            }
+            if(!style.minHeight){
+                style.minHeight = 0;
+            }
         }
         return style;
     }, [displayMode, styleString]);

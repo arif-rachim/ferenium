@@ -2,18 +2,18 @@ import {Signal} from "signal-polyfill";
 
 export type Info = {
     database: {
-        type?: 'file' | 'opfs' | 'network',
+        type?: 'file' | 'opfs' | 'http',
         path?: string,
 
     },
     appMeta: {
-        type?: 'file' | 'opfs' | 'network' | 'embed',
+        type?: 'file' | 'opfs' | 'http' ,
         path?: string,
         version?: number,
         lastUpdate?: string
     },
     appStorage: {
-        type?: 'file' | 'opfs' | 'network' | 'embed',
+        type?: 'file' | 'opfs' | 'http' ,
         path?: string,
         version?: number,
         lastUpdate?: string

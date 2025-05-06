@@ -7,6 +7,7 @@ import {Icon} from "../../../../core/components/icon/Icon.ts";
 import {useAddDashboardPanel} from "../../hooks/useAddDashboardPanel.tsx";
 import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {PropertyEditorComponent} from "./PropertyEditorComponent.tsx";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
 
 export function PropertyCallbackItemRenderer(props: { propertyName: string }) {
     const {propertyName} = props;
@@ -28,7 +29,7 @@ export function PropertyCallbackItemRenderer(props: { propertyName: string }) {
         <notifiable.div style={{display: 'flex', flexDirection: 'column', flexGrow: 1}}>
             {() => {
                 const container = containerSignal.get();
-                const hasError = context.allErrorsSignal.get().find(i => i.type === 'property' && i.propertyName === propertyName && i.containerId === container?.id) !== undefined;
+                const hasError = isNotEmpty(context.allErrorsSignal.get().find(i => i.type === 'property' && i.propertyName === propertyName && i.containerId === container?.id));
                 let isFormulaEmpty = true;
                 if (container && container.properties[propertyName]) {
                     const formula = container.properties[propertyName].formula;

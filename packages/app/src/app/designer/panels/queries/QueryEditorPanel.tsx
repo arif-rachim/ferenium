@@ -16,12 +16,14 @@ import {useUpdateQueries} from "./useUpdateQueries.ts";
 import {Query} from "../database/getTables.ts";
 import {RenderParameters} from "../fetchers/FetcherEditorPanel.tsx";
 import {ParamsObject, SqlValue} from "sql.js";
-import {SimpleTable, SimpleTableFooter} from "../database/TableEditor.tsx";
 import {composeArraySchema} from "../../variable-initialization/dbSchemaInitialization.ts";
 import {useNameRefactor} from "../../../../core/hooks/useNameRefactor.ts";
 import {queryPagination} from "../../queryPagination.ts";
 import {QueryParamsObject} from "../database/queryDb.ts";
 import {DEFAULT_ROW_PER_PAGE} from "../../../data/QueryGrid.tsx";
+import {SimpleTable} from "../database/SimpleTable.tsx";
+import {SimpleTableFooter} from "../database/SimpleTableFooter.tsx";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
 
 export default function QueryEditorPanel(props: {
     queryId?: string,
@@ -58,6 +60,7 @@ export default function QueryEditorPanel(props: {
             query: '',
             parameters: [],
             schemaCode: '',
+            fileName: ''
         }
     }
 
@@ -66,7 +69,7 @@ export default function QueryEditorPanel(props: {
 
     function validateForm(): [boolean, Partial<Record<keyof Query, Array<string>>>] {
         function nameIsDuplicate(name: string, id: string) {
-            return allQueriesSignal.get().filter(v => v.id !== id).find(v => v.name === name) !== undefined;
+            return isNotEmpty(allQueriesSignal.get().filter(v => v.id !== id).find(v => v.name === name));
         }
 
         const errors: Partial<Record<keyof Variable, Array<string>>> = {};
@@ -128,6 +131,7 @@ export default function QueryEditorPanel(props: {
             return params;
         }, params)
         const result = await queryPagination({
+            fileName : query.fileName,
             query: query.query,
             params,
             filter: filterSignal.get(),
@@ -143,6 +147,7 @@ export default function QueryEditorPanel(props: {
         }
         if (page === 1) {
             const allData = await queryPagination({
+                fileName : query.fileName,
                 query: query.query,
                 params,
                 filter: filterSignal.get(),
@@ -188,6 +193,34 @@ export default function QueryEditorPanel(props: {
                                           dom.setSelectionRange(cursorPosition, cursorPosition);
                                       }, 0);
                                   }}/>
+            </LabelContainer>
+            <LabelContainer label={'DB : '}
+                            style={{flexGrow: 1, flexBasis: '50%', flexDirection: 'row', alignItems: 'center', gap: 10}}
+                            styleLabel={{fontStyle: 'italic'}}>
+
+                <notifiable.select
+                    style={{
+                        width: '100%',
+                        border: BORDER,
+                        padding: '5px 10px',
+                        borderRadius: 5,
+                    }}
+                    value={() => {
+                        return querySignal.get().fileName
+                    }}
+                    name={'fileName'}
+                    onChange={(e) => {
+                        const newCallable = {...querySignal.get()};
+                        newCallable.fileName = e.target.value;
+                        querySignal.set(newCallable);
+                        isModified.set(true);
+                    }}>{() => {
+                    const databases = ['',...context.applicationSignal.get()?.databases];
+                    return databases?.map(db => {
+                        return <option value={db} key={db}>{db}</option>
+                    })
+                }}
+                </notifiable.select>
             </LabelContainer>
         </div>
         <div style={{display: 'flex', flexDirection: 'column', flexGrow: 1, flexShrink: 1, overflow: 'auto'}}>

@@ -7,15 +7,18 @@ import {BORDER} from "../../../core/style/Border.ts";
 import {Icon} from "../../../core/components/icon/Icon.ts";
 import {useShowModal} from "../../../core/hooks/modal/useShowModal.ts";
 import {Button} from "../../button/Button.tsx";
-import {ColumnsConfig} from "../panels/database/TableEditor.tsx";
 import {Container} from "../AppDesigner.tsx";
 import {PageInputSelector} from "../../data/PageInputSelector.tsx";
 import {AppDesignerContext} from "../AppDesignerContext.ts";
 import {MdOutlineCheckBox, MdOutlineCheckBoxOutlineBlank} from "react-icons/md";
-import {IoMdCheckbox} from "react-icons/io";
+import {IoMdCheckbox, IoMdRemoveCircle} from "react-icons/io";
 import {queryGridColumnsTemporalColumnsSignal} from "./queryGridColumnsTemporalColumnsSignal.ts";
 import {ValueMapperSelector} from "../../data/ValueMapperSelector.tsx";
 import {useLogger} from "../../../core/utils/logger.ts";
+import {ColumnsConfig} from "../panels/database/SimpleTable.tsx";
+import {ConfirmationDialog} from "../ConfirmationDialog.tsx";
+import ButtonGroup from "../../button/ButtonGroup.tsx";
+import {isNotEmpty} from "../../../core/utils/isNotEmpty.ts";
 
 const green = 'green';
 const red = 'red';
@@ -33,7 +36,7 @@ export function ConfigPropertyEditor(props: { propertyName: string }) {
 
     const container = containerSignal.get();
     const {propertyName} = props;
-    const hasError = context.allErrorsSignal.get().find(i => i.type === 'property' && i.propertyName === propertyName && i.containerId === container?.id) !== undefined;
+    const hasError = isNotEmpty(context.allErrorsSignal.get().find(i => i.type === 'property' && i.propertyName === propertyName && i.containerId === container?.id));
     const formula = getFormula(container, propertyName);
     const isFormulaEmpty = isEmpty(formula);
     const update = useUpdateDragContainer();
@@ -85,6 +88,17 @@ export function ConfigPropertyEditor(props: { propertyName: string }) {
 }
 
 
+export const COLUMNS_WIDTH = {
+    'SM_SCREEN': 360,
+    'MD_SCREEN': 784,
+    'LG_SCREEN': 1366,
+    'XL_SCREEN': 1920,
+} as const;
+
+export type CardViewType = (keyof typeof COLUMNS_WIDTH);
+
+export const CARD_COLUMNS = (Object.keys(COLUMNS_WIDTH) as Array<CardViewType>).sort((a,b) => COLUMNS_WIDTH[b] - COLUMNS_WIDTH[a]) as Array<CardViewType>;
+
 function EditColumnConfigFormula(props: {
     closePanel: (formula?: string) => void,
     formula?: string,
@@ -93,7 +107,8 @@ function EditColumnConfigFormula(props: {
     const {columns: columnsProps, formula, closePanel} = props;
     const [config, setConfig] = useState<ColumnsConfig>({});
     const [allHiddenStatus, setAllHiddenStatus] = useState<ThreeState>('no');
-    const log = useLogger(`EditColumnConfigFormula>${props.formula}`);
+    const log = useLogger(`EditColumnConfigFormula${props.formula}`);
+    const [displayCard, setDisplayCard] = useState('gridView');
     const columns = useMemo(() => {
         return ((columnsProps ?? []).map((col, index) => {
             if (config && col in config && config[col]) {
@@ -104,7 +119,6 @@ function EditColumnConfigFormula(props: {
     }, [columnsProps, config])
     const propsRef = useRef({columns});
     propsRef.current.columns = columns;
-
     useEffect(() => {
         if (formula) {
             setTimeout(() => {
@@ -149,244 +163,287 @@ function EditColumnConfigFormula(props: {
             })
         }
     }, [allHiddenStatus]);
-    return <div
-        style={{
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '0px 10px',
-            gap: 10,
-            overflow: 'auto',
-            maxHeight: '100%'
-        }}>
 
-        <div style={{display: 'table', overflowY: 'auto', height: '100%'}}>
-            <div style={{display: 'table-row', position: 'sticky', top: 0, background: 'white'}}>
-                <div style={{display: 'table-cell', padding: '0px 5px'}}>
-                </div>
-                <div style={{display: 'table-cell', padding: '10px 5px'}}>
-                    <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'center', paddingRight: 1}}>
-                        <div style={{paddingBottom: 2}}>Is Hidden</div>
-                        <InputThreeStateCheckbox value={allHiddenStatus} onChange={setAllHiddenStatus}
-                                                 style={{fontSize: 17, color: 'rgba(0,0,0,0.6)'}}/>
-                    </div>
-                </div>
-                <div style={{display: 'table-cell', padding: '0px 5px'}}>
-                    Min Width
-                </div>
-                <div style={{display: 'table-cell', padding: '0px 5px'}}>
-                    Max Width
-                </div>
-                <div style={{display: 'table-cell', padding: '0px 5px', width: 120}}>
-                    Cell Mapper
-                </div>
-                <div style={{display: 'table-cell', padding: '0px 5px', width: 200,maxWidth:200}}>
-                    Renderer
-                </div>
-                <div style={{display: 'table-cell', padding: '0px 5px'}}>
-                    Title
-                </div>
-            </div>
-            {(columns ?? []).map((col, index, source) => {
-                const isLastIndex = source.length - 1 === index;
-                const conf = config[col] ?? {
-                    hidden: false,
-                    width: undefined,
-                    title: undefined,
-                    rendererPageId: undefined
-                };
-                return <div key={col} style={{display: 'table-row'}} draggable={true} onDragStart={(e) => {
-                    e.dataTransfer.setData('text', JSON.stringify({col}));
-                }} onDragOver={e => {
-                    e.preventDefault();
-                }} onDrop={e => {
-                    const {col: sourceCol} = JSON.parse(e.dataTransfer.getData('text'));
-                    const columnsNew = columns.filter(i => i !== sourceCol);
-                    //columnsNew.splice(columnsNew.indexOf(col) + 1, 0, sourceCol);
-                    columnsNew.splice(columnsNew.indexOf(col), 0, sourceCol);
-                    setConfig(oldConfig => {
-                        if (columns) {
-                            const clone = {...oldConfig};
-                            for (const col of columns) {
-                                clone[col] = {...clone[col]};
-                                clone[col].index = columnsNew.indexOf(col);
+
+    return <ConfirmationDialog buttons={<>
+        <Button onClick={() => {
+            // here we need to save this convert to formula
+            const formula = `module.exports = ${JSON.stringify(config, null, 2)};`;
+            closePanel(formula);
+        }}>Save</Button>
+        <Button onClick={() => props.closePanel()}>Cancel</Button>
+    </>} title={'Edit Configuration'}>
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '0px 10px',
+                gap: 10,
+                overflow: 'auto',
+                maxHeight: '100%'
+            }}>
+            <div style={{display: 'flex', justifyContent: 'center'}}>
+                <ButtonGroup
+                    buttons={
+                        {
+                            gridView: {
+                                onClick: () => setDisplayCard('gridView'),
+                                title: 'Grid View'
+                            },
+                            cardView: {
+                                onClick: () => setDisplayCard('cardView'),
+                                title: 'Card View',
                             }
-                            return clone as typeof oldConfig;
                         }
-                        return oldConfig;
-                    })
-                }}>
-
+                    }
+                    value={displayCard}/>
+            </div>
+            <div style={{display: 'table', overflowY: 'auto', height: '100%'}}>
+                <div style={{display: 'table-row', position: 'sticky', top: 0, background: 'white'}}>
                     <div style={{display: 'table-cell', padding: '0px 5px'}}>
-                        {col}
                     </div>
-                    <div style={{
-                        display: 'table-cell',
-                        padding: '0px 5px',
-                        textAlign: 'right',
-                        verticalAlign: 'center'
-                    }}>
-                        <input type={"checkbox"} checked={conf.hidden}
-                               onChange={(e) => {
-                                   const value = e.target.checked;
-                                   setConfig(old => {
-                                       const clone = {...old};
-                                       clone[col] = {...clone[col]}
-                                       clone[col].hidden = value
-                                       return clone;
-                                   })
-                               }}/>
+                    <div style={{display: 'table-cell', padding: '0px 0px'}}>
+                        <InputThreeStateCheckbox value={allHiddenStatus} onChange={setAllHiddenStatus}
+                                                 style={{fontSize: 19, marginLeft: 2, color: 'rgba(0,0,0,0.6)'}}/>
                     </div>
-                    <div style={{display: 'table-cell'}}>
-                        <input style={{
-                            border: BORDER,
-                            borderRight: 'unset',
-                            borderBottom: isLastIndex ? BORDER : 'unset',
-                            borderRadius: 0,
-                            padding: '0px 5px',
-                            width: 70
-                        }}
-                               value={(conf.minWidth ?? '').toString()}
-                               onChange={(e) => {
-                                   const value = e.target.value;
-                                   const isPercentageOrPixel = value.endsWith('%') || value.endsWith('px') || value.endsWith('p');
-                                   const intValue = parseInt(value);
-                                   setConfig(old => {
-                                       const clone = {...old};
-                                       clone[col] = {...clone[col]}
-                                       if (isPercentageOrPixel || isNaN(intValue)) {
-                                           clone[col].minWidth = value
-                                       } else {
-                                           clone[col].minWidth = intValue
-                                       }
-
-                                       return clone;
-                                   })
-                               }}
-                        />
+                    <div style={{display: 'table-cell', padding: '0px 5px'}}>
+                        Min Width
                     </div>
-                    <div style={{display: 'table-cell'}}>
-                        <input style={{
-                            border: BORDER,
-                            borderRight: 'unset',
-                            borderBottom: isLastIndex ? BORDER : 'unset',
-                            borderRadius: 0,
-                            padding: '0px 5px',
-                            width: 70
-                        }}
-                               value={(conf.maxWidth ?? '').toString()}
-                               onChange={(e) => {
-                                   const value = e.target.value;
-                                   const isPercentageOrPixel = value.endsWith('%') || value.endsWith('px') || value.endsWith('p');
-                                   const intValue = parseInt(value);
-                                   setConfig(old => {
-                                       const clone = {...old};
-                                       clone[col] = {...clone[col]}
-                                       if (isPercentageOrPixel || isNaN(intValue)) {
-                                           clone[col].maxWidth = value
-                                       } else {
-                                           clone[col].maxWidth = intValue
-                                       }
-
-                                       return clone;
-                                   })
-                               }}
-                        />
+                    <div style={{display: 'table-cell', padding: '0px 5px'}}>
+                        Max Width
                     </div>
-                    <div style={{display: 'table-cell', verticalAlign: 'middle'}}>
-                        <ValueMapperSelector style={{
-                            padding: '0px 5px',
-                            borderRadius: 0,
-                            height: 23,
-                            borderBottom: isLastIndex ? '1px solid rgba(0,0,0,0.1)' : 'unset',
-                            borderRight: 'unset',
-                            width: '100%',
-                        }}
-                                             value={conf.cellValueMapper}
-                                             mapperInputSchema={composeMapperInputSchema(columns)}
-                                             onChange={(value) => {
-                                                 setConfig(old => {
-                                                     const clone = {...old};
-                                                     clone[col] = {...clone[col]}
-                                                     if (value === undefined) {
-                                                         delete clone[col].cellValueMapper;
-                                                     } else {
-                                                         clone[col].cellValueMapper = value;
-                                                     }
-                                                     return clone;
-                                                 })
-                                             }}/>
-
+                    <div style={{display: 'table-cell', padding: '0px 5px', width: 120}}>
+                        Cell Mapper
                     </div>
-                    <div style={{display: 'table-cell', verticalAlign: 'middle', width: 200,maxWidth:200}}>
-                        <PageInputSelector style={{
-                            borderRadius: 0,
-                            height: 23,
-                            padding: '0px 5px',
-                            borderRight: 'unset',
-                            borderBottom: isLastIndex ? BORDER : 'unset',
-                        }}
-                                           chipColor={'rgba(0,0,0,0)'}
-                                           onChange={(pageId, mapperFormula) => {
-                                               setConfig(old => {
-                                                   const clone = {...old};
-                                                   clone[col] = {...clone[col]}
-                                                   clone[col].rendererPageId = pageId;
-                                                   clone[col].rendererPageDataMapperFormula = mapperFormula;
-                                                   return clone;
-                                               })
-                                           }}
-                                           value={conf.rendererPageId}
-                                           bindWithMapper={true}
-                                           mapperInputSchema={composeMapperInputSchema(columns)}
-                                           mapperValue={conf.rendererPageDataMapperFormula}
-
-                        />
+                    <div style={{display: 'table-cell', padding: '0px 5px', width: 200, maxWidth: 200}}>
+                        Renderer
                     </div>
-
-                    <div style={{display: 'table-cell'}}>
-                        <input style={{
-                            border: BORDER,
-                            borderRadius: 0,
-                            padding: '0px 5px',
-                            borderBottom: isLastIndex ? BORDER : 'unset'
-                        }}
-                               value={conf?.title}
-                               onChange={(e) => {
-                                   const value = e.target.value;
-                                   setConfig(old => {
-                                       const clone = {...old};
-                                       clone[col] = {...clone[col]}
-                                       clone[col].title = value;
-                                       return clone;
-                                   })
-                               }}
-                        />
+                    <div style={{display: 'table-cell', padding: '0px 5px'}}>
+                        Title
                     </div>
                 </div>
-            })}
+                {(displayCard === 'cardView' ? CARD_COLUMNS : columns).map((col, index, source) => {
+                    const isLastIndex = source.length - 1 === index;
+                    const conf = config[col] ?? {
+                        hidden: false,
+                        width: undefined,
+                        title: undefined,
+                        rendererPageId: undefined
+                    };
+                    return <div key={col} style={{display: 'table-row'}} draggable={true} onDragStart={(e) => {
+                        e.dataTransfer.setData('text', JSON.stringify({col}));
+                    }} onDragOver={e => {
+                        e.preventDefault();
+                    }} onDrop={e => {
+                        const {col: sourceCol} = JSON.parse(e.dataTransfer.getData('text'));
+                        const columnsNew = columns.filter(i => i !== sourceCol);
+                        //columnsNew.splice(columnsNew.indexOf(col) + 1, 0, sourceCol);
+                        columnsNew.splice(columnsNew.indexOf(col), 0, sourceCol);
+                        setConfig(oldConfig => {
+                            if (columns) {
+                                const clone = {...oldConfig};
+                                for (const col of columns) {
+                                    clone[col] = {...clone[col]};
+                                    clone[col].index = columnsNew.indexOf(col);
+                                }
+                                return clone as typeof oldConfig;
+                            }
+                            return oldConfig;
+                        })
+                    }}>
+                        <div style={{display: 'table-cell', padding: '0px 5px', textAlign: 'right'}}>
+                            {col}
+                        </div>
+                        <div style={{
+                            display: 'table-cell',
+                            padding: '0px 5px',
+                            textAlign: 'center',
+                            verticalAlign: 'middle',
+                        }}>
+                            <InputCheckbox value={conf.hidden} onChange={value => {
+                                setConfig(old => {
+                                    const clone = {...old};
+                                    clone[col] = {...clone[col]}
+                                    clone[col].hidden = value
+                                    return clone;
+                                })
+                            }}/>
+                        </div>
+                        <div style={{display: 'table-cell'}}>
+                            <input style={{
+                                border: BORDER,
+                                borderRight: 'unset',
+                                borderBottom: isLastIndex ? BORDER : 'unset',
+                                borderRadius: 0,
+                                padding: '0px 5px',
+                                width: 70
+                            }}
+                                   value={(conf.minWidth ?? '').toString()}
+                                   onChange={(e) => {
+                                       const value = e.target.value;
+                                       const isPercentageOrPixel = value.endsWith('%') || value.endsWith('px') || value.endsWith('p');
+                                       const intValue = parseInt(value);
+                                       setConfig(old => {
+                                           const clone = {...old};
+                                           clone[col] = {...clone[col]}
+                                           if (isPercentageOrPixel || isNaN(intValue)) {
+                                               clone[col].minWidth = value
+                                           } else {
+                                               clone[col].minWidth = intValue
+                                           }
+
+                                           return clone;
+                                       })
+                                   }}
+                            />
+                        </div>
+                        <div style={{display: 'table-cell'}}>
+                            <input style={{
+                                border: BORDER,
+                                borderRight: 'unset',
+                                borderBottom: isLastIndex ? BORDER : 'unset',
+                                borderRadius: 0,
+                                padding: '0px 5px',
+                                width: 70
+                            }}
+                                   value={(conf.maxWidth ?? '').toString()}
+                                   onChange={(e) => {
+                                       const value = e.target.value;
+                                       const isPercentageOrPixel = value.endsWith('%') || value.endsWith('px') || value.endsWith('p');
+                                       const intValue = parseInt(value);
+                                       setConfig(old => {
+                                           const clone = {...old};
+                                           clone[col] = {...clone[col]}
+                                           if (isPercentageOrPixel || isNaN(intValue)) {
+                                               clone[col].maxWidth = value
+                                           } else {
+                                               clone[col].maxWidth = intValue
+                                           }
+
+                                           return clone;
+                                       })
+                                   }}
+                            />
+                        </div>
+                        <div style={{display: 'table-cell', verticalAlign: 'middle'}}>
+                            <ValueMapperSelector style={{
+                                padding: '0px 5px',
+                                borderRadius: 0,
+                                height: 23,
+                                borderBottom: isLastIndex ? '1px solid rgba(0,0,0,0.1)' : 'unset',
+                                borderRight: 'unset',
+                                width: '100%',
+                            }}
+                                                 value={conf.cellValueMapper}
+                                                 mapperInputSchema={composeMapperInputSchema(columns)}
+                                                 onChange={(value) => {
+                                                     setConfig(old => {
+                                                         const clone = {...old};
+                                                         clone[col] = {...clone[col]}
+                                                         if (value === undefined) {
+                                                             delete clone[col].cellValueMapper;
+                                                         } else {
+                                                             clone[col].cellValueMapper = value;
+                                                         }
+                                                         return clone;
+                                                     })
+                                                 }}/>
+
+                        </div>
+                        <div style={{display: 'table-cell', verticalAlign: 'middle', width: 200, maxWidth: 200}}>
+                            <PageInputSelector style={{
+                                borderRadius: 0,
+                                height: 23,
+                                padding: '0px 5px',
+                                borderRight: 'unset',
+                                borderBottom: isLastIndex ? BORDER : 'unset',
+                            }}
+                                               chipColor={'rgba(0,0,0,0)'}
+                                               onChange={(pageId, mapperFormula) => {
+                                                   setConfig(old => {
+                                                       const clone = {...old};
+                                                       clone[col] = {...clone[col]}
+                                                       clone[col].rendererPageId = pageId;
+                                                       clone[col].rendererPageDataMapperFormula = mapperFormula;
+                                                       return clone;
+                                                   })
+                                               }}
+                                               value={conf.rendererPageId}
+                                               bindWithMapper={true}
+                                               mapperInputSchema={composeMapperInputSchema(columns)}
+                                               mapperValue={conf.rendererPageDataMapperFormula}
+
+                            />
+                        </div>
+
+                        <div style={{display: 'table-cell'}}>
+                            <input style={{
+                                border: BORDER,
+                                borderRadius: 0,
+                                padding: '0px 5px',
+                                borderBottom: isLastIndex ? BORDER : 'unset'
+                            }}
+                                   value={conf?.title}
+                                   onChange={(e) => {
+                                       const value = e.target.value;
+                                       setConfig(old => {
+                                           const clone = {...old};
+                                           clone[col] = {...clone[col]}
+                                           clone[col].title = value;
+                                           return clone;
+                                       })
+                                   }}
+                            />
+                        </div>
+                    </div>
+                })}
+
+            </div>
 
         </div>
-        <div style={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'flex-end',
-            gap: 5,
-            position: 'sticky',
-            bottom: 0,
-            background: 'white',
-            padding: 10
-        }}>
-            <Button onClick={() => {
-                // here we need to save this convert to formula
-                const formula = `module.exports = ${JSON.stringify(config, null, 2)};`;
-                closePanel(formula);
-            }}>Save</Button>
-            <Button onClick={() => props.closePanel()}>Cancel</Button>
-        </div>
-    </div>
+    </ConfirmationDialog>
 }
 
 type ThreeState = 'yes' | 'no' | 'partial';
+
+function InputCheckbox(props: {
+    value?: boolean,
+    onChange: (value?: boolean) => void,
+}) {
+    const {value, onChange} = props;
+    const [val, setVal] = useState<boolean | undefined>(value);
+
+    function onClick() {
+        if (val === true) {
+            setVal(false);
+            onChange(false);
+        } else {
+            setVal(true);
+            onChange(true);
+        }
+    }
+
+    useEffect(() => {
+        setVal(value);
+    }, [value]);
+
+    let Component = IoMdCheckbox;
+    if (val === true) {
+        Component = IoMdRemoveCircle
+    }
+    if (val === false) {
+        Component = IoMdCheckbox
+    }
+    return <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: val === true ? 'red' : 'green',
+        fontSize: 17
+    }} onClick={onClick}>
+        <Component/>
+    </div>
+}
 
 function InputThreeStateCheckbox(props: {
     value: ThreeState,

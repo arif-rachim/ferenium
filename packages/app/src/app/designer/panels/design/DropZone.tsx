@@ -9,7 +9,8 @@ import {AppDesignerContext} from "../../AppDesignerContext.ts";
  */
 export function DropZone(props: {
     precedingSiblingId: string,
-    parentContainerId: string
+    parentContainerId: string,
+    key:string
 }) {
     const id = useId();
     const {activeDropZoneIdSignal} = useAppContext<AppDesignerContext>()

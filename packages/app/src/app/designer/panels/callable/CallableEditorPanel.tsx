@@ -16,6 +16,7 @@ import {wrapWithZObjectIfNeeded} from "../../../../core/utils/wrapWithZObjectIfN
 import {useUpdateCallable} from "../../../../core/hooks/useUpdateCallable.ts";
 import {useNameRefactor} from "../../../../core/hooks/useNameRefactor.ts";
 import {useShowErrorsDialogBox} from "../../../../core/hooks/useShowErrorsDialogBox.tsx";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
 
 export default function CallableEditorPanel(props: {
     callableId?: string,
@@ -57,7 +58,7 @@ export default function CallableEditorPanel(props: {
 
     function validateForm(): [boolean, Partial<Record<keyof Variable, Array<string>>>] {
         function nameIsDuplicate(name: string, id: string) {
-            return allApplicationCallablesSignal.get().filter(v => v.id !== id).find(v => v.name === name) !== undefined;
+            return isNotEmpty(allApplicationCallablesSignal.get().filter(v => v.id !== id).find(v => v.name === name));
         }
 
         const errors: Partial<Record<keyof Variable, Array<string>>> = {};

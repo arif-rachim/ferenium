@@ -28,7 +28,7 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     const context = useAppContext();
     const {component} = context && context.elements && container && container.type in context.elements ? context.elements[container.type] : {component: EmptyComponent};
     const ref = useRef<HTMLElement | null>(null);
-    const log = useLogger(`ElementRenderer>${container.type}`)
+    const log = useLogger(`ElementRenderer${container?.type}`)
     const propsRef = useRef(elementProps);
     propsRef.current = elementProps;
 
@@ -55,7 +55,9 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
                 element.addEventListener('dragend', onDragEnd);
                 element.addEventListener('mouseover', onMouseOver);
                 element.addEventListener('click', onClick);
-                element.setAttribute('data-element-id', propsRef.current.dataElementId);
+                if(propsRef.current.dataElementId){
+                    element.setAttribute('data-element-id', propsRef.current.dataElementId);
+                }
                 element.setAttribute('draggable', propsRef.current.draggable.toString());
             } catch (err) {
                 log.error(err)
@@ -78,7 +80,6 @@ export function ElementRenderer(props: { container: Container, elementProps: Ele
     }, [Component]);
     const {style, ...componentProperties} = componentProps as {style:CSSProperties};
     const defaultStyle = (style ?? {}) as CSSProperties;
-
     return <>
         <ErrorBoundary container={container}>
             <Component ref={ref} key={container?.id} container={container}

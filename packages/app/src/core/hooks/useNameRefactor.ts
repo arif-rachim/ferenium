@@ -14,12 +14,12 @@ export function useNameRefactor() {
     }) {
         updateApplication(application => {
             const app = structuredClone(application);
-            let codesToCheck: Array<{ functionCode: string, id: string, name: string }> = [];
+            const codesToCheck: Array<{ functionCode: string, id: string, name: string }> = [];
             const propsToCheck: Array<Record<string, ContainerPropertyType>> = []
             if (props.scope === 'app') {
-                codesToCheck = codesToCheck.concat(app.variables);
-                codesToCheck = codesToCheck.concat(app.callables);
-                codesToCheck = codesToCheck.concat(app.fetchers);
+                codesToCheck.push(...app.variables);
+                codesToCheck.push(...app.callables);
+                codesToCheck.push(...app.fetchers);
             }
 
             app.pages.filter(p => {
@@ -28,9 +28,9 @@ export function useNameRefactor() {
                 }
                 return true;
             }).forEach(p => {
-                codesToCheck = codesToCheck.concat(p.variables);
-                codesToCheck = codesToCheck.concat(p.callables);
-                codesToCheck = codesToCheck.concat(p.fetchers);
+                codesToCheck.push(...p.variables);
+                codesToCheck.push(...p.callables);
+                codesToCheck.push(...p.fetchers);
                 p.containers.forEach(p => {
                     propsToCheck.push(p.properties)
                 })

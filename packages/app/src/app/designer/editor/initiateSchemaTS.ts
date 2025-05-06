@@ -46,7 +46,6 @@ ${composeDbSchema(allTables)}
 ${composeAlert()}
 ${composeTools()}
 ${composeUtils()}
-${composeLog()}
 ${composeForm(formSchema)}
 declare const app:{
     var:${composeLibrary(allApplicationVariables)},
@@ -109,23 +108,13 @@ declare const alertBox : (props:{message:string,title?:string,icon?:Icons,button
 function composeTools() {
     return `
 declare const tools: {
-    deleteSqlLite: () => Promise<void>,
-    saveSqlLite: (arrayBuffer: ArrayBuffer) => Promise<void>,
-    readSqlLite: () => Promise<ArrayBuffer>
+    deleteSqlLite: (fileName:string) => Promise<void>,
+    saveSqlLite: (fileName:string,arrayBuffer: ArrayBuffer) => Promise<void>,
+    readSqlLite: (fileName:string) => Promise<ArrayBuffer>
 };
 `
 }
 
-function composeLog() {
-    return `
-declare const log: {
-    info : (...params:any[]) => void,
-    debug : (...params:any[]) => void,
-    warn : (...params:any[]) => void,
-    error : (...params:any[]) => void
-}
-    `
-}
 
 function composeUtils() {
     return `
@@ -141,7 +130,8 @@ interface ToBooleanType{
     (val:unknown) : (boolean | undefined);
     (val:unknown, defaultVal:boolean) : boolean;
 }
-    
+
+type LogFunction = (...params:any[]) => void; 
 declare const utils: {
     toDate: (date: unknown) => Date | undefined,
     dateToString: (date: unknown) => string | undefined,
@@ -164,7 +154,10 @@ declare const utils: {
     removeItem: (key:string) => Promise<void>,
     clearStorage: () => Promise<void>,
     fetch: (url:string,options?:RequestInit) => Promise<{error?:string,data:ArrayBuffer|string|Record<string,unknown>}>,
-    encryptObject : (value:Record) => ({ts:number,v:string})
+    encryptObject : (value:Record) => ({ts:number,v:string}),
+    createLogger : (name: string) => {info : LogFunction,debug : LogFunction,warn : LogFunction,error : LogFunction},
+    toDefault : <T>(val: unknown, defVal: T) => T ,
+    untrack : <T>(cb: () => T) => T
 };
 `
 }

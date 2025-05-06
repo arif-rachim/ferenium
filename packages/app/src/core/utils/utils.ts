@@ -15,9 +15,14 @@ import {guid, uniqueNumber} from "./guid.ts";
 import {startPad} from "./startPad.ts";
 import {toBoolean} from "./toBoolean.ts";
 import {arrayToQueryResult} from "./arrayToQueryResult.ts";
-import {clear, getItem, removeItem, setItem} from "./appStorage.ts";
+import {appStorage, clear} from "./appStorage.ts";
 import {fetcher} from "./fetcher.ts";
 import {encryptObject} from "./encryptObject.ts";
+import {createLogger} from "./logger.ts";
+import {toDefault} from "./toDefault.ts";
+import {Signal} from "signal-polyfill";
+
+const storage = appStorage();
 
 export const utils = {
     toDate: toDate,
@@ -36,11 +41,13 @@ export const utils = {
     startPad: startPad,
     toBoolean: toBoolean,
     arrayToQueryResult: arrayToQueryResult,
-
-    setItem: setItem,
-    getItem: getItem,
-    removeItem: removeItem,
+    setItem: storage.setItem,
+    getItem: storage.getItem,
+    removeItem: storage.removeItem,
     clearStorage: clear,
     fetch: fetcher,
     encryptObject: encryptObject,
+    createLogger: createLogger,
+    toDefault:toDefault,
+    untrack : Signal.subtle.untrack
 }

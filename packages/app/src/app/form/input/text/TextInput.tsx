@@ -116,6 +116,7 @@ export const TextInput = forwardRef(function TextInput(props: {
             flexGrow: 1,
             minWidth: 0,
             textAlign: type === 'number' ? 'right' : 'left',
+            width:'100%',
             ...inputStyle,
         } as CSSProperties;
 

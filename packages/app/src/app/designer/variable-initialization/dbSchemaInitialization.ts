@@ -1,10 +1,10 @@
 import {Table} from "../panels/database/getTables.ts";
-import sqlite from "../panels/database/sqlite.ts";
+import sqlite, {getDatabase} from "../panels/database/sqlite.ts";
 import {BindParams, SqlValue} from "sql.js";
 import {zodSchemaToJson} from "../../../core/utils/zodSchemaToJson.ts";
 import {createLogger} from "../../../core/utils/logger.ts";
+import {isNotEmpty} from "../../../core/utils/isNotEmpty.ts";
 
-const log = createLogger('dbSchemaInitialization');
 export function composeTableSchema(table: Table) {
     const schema: string[] = [];
     for (const info of table.tableInfo) {
@@ -50,12 +50,28 @@ export function composeArraySchema(data: Array<unknown>) {
 }
 
 export function composeDbSchema(allTables: Array<Table>) {
+
+    // lets group them first based on the databases
+
+    const dbFiles = allTables.reduce((dbFile,table) => {
+        dbFile[table.fileName] = dbFile[table.fileName] ?? [];
+        dbFile[table.fileName].push(table);
+        return dbFile;
+    },{} as Record<string, Array<Table>>) ;
+
     const dbSchema = [];
-    for (const table of allTables) {
-        composeTableSchema(table);
-        dbSchema.push(`${table.name} : ${composeTableSchema(table)} `)
+    for (const dbFile of Object.keys(dbFiles)) {
+        const tables = dbFiles[dbFile]
+        const tableSchema = [];
+        for (const table of tables) {
+            tableSchema.push(`${table.name} : ${composeTableSchema(table)} `)
+        }
+        const tSchema = `z.object({ ${tableSchema.join(',')} })`;
+        dbSchema.push(`${dbFile} : ${tSchema} `)
     }
-    const schema = `z.object({ ${dbSchema.join(',')} })`;
+    const schema = `z.object({ ${dbSchema.join(',')} })`
+
+
     const schemaInJson = zodSchemaToJson(schema);
     return `
 type DbSchema = ${schemaInJson}
@@ -64,71 +80,88 @@ type ConvertToSortOrder<T> = {
 }
 type BindParams = Array<string|number|null> | Record<string, string|number|null> 
 declare const db:{
-    record:<N extends keyof DbSchema>(name:N,item:DbSchema[N]) => Promise<DbSchema[N]>,
-    remove:<N extends keyof DbSchema>(name:N,filter:DbSchema[N]) => Promise<DbSchema[N]>,
-    read:<N extends keyof DbSchema>(name:N,filter:DbSchema[N],sort?:ConvertToSortOrder<DbSchema[N]>) => Promise<Array<DbSchema[N]>>,
-    find:<N extends keyof DbSchema>(name:N,filter:DbSchema[N]) => Promise<DbSchema[N]|undefined>,
-    query : (query:string,params:BindParams) => Promise<Array<Record<string,string|number|null>>>,
-    commit: () => Promise<void>,
-    updateRecord:<N extends keyof DbSchema>(name:N,item:DbSchema[N],keys:Array<keyof DbSchema[N]>|keyof DbSchema[N]) => Promise<DbSchema[N]>,
+    record:<F extends keyof DbSchema, N extends keyof DbSchema[F]>(file:F,name:N,item:DbSchema[F][N]) => Promise<DbSchema[F][N]>,
+    remove:<F extends keyof DbSchema, N extends keyof DbSchema[F]>(file:F,name:N,filter:DbSchema[F][N]) => Promise<DbSchema[F][N]>,
+    read:<F extends keyof DbSchema, N extends keyof DbSchema[F]>(file:F,name:N,filter:DbSchema[F][N],sort?:ConvertToSortOrder<DbSchema[F][N]>) => Promise<Array<DbSchema[F][N]>>,
+    find:<F extends keyof DbSchema, N extends keyof DbSchema[F]>(file:F,name:N,filter:DbSchema[F][N]) => Promise<DbSchema[F][N]|undefined>,
+    query : <F extends keyof DbSchema>(file:F, query:string,params:BindParams) => Promise<Array<Record<string,string|number|null>>>,
+    commit: <F extends keyof DbSchema>(file:F) => Promise<void>,
+    updateRecord:<F extends keyof DbSchema, N extends keyof DbSchema[F]>(file:F,name:N,item:DbSchema[F][N],keys:Array<keyof DbSchema[F][N]>|keyof DbSchema[F][N]) => Promise<DbSchema[F][N]>,
+    isExist : <F extends keyof DbSchema>(file:F) => Promise<boolean>
 };
 `
 }
 
+const log = createLogger('db-error');
+
 export function dbSchemaInitialization() {
 
-    async function record(tableName: string, item: Record<string, SqlValue>) {
-        const query = `INSERT INTO ${tableName} (${Object.keys(item).join(', ')}) VALUES (${Object.keys(item).map(() => `?`).join(', ')})`
-        const result = await sqlite({type: 'executeQuery', query: query, params: Object.values(item).map(i => i === undefined  ? null : i )});
+    async function record(fileName: string, tableName: string, item: Record<string, SqlValue>) {
+        const query = `INSERT INTO ${tableName} (${Object.keys(item).join(', ')})
+                       VALUES (${Object.keys(item).map(() => `?`).join(', ')})`
+        const result = await sqlite({
+            type: 'executeQuery',
+            query: query,
+            params: Object.values(item).map(i => i === undefined ? null : i),
+            fileName
+        });
         if (!result.errors) {
-            const readResponse = await read(tableName, item);
+            const readResponse = await read(fileName,tableName, item);
             if (readResponse.length > 0) {
                 return readResponse[0];
             }
-        }else{
-            log.error(result.errors)
+        } else {
+            log.error(result.errors, query)
         }
         return result;
     }
 
-    async function updateRecord(tableName: string, item: Record<string, SqlValue>,keys:string[]|string){
+    async function updateRecord(fileName: string, tableName: string, item: Record<string, SqlValue>, keys: string[] | string) {
         const filterKeys = Array.isArray(keys) ? keys : [keys]
         const paramKeys = Object.keys(item).filter(key => !filterKeys.includes(key));
 
-        const param = paramKeys.reduce((result,key) => {
+        const param = paramKeys.reduce((result, key) => {
             result[key] = item[key];
             return result;
-        },{} as Record<string, SqlValue>);
+        }, {} as Record<string, SqlValue>);
 
-        const filter = filterKeys.reduce((result,key) => {
+        const filter = filterKeys.reduce((result, key) => {
             result[key] = item[key];
             return result;
-        },{} as Record<string, SqlValue>);
+        }, {} as Record<string, SqlValue>);
 
-        const data = await read(tableName, filter);
-        if(data.length > 0) {
+        const data = await read(fileName,tableName, filter);
+        if (data.length > 0) {
             const valueCondition = paramKeys.map(k => `${k} = ?`).join(' , ').trim();
             const whereCondition = filterKeys.map(k => `${k} = ?`).join(' AND ').trim();
-            const query = `UPDATE ${tableName} SET ${valueCondition} WHERE ${whereCondition}`
-            const result = await sqlite({type: 'executeQuery', query: query, params: [...Object.values(param),...Object.values(filter)]});
+            const query = `UPDATE ${tableName}
+                           SET ${valueCondition}
+                           WHERE ${whereCondition}`
+            const result = await sqlite({
+                type: 'executeQuery',
+                query: query,
+                params: [...Object.values(param), ...Object.values(filter)],
+                fileName
+            });
             if (!result.errors) {
-                const readResponse = await read(tableName, item);
+                const readResponse = await read(fileName,tableName, item);
                 if (readResponse.length > 0) {
                     return readResponse[0];
                 }
-            }else{
-                log.error(result.errors)
+            } else {
+                log.error(result.errors, query)
             }
             return result;
-        }else{
-            return await record(tableName, item);
+        } else {
+            return await record(fileName, tableName, item);
         }
     }
 
-    async function remove(tableName: string, filter: Record<string, SqlValue>) {
+    async function remove(fileName:string,tableName: string, filter: Record<string, SqlValue>) {
         const whereCondition = Object.keys(filter).map(k => `${k} = ?`).join(' AND ').trim();
-        const query = `DELETE FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''}`
-        const queryResult = await sqlite({type: 'executeQuery', query: query, params: Object.values(filter)});
+        const query = `DELETE
+                       FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''}`
+        const queryResult = await sqlite({type: 'executeQuery', query: query, params: Object.values(filter),fileName});
         if (queryResult.errors) {
             log.error(queryResult.errors);
             return {};
@@ -136,15 +169,16 @@ export function dbSchemaInitialization() {
         return queryResult;
     }
 
-    async function read(tableName: string, filter: Record<string, SqlValue>,order?:Record<string,'asc'|'desc'|undefined>): Promise<Array<Record<string, SqlValue>>> {
+    async function read(fileName:string,tableName: string, filter: Record<string, SqlValue>, order?: Record<string, 'asc' | 'desc' | undefined>): Promise<Array<Record<string, SqlValue>>> {
         const whereCondition = Object.keys(filter).map(k => `${k} = ?`).join(' AND ').trim();
         const orderCondition = Object.keys({...order}).filter(i => i).map(k => `${k} ${(order ?? {})[k]}`).join(', ').trim();
-        const qry = `SELECT * FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''} ${orderCondition ? `ORDER BY ${orderCondition}`: ''}`
-        return query(qry,Object.values(filter));
+        const qry = `SELECT *
+                     FROM ${tableName} ${whereCondition ? `WHERE ${whereCondition}` : ''} ${orderCondition ? `ORDER BY ${orderCondition}` : ''}`
+        return query(fileName,qry, Object.values(filter));
     }
 
-    async function query(query:string,params:BindParams): Promise<Array<Record<string, SqlValue>>> {
-        const queryResult = await sqlite({type: 'executeQuery', query, params});
+    async function query(fileName:string,query: string, params: BindParams): Promise<Array<Record<string, SqlValue>>> {
+        const queryResult = await sqlite({type: 'executeQuery', query, params,fileName});
         if (queryResult.errors) {
             log.error(queryResult.errors);
             return [];
@@ -163,16 +197,21 @@ export function dbSchemaInitialization() {
         return result;
     }
 
-    async function find(tableName: string, filter: Record<string, SqlValue>): Promise<Record<string, SqlValue>|undefined>{
-        const result = await read(tableName,filter);
-        if(result.length > 0){
+    async function find(fileName:string,tableName: string, filter: Record<string, SqlValue>): Promise<Record<string, SqlValue> | undefined> {
+        const result = await read(fileName,tableName, filter);
+        if (result.length > 0) {
             return result[0];
         }
         return undefined;
     }
 
-    async function commit(){
-        await sqlite({type: 'persistChanges'});
+    async function commit(fileName:string) {
+        await sqlite({type: 'persistChanges',fileName});
+    }
+
+    async function isExist(fileName:string){
+        const db = await getDatabase(fileName);
+        return isNotEmpty(db);
     }
 
     return {
@@ -182,6 +221,7 @@ export function dbSchemaInitialization() {
         commit,
         query,
         find,
-        updateRecord
+        updateRecord,
+        isExist
     }
 }

@@ -3,6 +3,7 @@ import {useSignal, useSignalEffect} from "react-hook-signal";
 import {FormContext} from "./Form.tsx";
 import {isPromise} from "../../core/utils/isPromise.ts";
 import {isEmpty} from "../../core/utils/isEmpty.ts";
+import {isNotEmpty} from "../../core/utils/isNotEmpty.ts";
 
 
 export function useFormInput<T, V>(props: {
@@ -57,12 +58,7 @@ export function useFormInput<T, V>(props: {
     });
 
     const [localError, setLocalError] = useState<string | undefined>(error);
-    const [isDisabled, setIsDisabled] = useState<boolean | undefined>(() => {
-        if (disabledProps !== undefined) {
-            return disabledProps;
-        }
-        return undefined;
-    });
+    const [isDisabled, setIsDisabled] = useState<boolean | undefined>(disabledProps);
     const [isBusy, setIsBusy] = useState<boolean>(false);
     const formContext = useContext(FormContext);
     const propsRef = useRef({...props, localValue, valueIsEqual, preventChange});
@@ -148,9 +144,9 @@ export function useFormInput<T, V>(props: {
     });
 
     useSignalEffect(() => {
-        const isBusy = formContext !== undefined && formContext.isBusy.get();
-        const isFormDisabled = formContext !== undefined && formContext.isDisabled.get();
-        const hasDisabledFlagSet = disabledPropsSignal.get() !== undefined;
+        const isBusy = isNotEmpty(formContext) && formContext.isBusy.get();
+        const isFormDisabled = isNotEmpty(formContext) && formContext.isDisabled.get();
+        const hasDisabledFlagSet = isNotEmpty(disabledPropsSignal.get());
         setIsBusy(isBusy);
         if (hasDisabledFlagSet) {
             setIsDisabled(disabledPropsSignal.get() === true);

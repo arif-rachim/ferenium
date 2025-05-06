@@ -4,10 +4,11 @@ import {FormulaDependencyParameter} from "./AppVariableInitialization.tsx";
 import {dbSchemaInitialization} from "./dbSchemaInitialization.ts";
 import {ModalBox} from "./useModalBox.tsx";
 import {utils} from "../../../core/utils/utils.ts";
-import {createLogger} from "../../../core/utils/logger.ts";
+import {createLogger, wrapWithLog} from "../../../core/utils/logger.ts";
 
 const db = dbSchemaInitialization()
 
+const log = createLogger('signal-effect-error');
 export function initiateEffect(props: {
     navigate: (path: string, param?: Record<string, any>) => void,
     navigatePanel: (path: string, param?: Record<string, unknown>) => Promise<unknown>,
@@ -16,7 +17,7 @@ export function initiateEffect(props: {
     app: FormulaDependencyParameter,
     page: FormulaDependencyParameter,
     alertBox: ModalBox,
-    tools: { deleteSqlLite: () => Promise<void>, saveSqlLite: (buffer: ArrayBuffer) => Promise<void>, readSqlLite : () => Promise<ArrayBuffer> },
+    tools: { deleteSqlLite: (fileName:string) => Promise<void>, saveSqlLite: (fileName:string,buffer: ArrayBuffer) => Promise<void>, readSqlLite : (fileName:string) => Promise<ArrayBuffer> },
 }) {
     const {
         navigate,
@@ -34,22 +35,20 @@ export function initiateEffect(props: {
         if (v.type !== 'effect') {
             continue;
         }
-
-        const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', 'log', v.functionCode];
-        const log = createLogger(`Effect>${v?.name}>${v?.id}`);
+        const params = ['navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'alertBox', 'tools', 'utils', wrapWithLog(v.functionCode)];
         try {
-            const func = new Function(...params) as (...args: unknown[]) => void
+            const func = new Function(...params) as (...args: unknown[]) => void;
             const destructor = effect(() => {
-                const instances = [navigate, navigatePanel, closePanel, db, app, page, alertBox, tools, utils, log]
+                const instances = [navigate, navigatePanel, closePanel, db, app, page, alertBox, tools, utils]
                 try {
                     func.call(null, ...instances);
                 } catch (err) {
-                    log.error(err);
+                    log.error(v.name,err,v.functionCode);
                 }
             });
             destructorCallbacks.push(destructor);
         } catch (err) {
-            log.error(err);
+            log.error(v.name,err,v.functionCode);
         }
     }
     return () => {

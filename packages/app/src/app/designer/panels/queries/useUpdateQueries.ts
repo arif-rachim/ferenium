@@ -19,7 +19,7 @@ export function useUpdateQueries(scope: 'page' | 'application') {
             updatePage({type: 'query', queries: queries});
         } else {
             updateApplication(original => {
-                original.queries = queries
+                original.queries = [...queries]
             })
         }
     }

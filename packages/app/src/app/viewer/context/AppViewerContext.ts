@@ -20,7 +20,7 @@ export interface AppViewerContext {
     applicationSignal: Signal.State<Application>;
     allApplicationCallablesSignal: Signal.Computed<Array<Callable>>;
     allPageCallablesSignal: Signal.Computed<Array<Callable>>;
-    allTablesSignal: Signal.Computed<Array<Table>>;
+    allTablesSignal: Signal.State<Array<Table>>;
     allPagesSignal: Signal.Computed<Array<Page>>;
     activePageIdSignal: Signal.State<string>;
     allContainersSignal: Signal.Computed<Array<Container>>;

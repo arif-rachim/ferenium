@@ -13,7 +13,6 @@ import {useContext, useEffect} from "react";
 import {PanelIsFocusedContext} from "../../../Dashboard.tsx";
 import {createLogger} from "../../../../core/utils/logger.ts";
 
-const log = createLogger('ComponentPropertyEditor');
 /**
  * ComponentPropertyEditor is a React component that renders a property editor panel for a component.
  */
@@ -159,7 +158,7 @@ function createNewProps(): ContainerPropertyType {
     }
 }
 
-
+const log = createLogger('invalid-form-schema-error');
 function getParentFormSchema(selectedContainer: Container, allContainers: Container[]) {
     const container = allContainers.find(i => i.id === selectedContainer?.parent);
     if (container) {
@@ -173,7 +172,7 @@ function getParentFormSchema(selectedContainer: Container, allContainers: Contai
         if ('schema' in container.properties && container.properties.schema && container.properties.schema.formula) {
             try {
                 if(container.properties.schema.formula.indexOf('module.exports')<0){
-                    log.error("form schema require to have `module.exports` seems you are missing it");
+                    log.error("Form schema require to have `module.exports` seems you are missing it");
                 }
                 const fun = new Function('module', 'z', container.properties.schema.formula);
                 const module: { exports: ZodType | undefined } = {exports: undefined};

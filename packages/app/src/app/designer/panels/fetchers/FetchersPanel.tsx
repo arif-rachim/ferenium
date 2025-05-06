@@ -107,7 +107,7 @@ export function FetchersPanel() {
             if (scope === 'application') {
                 const fetchers = allApplicationFetchersSignal.get().filter(i => i.id !== fetcher.id);
                 updateApplication(app => {
-                    app.fetchers = fetchers;
+                    app.fetchers = [...fetchers];
                 })
             } else {
                 const fetchers = allPageFetchersSignal.get().filter(i => i.id !== fetcher.id);

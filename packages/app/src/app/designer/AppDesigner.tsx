@@ -16,7 +16,7 @@ import {ErrorsPanel} from "./panels/errors/ErrorsPanel.tsx";
 import PackagePanel from "./panels/package/PackagePanel.tsx";
 import {DefaultElements} from "./DefaultElements.tsx";
 import {DatabasePanel} from "./panels/database/DatabasePanel.tsx";
-import {Query, Table} from "./panels/database/getTables.ts";
+import {Query} from "./panels/database/getTables.ts";
 import {FetchersPanel} from "./panels/fetchers/FetchersPanel.tsx";
 import {CallablePanel} from "./panels/callable/CallablePanel.tsx";
 import {QueriesPanel} from "./panels/queries/QueriesPanel.tsx";
@@ -90,11 +90,13 @@ export type Application = {
     id: string,
     name: string,
     pages: Array<Page>,
-    tables: Array<Table>,
     queries: Array<Query>,
     callables: Array<Callable>,
     variables: Array<Variable>, // application variables, we can use this to store the login state !
-    fetchers: Array<Fetcher>
+    fetchers: Array<Fetcher>,
+    databases: Array<string>,
+    version: number,
+    lastUpdate: string
 }
 
 export type Container = {
@@ -176,7 +178,6 @@ export default function AppDesigner(props: LayoutBuilderProps) {
         navigate,
         navigateBack
     }
-
     return <ErrorBoundary>
         <AppDesignerContext.Provider
             value={context}>
