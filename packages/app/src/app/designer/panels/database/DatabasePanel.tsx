@@ -134,7 +134,7 @@ export function DatabasePanel() {
                         const appSignal = applicationSignal.get();
                         if(appSignal && appSignal.databases) {
                             const databases = ['all',...appSignal.databases];
-                            return databases.map(d => <option value={d}>{d}</option>)
+                            return databases.map(d => <option value={d} key={d}>{d}</option>)
                         }
                         return []
                     }}

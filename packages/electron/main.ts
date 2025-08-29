@@ -4,8 +4,91 @@ import * as fs from "fs";
 import * as os from "os";
 import MessageBoxOptions = Electron.MessageBoxOptions;
 
+/**
+ * START LOGGING MECHANISM
+ */
+
+function dateToHhMm(date: Date) {
+    const hrs = date.getHours();
+    let hours = hrs.toString();
+    if (hrs <= 9) {
+        hours = '0' + hrs;
+    }
+    const min = date.getMinutes();
+    let minutes = min.toString();
+    if (min <= 9) {
+        minutes = '0' + min;
+    }
+    return `${hours}:${minutes}`;
+}
+
+function loadingAnimation() {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    const p = ['/', '-', '\\', '|'];
+    let x = 0;
+    let removeLine = ''
+    let prevMessageLength = 0;
+
+    function stopAnimation() {
+        if (intervalId != null) {
+            clearInterval(intervalId);
+        }
+        let removeLine = Array.from({length: prevMessageLength}).map(_ => '\r').join('');
+        let cleanupLine = Array.from({length: prevMessageLength}).join(' ');
+        process.stdout.write(removeLine + cleanupLine + removeLine);
+    }
+
+    function startAnimation() {
+        intervalId = setInterval(() => {
+            let message = `[ESNAAD-M] ${dateToHhMm(new Date())} ${p[x++]}   `;
+            removeLine = Array.from({length: prevMessageLength}).map(_ => '\r').join('');
+            let cleanupLine = Array.from({length: prevMessageLength}).join(' ');
+            process.stdout.write(removeLine + cleanupLine + removeLine + message);
+            prevMessageLength = message.length;
+            x &= (p.length - 1);
+        }, 250);
+    }
+
+    return {
+        startAnimation,
+        stopAnimation
+    }
+}
+
+const {startAnimation, stopAnimation} = loadingAnimation();
+
+const log = (...messages: unknown[]) => {
+    stopAnimation();
+    messages = messages.map(m => {
+        if (typeof m === 'string') {
+            return m.trim()
+        }
+        return m;
+    }).filter(m => m);
+    console.log('[ESNAAD-M]', dateToHhMm(new Date()), ...messages)
+    startAnimation();
+}
+/**
+ * END OF LOGGING MECHANISM
+ */
+
+
+
+
+
 let win: BrowserWindow | null;
-const publicPath = path.join(os.homedir(), '..', 'Public', 'AppData', 'esnaadm-v2'); // Saves to Desktop
+// THIS IS PATH FOR PRODUCTION
+// we need a mechanism to switch this from production to development
+let publicPath = path.join(os.homedir(), '..', 'Public', 'AppData', 'esnaadm-v2'); // Saves to Desktop
+const developmentPath = path.join(process.cwd(), '..', 'app', 'public'); // saves to packages/app/public
+
+try {
+    if (fs.existsSync(developmentPath)) {
+        publicPath = developmentPath;
+        log('Using ', developmentPath, ' as path ')
+    }
+} catch (err) {
+}
 const appMeta = path.join(publicPath, 'data', 'app-meta.json');
 const appIndex = path.join(publicPath, 'app', 'index.html');
 const appEnv = path.join(publicPath, 'data', 'env.json');
@@ -50,12 +133,12 @@ async function getEnvValue(parentWindow: BrowserWindow) {
 async function getRemoteMeta(env: { baseUrl: string }) {
     if (env.baseUrl) {
         try {
-            const response = await fetch(`${env.baseUrl}/data/app-meta.json`);
+            const response = await fetchData(`${env.baseUrl}/data/app-meta.json`,{},5000);
             if (response.ok) {
                 return await response.json();
             }
         } catch (err) {
-            console.error(err);
+            log(err);
         }
     }
 }
@@ -201,15 +284,32 @@ function initEnvironment() {
 
 // Handle the file-saving request
     ipcMain.handle('save-binary-file', async (_, fileName, fileData) => {
-        try {
-            const filePath = path.join(publicPath, 'data', fileName);
-            await fs.promises.mkdir(path.dirname(filePath), {recursive: true});
-            await fs.promises.writeFile(filePath, Buffer.from(fileData), 'binary');
-            return {success: true, data: filePath}
-        } catch (err: unknown) {
-            console.error(err)
-            return {success: false, err}
+
+        if (fileName === 'app-meta.json') {
+            try {
+                const filePath = path.join(publicPath, 'data', fileName);
+                log('SAVING app.meta.json', filePath);
+                await fs.promises.mkdir(path.dirname(filePath), {recursive: true});
+                await fs.promises.writeFile(filePath, JSON.stringify(JSON.parse(Buffer.from(fileData).toString('utf-8')), null, 2), 'utf-8');
+                return {success: true, data: filePath}
+            } catch (err: unknown) {
+                log(err)
+                return {success: false, err}
+            }
+        } else {
+            try {
+                const filePath = path.join(publicPath, 'data', fileName);
+                log('SAVING', filePath);
+                await fs.promises.mkdir(path.dirname(filePath), {recursive: true});
+                await fs.promises.writeFile(filePath, Buffer.from(fileData), 'binary');
+                return {success: true, data: filePath}
+            } catch (err: unknown) {
+                log(err)
+                return {success: false, err}
+            }
         }
+
+
     });
 
 // Handle the file-loading request
@@ -233,7 +333,6 @@ function initEnvironment() {
         }
     });
 
-
     ipcMain.handle('fetch-request', async (event, url: string, options?: Record<string, unknown>) => {
         try {
             if (options && 'body' in options && options.body && typeof options.body === 'object' && options.isFormData === true) {
@@ -254,8 +353,10 @@ function initEnvironment() {
                 });
                 options.body = formData;
             }
-            const response = await session.defaultSession.fetch(url, options);
+
+            const response = await fetchData(url, options);
             if (!response.ok) {
+                log('[ERROR]', url, options, response);
                 return {error: response.statusText}
             }
             const contentType = response.headers.get('Content-Type') ?? '';
@@ -279,16 +380,39 @@ function initEnvironment() {
             }
             if (type === 'text') {
                 const text = await response.text();
+                log('[SUCCESS]', url, options, text);
                 return {data: text, contentType: contentType}
             }
             const json = await response.json();
+            log('[SUCCESS]', url, options, json);
             return {data: json, contentType: contentType}
         } catch (error) {
+            console.error(error);
             if (error && typeof error === 'object' && 'message' in error) {
                 return {error: error.message as string}
             }
             return {error: 'Unable to fetch request'}
         }
+    });
+}
+
+async function fetchData(url: string, options?: Record<string, unknown>, timeout?: number) {
+    return new Promise<GlobalResponse>((resolve, reject) => {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout ?? 60000);
+
+        session.defaultSession.fetch(url, {...options, signal: controller.signal})
+            .then(response => {
+                clearTimeout(id);
+                resolve(response);
+            })
+            .catch(error => {
+                if (error.name === 'AbortError') {
+                    reject(new Error('Request timed out'));
+                } else {
+                    reject(error);
+                }
+            });
     });
 }
 
@@ -481,3 +605,6 @@ const autoUpdateUrlHTML = `
 </body>
 </html>
 `
+
+
+// Example usage of the custom log function with spinner

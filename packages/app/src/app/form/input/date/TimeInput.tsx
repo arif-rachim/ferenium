@@ -4,6 +4,9 @@ import {Label} from "../../Label.tsx";
 import {useForwardedRef} from "../../../../core/hooks/useForwardedRef.ts";
 import {useFormInput} from "../../useFormInput.ts";
 import {utils} from "../../../../core/utils/utils.ts";
+import {isEmpty} from "../../../../core/utils/isEmpty.ts";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
+import {isNumberAble} from "../../../../core/utils/isNumberAble.ts";
 
 const ERROR_COLOR = '#C00000';
 export const TimeInput = forwardRef(function TimeInput(props: {
@@ -40,7 +43,7 @@ export const TimeInput = forwardRef(function TimeInput(props: {
         valueToLocalValue: param => {
             param = utils.toNumber(param);
             if (param && param >= 0) {
-                const hour = utils.startPad(Math.floor(param/60),1);
+                const hour = utils.startPad(Math.floor(param / 60), 1);
                 const minute = utils.startPad((param % 60), 2);
                 return {hour, minute};
             }
@@ -64,36 +67,94 @@ export const TimeInput = forwardRef(function TimeInput(props: {
             const shouldTriggerChange = value === undefined || (timeValue.toString() !== value.toString());
             const val = valueIsString ? timeValue.toString() : timeValue;
             if (shouldTriggerChange) {
-                handleValueChange(val,true).then();
+                handleValueChange(val, true).then();
             }
         }
     }, [setLocalValue, formContext, localValue, name]);
     const firstSegmentTimeRef = useRef<HTMLInputElement | undefined>();
     const secondSegmentTimeRef = useRef<HTMLInputElement | undefined>();
-    return <Label ref={ref} label={label} style={{width:60,...style,flexDirection: 'column'}}>
+    const cursorMinutesPosition = useRef<number>(0);
+    const cursorHoursPosition = useRef<number>(0);
+    return <Label ref={ref} label={label} style={{width: 60, ...style, flexDirection: 'column'}}>
         <div style={{display: 'flex', flexDirection: 'row', position: 'relative'}}>
             <TextInput
                 disabled={isDisabled || isBusy}
+                type={'text'}
                 inputRef={firstSegmentTimeRef}
+                debounceChangeEvent={0}
                 inputStyle={{
                     borderTopRightRadius: 0,
                     borderBottomRightRadius: 0,
                     borderRight: 'unset',
                     textAlign: 'right',
-                    paddingRight:4,
+                    paddingRight: 4,
                     borderColor: localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)',
                     ...inputStyle
                 }}
                 value={localValue?.hour}
                 style={{width: '50%'}}
-                onFocus={handleOnFocus}
-                onChange={e => setLocalValue(prev => {
-                    const next = ({...prev, hour: e});
+                onFocus={(_, event) => {
+                    if (handleOnFocus) {
+                        handleOnFocus(event)
+                    }
+                    if (handleOnFocus) {
+                        handleOnFocus(event)
+                        let position = firstSegmentTimeRef?.current?.selectionStart ?? 0;
+                        if(position && _ && position === _.length) {
+                            position = position - 1;
+                        }
+                        cursorHoursPosition.current = position;
+                        if(firstSegmentTimeRef.current) {
+                            firstSegmentTimeRef.current.setSelectionRange(position,position+1);
+                        }
+                    }
+                }}
+                onKeyDown={(_,e) => {
+                    const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                    if(!isAllowed){
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }}
+                onKeyUp={(_, e) => {
+                    const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                    if(isAllowed) {
+                        let position = firstSegmentTimeRef?.current?.selectionStart ?? 0;
+                        if(e.key === 'ArrowLeft') {
+                            position = position - 1;
+                        }
+                        if(e.key === 'ArrowRight') {
+                            if(position && _ && position === _.length && secondSegmentTimeRef.current) {
+                                secondSegmentTimeRef.current.focus();
+                                return;
+                            }
+                        }
+                        cursorHoursPosition.current = position;
+                        if(firstSegmentTimeRef.current) {
+                            firstSegmentTimeRef.current.setSelectionRange(position,position+1);
+                        }
+                    }
+                }}
+                onChange={value => setLocalValue(prev => {
+                    const next = ({...prev, hour: value});
                     if (next.hour !== prev?.hour) {
+                        if (isNotEmpty(next.hour) && isEmpty(next.minute)) {
+                            next.minute = '00';
+                        }
                         return next;
                     }
                     return prev;
                 })}
+                onBlur={() => {
+                    if(localValue?.hour && parseInt(localValue.hour) === 0 && localValue.hour !== '0') {
+                        setLocalValue(prev => {
+                            return {
+                                hour : '0',
+                                minute : prev.minute
+                            }
+                        })
+                    }
+                }}
             />
             <div style={{
                 borderTop: `1px solid ${localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'}`,
@@ -107,21 +168,59 @@ export const TimeInput = forwardRef(function TimeInput(props: {
             <TextInput
                 disabled={isDisabled || isBusy}
                 inputRef={secondSegmentTimeRef}
+                type={'text'}
                 inputStyle={{
                     ...inputStyle,
                     borderTopLeftRadius: 0,
                     borderBottomLeftRadius: 0,
                     borderLeft: 'unset',
                     textAlign: 'left',
-                    paddingLeft:3,
+                    paddingLeft: 3,
                     borderColor: localError ? ERROR_COLOR : 'rgba(0,0,0,0.1)'
                 }}
                 value={localValue?.minute}
                 style={{width: '50%'}}
                 maxLength={2}
-                onFocus={handleOnFocus}
-                onChange={e => setLocalValue(prev => {
-                    const next = ({...prev, minute: e});
+                onFocus={(_, event) => {
+                    if (handleOnFocus) {
+                        handleOnFocus(event)
+                        cursorMinutesPosition.current = secondSegmentTimeRef?.current?.selectionStart ?? 0;
+                        if(secondSegmentTimeRef.current) {
+                            secondSegmentTimeRef.current.setSelectionRange(cursorMinutesPosition.current,cursorMinutesPosition.current+1);
+                        }
+
+                    }
+                }}
+                onKeyDown={(_,e) => {
+                    const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                    if(!isAllowed){
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }}
+                onKeyUp={(_, e) => {
+                    const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                    if(isAllowed) {
+                        let position = secondSegmentTimeRef?.current?.selectionStart ?? 0;
+                        if(e.key === 'ArrowLeft') {
+                            if(position === 0) {
+                                const endOfRange = firstSegmentTimeRef.current?.value?.length ?? 0;
+                                if(firstSegmentTimeRef.current) {
+                                    firstSegmentTimeRef.current.setSelectionRange(endOfRange - 1,endOfRange);
+                                    firstSegmentTimeRef.current.focus()
+                                }
+                                return;
+                            }
+                            position -= position;
+                        }
+                        cursorMinutesPosition.current = position;
+                        if(secondSegmentTimeRef.current) {
+                            secondSegmentTimeRef.current.setSelectionRange(position,position+1);
+                        }
+                    }
+                }}
+                onChange={value => setLocalValue(prev => {
+                    const next = ({...prev, minute: value});
                     if (next.minute !== prev?.minute) {
                         return next;
                     }
@@ -131,3 +230,4 @@ export const TimeInput = forwardRef(function TimeInput(props: {
         </div>
     </Label>
 })
+export const allowedKeys = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter'];

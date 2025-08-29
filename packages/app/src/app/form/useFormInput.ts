@@ -1,4 +1,4 @@
-import {Dispatch, SetStateAction, useCallback, useContext, useEffect, useId, useRef, useState} from "react";
+import {Dispatch, SetStateAction, useCallback, useContext, useEffect, useId, useRef, useState,FocusEvent} from "react";
 import {useSignal, useSignalEffect} from "react-hook-signal";
 import {FormContext} from "./Form.tsx";
 import {isPromise} from "../../core/utils/isPromise.ts";
@@ -18,7 +18,7 @@ export function useFormInput<T, V>(props: {
     validator?: (value?: T) => Promise<string | unknown>,
     required?: boolean,
     label?: string,
-    onFocus?: () => void
+    onFocus?: (e?:FocusEvent) => void
 }) {
     const {
         name,
@@ -154,8 +154,7 @@ export function useFormInput<T, V>(props: {
             setIsDisabled(isFormDisabled);
         }
     });
-
-    const handleValueChange = useCallback(async (nxtVal?: (T | ((current?: T) => T | undefined)), programmaticChange?: boolean) => {
+    const handleValueChange = useCallback(async (nxtVal?: SetStateAction<T | undefined>, programmaticChange?: boolean) => {
         let nextValue = nxtVal as (T | undefined);
         let prevValue = propsRef.current.value;
 
@@ -220,12 +219,12 @@ export function useFormInput<T, V>(props: {
         setLocalValue(nextValue as V)
     }, [name, formContext, setLocalValue]);
 
-    const handleOnFocus = useCallback(() => {
+    const handleOnFocus = useCallback((e?:FocusEvent<HTMLElement>) => {
         if (formContext?.focusedElementId) {
             formContext.focusedElementId.set(elementId);
         }
         if (onFocus) {
-            onFocus();
+            onFocus(e);
         }
         return typeof onFocus === 'function'
     }, [onFocus, formContext, elementId])

@@ -15,7 +15,6 @@ import {
     VariableInstance
 } from "../../app/designer/AppDesigner.tsx";
 
-const navigationStack: Array<{ path: string, param?: unknown }> = [];
 
 export function useAppInitiator(props: LayoutBuilderProps & {
     startingPage?: string,
@@ -26,7 +25,14 @@ export function useAppInitiator(props: LayoutBuilderProps & {
     const allApplicationCallablesSignal = useComputed(() => applicationSignal.get().callables ?? []);
     const allPagesSignal = useComputed<Array<Page>>(() => applicationSignal.get().pages ?? []);
     const allTablesSignal = useContext(TableContext)!;
-
+    const navigationStackRef = useRef< Array<{ path: string, param?: unknown }>>([]);
+    const startingPage = props.startingPage;
+    useEffect(() => {
+        navigationStackRef.current = [];
+        if(startingPage){
+            navigationStackRef.current.push({path: startingPage, param: undefined});
+        }
+    }, [startingPage]);
     const allApplicationQueriesSignal = useComputed(() => applicationSignal.get().queries ?? []);
     useSignalEffect(() => {
         const allPages = allPagesSignal.get();
@@ -37,7 +43,7 @@ export function useAppInitiator(props: LayoutBuilderProps & {
             activePageIdSignal.set(startingPageId);
         }
     });
-    const startingPage = props.startingPage;
+
     const activePageId = useMemo(() => {
         const allPages = allPagesSignal.get() ?? [];
         const pageId = allPages.find(p => p.name === startingPage)?.id ?? '';
@@ -115,7 +121,7 @@ export function useAppInitiator(props: LayoutBuilderProps & {
             if (uiDisplayModeSignal && uiDisplayModeSignal.get() === 'design') {
                 return;
             }
-            navigationStack.unshift({path, param});
+            navigationStackRef.current.unshift({path, param});
             allErrorsSignal.set([]);
             variableInitialValueSignal.set(param as Record<string, unknown> ?? {});
             activePageIdSignal.set(page.id);
@@ -124,13 +130,16 @@ export function useAppInitiator(props: LayoutBuilderProps & {
 
     const navigateBack = useMemo(() => {
         return async function navigateBack() {
-            navigationStack.shift(); // throw last insert
-            let prevNavigation = navigationStack.shift();
+            if(navigationStackRef.current.length === 1){
+                return;
+            }
+            navigationStackRef.current.shift(); // throw last insert
+            let prevNavigation = navigationStackRef.current.shift();
             while (prevNavigation && prevNavigation.param
             && typeof prevNavigation.param === 'object'
             && 'transientNavigation' in prevNavigation.param
             && prevNavigation.param.transientNavigation === true) {
-                prevNavigation = navigationStack.shift();
+                prevNavigation = navigationStackRef.current.shift();
             }
             if (prevNavigation?.path) {
                 await navigate(prevNavigation.path, prevNavigation?.param as Record<string, unknown>);

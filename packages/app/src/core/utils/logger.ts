@@ -50,21 +50,14 @@ export function useLogger(name: string) {
     return useMemo(() => createLogger(name), [name])
 }
 
-//export const log = createLogger('log');
-
 export function wrapWithLog(code: string) {
-    return `
-const _l = utils.createLogger;
-utils = {...utils}
-utils.createLogger = (name) => {
-    const _lg = _l(name,false);
-    return ['debug', 'info', 'warn', 'error'].reduce((res,key) => {
-        const time = new Date().toLocaleTimeString()
-        res[key] = (...args) => {_lg[key](...args);console[key]('['+time+']',...args)}
-        return res; 
-    },{});
-}   
-${code}`
-
-
+    return `const _l = utils.createLogger;
+utils = {...utils};utils.createLogger = (name) => {const _lg = _l(name,false);
+return ['debug', 'info', 'warn', 'error'].reduce((res,key) => {const time = new Date().toLocaleTimeString();
+res[key] = (...args) => {_lg[key](...args);console[key]('['+time+']',...args)};return res;},{});}   
+try{
+// source-code-start
+${code}
+// source-code-end
+}catch(err){console.error(err)}`
 }

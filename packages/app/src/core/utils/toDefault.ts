@@ -1,7 +1,9 @@
 export function toDefault<T>(val: unknown, defVal: T): T {
-    // first check if the val is undefined or null then return defaultVal
     if (val === undefined || val === null) {
         return defVal;
+    }
+    if(defVal === undefined || defVal === null) {
+        return val as T;
     }
     const typeVal = typeof val;
     const typeDefaultVal = typeof defVal;

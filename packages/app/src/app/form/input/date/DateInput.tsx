@@ -10,12 +10,15 @@ import {useAppContext} from "../../../../core/hooks/useAppContext.ts";
 import {useFormInput} from "../../useFormInput.ts";
 import {useSignalEffect} from "react-hook-signal";
 import {colors} from "../../../../core/style/colors.ts";
+import {utils} from "../../../../core/utils/utils.ts";
 
-type DateOrString = Date | string
+export type DateOrString = Date | string | null
 
 export const DateInput = forwardRef(function DateInput<T extends DateOrString>(props: {
     name?: string,
     value?: T,
+    minValue?:T,
+    maxValue?:T,
     onChange?: (value?: T) => void,
     disabled?: boolean,
     required?: boolean,
@@ -26,8 +29,8 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
     validator?:(value?:unknown) => Promise<string|undefined>,
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style, error, label, onChange, value, disabled, validator, name , required} = props;
-    const {localValue, localError, handleValueChange,isDisabled,isBusy,handleOnFocus,formContext,elementId} = useFormInput<typeof value, Date>({
+    const {inputStyle, style, error, label, onChange, value, disabled, validator, name , required, minValue, maxValue} = props;
+    const {localValue, localError, handleValueChange,isDisabled,isBusy,handleOnFocus,formContext,elementId} = useFormInput<T, Date>({
         name,
         value,
         error,
@@ -70,18 +73,18 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
                 display: 'flex',
                 flexDirection: 'column',
                 background: 'white',
-                padding: 10,
-                marginTop: 1,
                 borderBottomRightRadius: 5,
                 borderBottomLeftRadius: 5,
-                width: 270,
+                overflow:'hidden',
                 boxShadow: '0px 10px 5px -3px rgba(0,0,0,0.5)'
             }} onMouseDown={(e) => {
                 e.preventDefault()
             }} onClickOutside={() => {
                 closePanel(false);
             }}><DatePicker onChange={(newDate) => closePanel(newDate)}
-                           value={localValue}/></DivWithClickOutside>
+                           value={localValue}
+                           minValue={utils.toDate(minValue)}
+                           maxValue={utils.toDate(maxValue)}/></DivWithClickOutside>
         })
         popupVisibleRef.current = false;
         if (newDate === false) {
@@ -122,5 +125,7 @@ export const DateInput = forwardRef(function DateInput<T extends DateOrString>(p
                       onKeyDown={() => {
                           propsRef.current.userIsChangingData = true;
                       }}
+                      enableClearIcon={!utils.isEmpty(text)}
+                      onClearIconClicked={() => handleValueChange(null as T)}
     />
 })

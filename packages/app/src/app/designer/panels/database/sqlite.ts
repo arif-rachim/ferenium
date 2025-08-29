@@ -157,6 +157,12 @@ function cleanUpParams(params?: BindParams): BindParams | undefined {
             if (v instanceof Date) {
                 return dateToString(v)
             }
+            if (Number(v) === v && !Number.isInteger(v)) {
+                return parseFloat(v.toFixed(2))
+            }
+            if(v === undefined){
+                return null;
+            }
             return v;
         }) as SqlValue[]
     }

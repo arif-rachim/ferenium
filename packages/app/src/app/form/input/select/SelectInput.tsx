@@ -14,7 +14,7 @@ import {QueryGrid} from "../../../data/QueryGrid.tsx";
 import {
     AppVariableInitializationContext,
     FormulaDependencyParameter,
-    QueryType
+    QueryType, QueryTypeParam
 } from "../../../designer/variable-initialization/AppVariableInitialization.tsx";
 import {Container} from "../../../designer/AppDesigner.tsx";
 import {SqlValue} from "sql.js";
@@ -129,12 +129,14 @@ export const SelectInput = forwardRef(function SelectInput(props: {
     const {allPagesSignal, applicationSignal, elements, navigate} = context;
     const isDesignMode = 'uiDisplayModeSignal' in context && context.uiDisplayModeSignal.get() === 'design';
     const propsRef = useRef({valueToRowData, rowDataToText, rowDataToValue});
-    propsRef.current = {valueToRowData, rowDataToText, rowDataToValue}
+    propsRef.current = {valueToRowData, rowDataToText, rowDataToValue};
+    const queryParamRef = useRef<QueryTypeParam|undefined>(undefined)
     const text = (rowDataToText ? rowDataToText(localValue) : defaultRowDataToText(localValue)) ?? '';
     const showPopup = useShowPopUp();
     const rendererPageId = rowDataToRenderer?.rendererPageId ?? '';
     const rendererPageDataMapperFormula = rowDataToRenderer?.rendererPageDataMapperFormula ?? '';
     const localValueString = localValue ? JSON.stringify(localValue) : undefined;
+    const popupShowTimeRef = useRef(0);
     const renderer: ReactNode | undefined = useMemo(() => {
         const localValue = localValueString ? JSON.parse(localValueString) : undefined;
         let renderer: ReactNode | undefined = undefined;
@@ -196,6 +198,8 @@ export const SelectInput = forwardRef(function SelectInput(props: {
         }
         popupVisibleRef.current = true;
         handleOnFocus();
+        popupShowTimeRef.current = Date.now()
+        console.log('SHOW POPUP')
         const props = await showPopup<{
             value: Record<string, SqlValue>,
             data: Array<Record<string, SqlValue>>,
@@ -204,7 +208,14 @@ export const SelectInput = forwardRef(function SelectInput(props: {
             index: number
         } | false, HTMLLabelElement>(ref, (closePanel, commitLayout) => {
             return <QueryGrid query={query} columnsConfig={config}
-                              onClickOutside={() => closePanel(false)}
+                              onClickOutside={() => {
+                                  const now = Date.now();
+                                  if(now - popupShowTimeRef.current < 300){
+                                      // once opened you cant immediately closed, we need to prevent this from happening.
+                                      return;
+                                  }
+                                  closePanel(false)
+                              }}
                               rowPerPage={10}
                               paginationButtonCount={3}
                               onFocusedRowChange={closePanel}
@@ -216,9 +227,12 @@ export const SelectInput = forwardRef(function SelectInput(props: {
                               pageable={pageable}
                               itemToKey={itemToKey}
                               onQueryResultChange={commitLayout}
-
+                              queryParam={queryParamRef.current}
+                              onQueryParamChange={queryParam => queryParamRef.current = queryParam}
             />
         });
+        console.log('POPUP CLOSED');
+
         popupVisibleRef.current = false;
         if (props === false) {
             formContext?.focusedElementId.set(undefined);

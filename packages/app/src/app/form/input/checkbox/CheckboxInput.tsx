@@ -33,6 +33,7 @@ export const CheckboxInput = forwardRef(function CheckboxInput(props: {
         color: localError ? 'red' : '#333',
         border: BORDER,
         width: 15, height: 15,
+        background :'#FFF',
         borderRadius: 3
     } as CSSProperties;
 

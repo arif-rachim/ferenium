@@ -221,6 +221,9 @@ function EditColumnConfigFormula(props: {
                     <div style={{display: 'table-cell', padding: '0px 5px'}}>
                         Title
                     </div>
+                    <div style={{display: 'table-cell', padding: '0px 5px'}}>
+                        Align
+                    </div>
                 </div>
                 {(displayCard === 'cardView' ? CARD_COLUMNS : columns).map((col, index, source) => {
                     const isLastIndex = source.length - 1 === index;
@@ -394,6 +397,26 @@ function EditColumnConfigFormula(props: {
                                        })
                                    }}
                             />
+                        </div>
+                        <div style={{display: 'table-cell'}}>
+                            <select style={{
+                                border: BORDER,
+                                borderRadius: 0,
+                                padding: '0px 5px',
+                                borderBottom: isLastIndex ? BORDER : 'unset'
+                            }} value={conf?.align} onChange={(e) => {
+                                const value = e.target.value;
+                                setConfig(old => {
+                                    const clone = {...old};
+                                    clone[col] = {...clone[col]}
+                                    clone[col].align = value as 'left';
+                                    return clone;
+                                })
+                            }}>
+                                <option value={'left'}>Left</option>
+                                <option value={'center'}>Center</option>
+                                <option value={'right'}>Right</option>
+                            </select>
                         </div>
                     </div>
                 })}

@@ -86,11 +86,13 @@ export function fetcherInitialization(props: {
                         return h
                     });
                 } catch (err) {
+                    console.error(err);
                     log.error(err);
                 }
                 const {address, requestInit} = createRequest(fetcher, inputs ?? {}, config);
                 return await utils.fetch(address, requestInit);
             } catch (error: unknown) {
+                console.error(error);
                 const err = error as Error;
                 return {error: err.message}
             }

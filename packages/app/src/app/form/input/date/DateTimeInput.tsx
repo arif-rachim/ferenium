@@ -12,13 +12,20 @@ import {useFormInput} from "../../useFormInput.ts";
 import {utils} from "../../../../core/utils/utils.ts";
 import {useSignalEffect} from "react-hook-signal";
 import {colors} from "../../../../core/style/colors.ts";
+import {DateOrString} from "./DateInput.tsx";
+import {isNumberAble} from "../../../../core/utils/isNumberAble.ts";
+import {allowedKeys} from "./TimeInput.tsx";
+import {isNotEmpty} from "../../../../core/utils/isNotEmpty.ts";
+import {isEmpty} from "../../../../core/utils/isEmpty.ts";
 
 const ERROR_COLOR = '#C00000';
 
-export const DateTimeInput = forwardRef(function DateTimeInput(props: {
+export const DateTimeInput = forwardRef(function DateTimeInput<T extends DateOrString>(props: {
     name?: string,
-    value?: Date | string,
-    onChange?: (value?: Date | string) => void,
+    value?: T,
+    minValue?: T,
+    maxValue?: T,
+    onChange?: (value?: T) => void,
     disabled?: boolean,
     label?: string,
     error?: string,
@@ -29,7 +36,20 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
 }, forwardedRef: ForwardedRef<HTMLLabelElement>) {
 
     const ref = useForwardedRef(forwardedRef);
-    const {inputStyle, style, error, label, onChange, value, name, disabled, validator, required} = props;
+    const {
+        inputStyle,
+        style,
+        error,
+        label,
+        onChange,
+        value,
+        minValue,
+        maxValue,
+        name,
+        disabled,
+        validator,
+        required
+    } = props;
     const {
         localValue,
         setLocalValue,
@@ -40,7 +60,7 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
         isBusy,
         handleOnFocus,
         elementId
-    } = useFormInput<typeof value, {
+    } = useFormInput<T, {
         date?: string,
         hour?: string,
         minute?: string
@@ -82,7 +102,7 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                 const shouldTriggerChange = value === undefined || (valueIsString && dateToString(dateValue) !== value) || (isDate(value) && dateToString(dateValue) !== dateToString(value));
                 const val = valueIsString ? dateToString(dateValue) : dateValue;
                 if (shouldTriggerChange) {
-                    handleValueChange(val,true).then();
+                    handleValueChange(val as T, true).then();
                 }
             }
         }
@@ -91,7 +111,10 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
     const showPopup = useShowPopUp();
     const firstSegmentTimeRef = useRef<HTMLInputElement | undefined>();
     const secondSegmentTimeRef = useRef<HTMLInputElement | undefined>();
-    const trapHowManyTimesUserTypeKeyDown = useRef(0);
+    const cursorMinutesPosition = useRef<number>(0);
+    const cursorHoursPosition = useRef<number>(0);
+
+
     const [isFocused, setIsFocused] = useState(false);
     useSignalEffect(() => {
         setIsFocused(formContext?.focusedElementId.get() === elementId)
@@ -110,7 +133,7 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
     }, [inputStyle, isFocused, localError]);
     const popupVisibleRef = useRef(false);
     const localValueDate = localValue?.date;
-    const onFocus = useCallback(async function onFocus(){
+    const onFocus = useCallback(async function onFocus() {
         if (popupVisibleRef.current) {
             return
         }
@@ -125,16 +148,16 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                 display: 'flex',
                 flexDirection: 'column',
                 background: 'white',
-                padding: 10,
-                marginTop: 1,
                 borderBottomRightRadius: 5,
                 borderBottomLeftRadius: 5,
-                width: 270,
                 boxShadow: '0px 10px 5px -3px rgba(0,0,0,0.5)'
             }} onMouseDown={(e) => {
                 e.preventDefault()
             }} onClickOutside={() => closePanel(false)}><DatePicker onChange={closePanel}
-                                                                    value={toDate(localValueDate)}/></DivWithClickOutside>
+                                                                    value={toDate(localValueDate)}
+                                                                    minValue={utils.toDate(minValue)}
+                                                                    maxValue={utils.toDate(maxValue)}/>
+            </DivWithClickOutside>
         });
         popupVisibleRef.current = false;
         if (newDate === false) {
@@ -150,7 +173,7 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
         if (firstSegmentTimeRef.current) {
             firstSegmentTimeRef.current.focus();
         }
-    },[handleOnFocus, isDesignMode, localValueDate, ref, setLocalValue,showPopup]);
+    }, [handleOnFocus, isDesignMode, localValueDate, ref, setLocalValue, showPopup]);
     return <Label ref={ref} label={label} style={{...style, flexDirection: 'column'}}>
         <div style={{display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'flex-end'}}>
             <TextInput
@@ -178,6 +201,8 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                 <TextInput
                     disabled={isDisabled || isBusy}
                     inputRef={firstSegmentTimeRef}
+                    type={'text'}
+                    debounceChangeEvent={0}
                     inputStyle={{
                         borderTopRightRadius: 0,
                         borderBottomRightRadius: 0,
@@ -189,19 +214,59 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                     value={localValue?.hour}
                     style={{width: 30}}
                     maxLength={2}
-                    onChange={e => setLocalValue(prev => {
-                        const next = ({...prev, hour: e});
+                    onFocus={(_, event) => {
+                        if (handleOnFocus) {
+                            handleOnFocus(event)
+                        }
+                        if (handleOnFocus) {
+                            handleOnFocus(event)
+                            let position = firstSegmentTimeRef?.current?.selectionStart ?? 0;
+                            if (position && _ && position === _.length) {
+                                position = position - 1;
+                            }
+                            cursorHoursPosition.current = position;
+                            if (firstSegmentTimeRef.current) {
+                                firstSegmentTimeRef.current.setSelectionRange(position, position + 1);
+                            }
+
+                        }
+                    }}
+                    onKeyDown={(_, e) => {
+                        const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                        if (!isAllowed) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                    }}
+                    onChange={value => setLocalValue(prev => {
+                        const next = ({...prev, hour: value});
                         if (next.hour !== prev?.hour) {
+                            if (isNotEmpty(next.hour) && isEmpty(next.minute)) {
+                                next.minute = '00';
+                            }
                             return next;
                         }
                         return prev;
                     })}
-                    onKeyUp={() => {
-                        trapHowManyTimesUserTypeKeyDown.current += 1;
-                        if (trapHowManyTimesUserTypeKeyDown.current === 2 && secondSegmentTimeRef.current) {
-                            trapHowManyTimesUserTypeKeyDown.current = 0;
-                            secondSegmentTimeRef.current.focus()
-                            return;
+                    onKeyUp={(_, e) => {
+                        const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                        if (isAllowed) {
+                            let position = firstSegmentTimeRef?.current?.selectionStart ?? 0;
+                            if (e.key === 'ArrowLeft') {
+                                position = position - 1;
+                            }
+                            // if(e.key === 'ArrowRight') {
+                            if (position && _ && position === _.length && _.length == 2 && secondSegmentTimeRef.current) {
+                                secondSegmentTimeRef.current.setSelectionRange(0, 1);
+                                secondSegmentTimeRef.current.focus();
+                                return;
+                            }
+                            // }
+                            cursorHoursPosition.current = position;
+                            if (firstSegmentTimeRef.current) {
+                                firstSegmentTimeRef.current.setSelectionRange(position, position + 1);
+                            }
+
                         }
                     }}
                 />
@@ -217,6 +282,7 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                 <TextInput
                     disabled={isDisabled || isBusy}
                     inputRef={secondSegmentTimeRef}
+                    type={'text'}
                     inputStyle={{
                         ...inputStyle,
                         borderTopLeftRadius: 0,
@@ -228,8 +294,45 @@ export const DateTimeInput = forwardRef(function DateTimeInput(props: {
                     value={localValue?.minute}
                     style={{width: 30}}
                     maxLength={2}
-                    onChange={e => setLocalValue(prev => {
-                        const next = ({...prev, minute: e});
+                    onFocus={(_, event) => {
+                        if (handleOnFocus) {
+                            handleOnFocus(event)
+                            cursorMinutesPosition.current = secondSegmentTimeRef?.current?.selectionStart ?? 0;
+                            if(secondSegmentTimeRef.current) {
+                                secondSegmentTimeRef.current.setSelectionRange(cursorMinutesPosition.current, cursorMinutesPosition.current + 1);
+                            }
+                        }
+                    }}
+                    onKeyDown={(_, e) => {
+                        const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                        if (!isAllowed) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                    }}
+                    onKeyUp={(_, e) => {
+                        const isAllowed = allowedKeys.includes(e.key) || isNumberAble(e.key)
+                        if (isAllowed) {
+                            let position = secondSegmentTimeRef?.current?.selectionStart ?? 0;
+                            if (e.key === 'ArrowLeft') {
+                                if (position === 0) {
+                                    const endOfRange = firstSegmentTimeRef.current?.value?.length ?? 0;
+                                    if(firstSegmentTimeRef.current) {
+                                        firstSegmentTimeRef.current.setSelectionRange(endOfRange - 1, endOfRange);
+                                        firstSegmentTimeRef.current.focus()
+                                        return;
+                                    }
+                                }
+                                position -= position;
+                            }
+                            cursorMinutesPosition.current = position;
+                            if (secondSegmentTimeRef.current) {
+                                secondSegmentTimeRef.current.setSelectionRange(position, position + 1);
+                            }
+                        }
+                    }}
+                    onChange={value => setLocalValue(prev => {
+                        const next = ({...prev, minute: value});
                         if (next.minute !== prev?.minute) {
                             return next;
                         }

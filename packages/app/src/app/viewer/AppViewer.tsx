@@ -62,7 +62,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
         const container = context.allContainersSignal.get().find(item => isEmpty(item.parent));
         setContainerAndPageId({container, activePageId});
     });
-    const [screen, setScreen] = useState<ScreenSizeType>((Object.keys(screenSizes) as Array<ScreenSizeType>) [0]);
+    const [screen, setScreen] = useState<ScreenSizeType>((Object.keys(screenSizes) as Array<ScreenSizeType>) [3]);
     return <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -86,24 +86,29 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
             <motion.div style={{
                 display: 'flex',
                 margin: 5,
-                position: screen === 'Monitors' ? 'absolute' : 'relative',
+                position: 'absolute',
                 top: 0,
                 left: 0,
-                width: '100%',
+                right: 0,
                 justifyContent: 'center',
-                zIndex: 1
-            }} layout={'position'}>
+                zIndex: 1,
+            }} layout={'position'} >
+                <motion.div style={{
+                    display: 'flex',
+                    opacity:0
+                }} whileHover={{opacity:1}}>
                 <ButtonGroup buttons={(Object.keys(screenSizes) as Array<ScreenSizeType>).reduce((result, key) => {
                     result[key] = {title: key, onClick: () => setScreen(key)}
                     return result;
                 }, {} as Record<ScreenSizeType, { title: string, onClick: () => void }>)} value={screen}/>
+                </motion.div>
             </motion.div>
 
             <motion.div style={{
                 maxWidth: screenSizes[screen]?.width,
-                maxHeight: screen === 'Monitors'? 'unset' : screenSizes[screen]?.height,
+                maxHeight: screen === 'Monitors' ? 'unset' : screenSizes[screen]?.height,
                 borderRadius: screenSizes[screen]?.borderRadius,
-                border: screen === 'Monitors'? 'unset' : '3px solid #666',
+                border: screen === 'Monitors' ? 'unset' : '3px solid #666',
                 background: 'linear-gradient(0deg,#FAFAFA,#FFFFFF)',
                 boxShadow: '0px 25px 20px -10px rgba(0,0,0,0.3) ',
                 display: 'flex',
@@ -112,8 +117,9 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                 flexDirection: 'column',
                 overflow: 'auto',
                 position: 'relative',
-                transition: 'all 300ms ease-in-out'
-            }}>
+                transition: 'all 300ms ease-in-out',
+                overflowX: 'hidden'
+            }} >
                 <ErrorBoundary>
                     <AppViewerContext.Provider value={context}>
                         <ModalProvider>
@@ -121,7 +127,7 @@ export default function AppViewer(props: LayoutBuilderProps & { startingPage: st
                                 <PageVariableInitialization>
                                     <ClosePanelContext.Provider value={context.navigateBack}>
                                         <motion.div layout={'position'} style={{
-                                            borderRadius: 15,
+                                            borderRadius: screen === 'Monitors' ? 0 : screenSizes[screen]?.borderRadius - 2,
                                             flexGrow: 1,
                                             display: 'flex',
                                             flexDirection: 'column',

@@ -404,19 +404,20 @@ export const DefaultElements: Record<string, Element> = {
         icon: MdOutlineCalendarMonth,
         property: {
             name: z.string().optional(),
-            value: z.union([z.date(), z.string()]).optional(),
+            value: z.union([z.date(), z.string(),z.null()]).optional(),
+            minValue: z.union([z.date(), z.string(),z.null()]).optional(),
+            maxValue: z.union([z.date(), z.string(),z.null()]).optional(),
             label: z.string().optional(),
             error: z.string().optional(),
             disabled: z.boolean().optional(),
-            onChange: z.function().args(z.union([z.date(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
+            onChange: z.function().args(z.union([z.date(), z.string(),z.null()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema,
             validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())),
             required: z.boolean().optional(),
         },
         component: (props, ref) => {
-            const {inputStyle, style, label, error, name, value, disabled, onChange, validator, required} = props;
-
+            const {inputStyle, style, label, error, name, value, minValue, maxValue, disabled, onChange, validator, required} = props;
             return <DateInput ref={ref as MutableRefObject<HTMLLabelElement>}
                               style={style as CSSProperties}
                               inputStyle={inputStyle as CSSProperties}
@@ -428,7 +429,8 @@ export const DefaultElements: Record<string, Element> = {
                               disabled={disabled}
                               validator={validator}
                               required={required}
-
+                              minValue={minValue}
+                              maxValue={maxValue}
             />
         },
         propertyEditor: {
@@ -446,29 +448,34 @@ export const DefaultElements: Record<string, Element> = {
         icon: IoMdTime,
         property: {
             name: z.string().optional(),
-            value: z.union([z.date(), z.string()]).optional(),
+            value: z.union([z.date(), z.string(),z.null()]).optional(),
+            minValue: z.union([z.date(), z.string(),z.null()]).optional(),
+            maxValue: z.union([z.date(), z.string(),z.null()]).optional(),
             label: z.string().optional(),
             error: z.string().optional(),
             disabled: z.boolean().optional(),
             required: z.boolean().optional(),
             validator: z.function().args(z.unknown().optional()).returns(z.promise(z.string().optional())),
-            onChange: z.function().args(z.union([z.date(), z.string()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
+            onChange: z.function().args(z.union([z.date(), z.string(),z.null()]).optional()).returns(z.union([z.promise(z.void()), z.void()])),
             style: cssPropertiesSchema,
             inputStyle: cssPropertiesSchema
         },
         component: (props, ref) => {
-            const {inputStyle, value, name, onChange, label, error, disabled, required, validator} = props;
+            const {inputStyle, value, minValue, maxValue, name, onChange, label, error, disabled, required, validator} = props;
             return <DateTimeInput ref={ref as MutableRefObject<HTMLLabelElement>}
                                   disabled={disabled}
                                   style={props.style as CSSProperties}
                                   inputStyle={inputStyle as CSSProperties}
                                   value={value}
+                                  minValue={minValue}
+                                  maxValue={maxValue}
                                   name={name}
                                   onChange={onChange}
                                   label={label}
                                   error={error}
                                   required={required}
                                   validator={validator}
+
             />
         },
         propertyEditor: {
@@ -586,9 +593,14 @@ export const DefaultElements: Record<string, Element> = {
             }))),
             config: z.record(z.object({
                 hidden: z.boolean().optional(),
-                width: z.union([z.string(), z.number()]).optional(),
+                minWidth: z.union([z.string(), z.number()]).optional(),
+                maxWidth: z.union([z.string(), z.number()]).optional(),
                 rendererPageId: z.string().optional(),
-                title: z.string().optional()
+                title: z.string().optional(),
+                cellValueMapper:z.string().optional(),
+                index : z.number().optional(),
+                align: z.enum(['left','center','right']).optional(),
+                rendererPageDataMapperFormula: z.string().optional()
             })),
             valueToRowData: z.function().args(ZodSqlValue.optional()).returns(z.promise(z.record(ZodSqlValue))).optional(),
             rowDataToText: z.function().args(z.record(ZodSqlValue).optional()).returns(z.string()),
@@ -831,9 +843,14 @@ export const DefaultElements: Record<string, Element> = {
             }))),
             config: z.record(z.object({
                 hidden: z.boolean().optional(),
-                width: z.union([z.string(), z.number()]).optional(),
+                minWidth: z.union([z.string(), z.number()]).optional(),
+                maxWidth: z.union([z.string(), z.number()]).optional(),
                 rendererPageId: z.string().optional(),
-                title: z.string().optional()
+                title: z.string().optional(),
+                cellValueMapper:z.string().optional(),
+                index : z.number().optional(),
+                align: z.enum(['left','center','right']).optional(),
+                rendererPageDataMapperFormula: z.string().optional()
             })),
             focusedRow: z.record(z.union([z.number(), z.string()])),
             onFocusedRowChange: z.function().args(z.object({

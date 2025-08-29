@@ -218,6 +218,7 @@ export function FetcherEditorPanel(props: { fetcherId?: string, panelId: string,
         const response = await utils.fetch(address, requestInit);
         logTestMessage(`[Response] ${JSON.stringify(response)}`);
         if(response.error){
+            console.error(response);
             return;
         }
         if (response.contentType?.includes('application/json')) {

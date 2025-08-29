@@ -1,15 +1,15 @@
 import {BORDER, BORDER_ERROR} from "../../../../core/style/Border.ts";
-import type {ChangeEvent, ReactNode} from "react";
+import type {ChangeEvent, FocusEvent, KeyboardEvent, MouseEvent, ReactNode} from "react";
 import {
     createElement,
     CSSProperties,
     ForwardedRef,
     forwardRef,
     MutableRefObject,
+    useCallback,
     useEffect,
     useRef,
     useState,
-    useTransition
 } from "react";
 import {Label} from "../../Label.tsx";
 import {guid} from "../../../../core/utils/guid.ts";
@@ -20,11 +20,11 @@ export const TextInput = forwardRef(function TextInput(props: {
         name?: string,
         value?: string,
         onChange?: (value?: string) => void,
-        onFocus?: () => void,
-        onBlur?: (value: string) => void,
-        onKeyDown?: (value: string) => void,
-        onKeyUp?: (value: string) => void,
-        onMouseDown?: () => void,
+        onFocus?: (value: string, e?: FocusEvent<HTMLInputElement>) => void,
+        onBlur?: (value: string, e: FocusEvent<HTMLInputElement>) => void,
+        onKeyDown?: (value: string, e: KeyboardEvent<HTMLInputElement>) => void,
+        onKeyUp?: (value: string, e: KeyboardEvent<HTMLInputElement>) => void,
+        onMouseDown?: (value: string, e: MouseEvent<HTMLInputElement>) => void,
         label?: string,
         error?: string,
         style?: CSSProperties,
@@ -42,7 +42,8 @@ export const TextInput = forwardRef(function TextInput(props: {
         placeholder?: string,
         enableClearIcon?: boolean,
         onClearIconClicked?: () => void,
-        autoFocus?: boolean
+        autoFocus?: boolean,
+        debounceChangeEvent?:number
     }, ref: ForwardedRef<HTMLLabelElement>) {
         const {
             value,
@@ -69,8 +70,17 @@ export const TextInput = forwardRef(function TextInput(props: {
             enableClearIcon,
             onClearIconClicked,
             autoFocus,
-            busy
+            busy,
+            debounceChangeEvent
         } = props;
+
+
+        function onFocusWrapper(e?: FocusEvent) {
+            const val = getValue(e) ?? '';
+            if (onFocus) {
+                onFocus(val, e as FocusEvent<HTMLInputElement>)
+            }
+        }
 
         const {
             localValue,
@@ -78,7 +88,8 @@ export const TextInput = forwardRef(function TextInput(props: {
             isDisabled,
             isBusy,
             handleValueChange,
-            handleOnFocus
+            handleOnFocus,
+            setLocalValue
         } = useFormInput<typeof value, typeof value>({
             name,
             value,
@@ -89,24 +100,24 @@ export const TextInput = forwardRef(function TextInput(props: {
             validator,
             required,
             label,
-            onFocus
+            onFocus: onFocusWrapper
         });
 
-        const [cursorLoc, setCursorLoc] = useState<null | number>(null);
+        const handleValueChangeDebounce = useCallback(debounce(handleValueChange, debounceChangeEvent ?? 300), [handleValueChange])
+        const cursorLocRef = useRef<null | number>(null)
 
         const localRef = useRef<HTMLInputElement | null>(null);
         const inputRef = props.inputRef ? props.inputRef : localRef;
 
         const inputDisabled = isDisabled || isBusy;
-        const [_, startTransition] = useTransition();
         const propsRef = useRef({onChange});
         propsRef.current = {onChange};
 
         useEffect(() => {
             if (inputRef.current && inputRef.current?.type !== 'number') {
-                inputRef.current.setSelectionRange(cursorLoc, cursorLoc);
+                inputRef.current.setSelectionRange(cursorLocRef.current, cursorLocRef.current);
             }
-        }, [inputRef, localValue, cursorLoc]);
+        }, [inputRef, localValue]);
 
 
         const style = {
@@ -116,7 +127,7 @@ export const TextInput = forwardRef(function TextInput(props: {
             flexGrow: 1,
             minWidth: 0,
             textAlign: type === 'number' ? 'right' : 'left',
-            width:'100%',
+            width: '100%',
             ...inputStyle,
         } as CSSProperties;
 
@@ -133,39 +144,43 @@ export const TextInput = forwardRef(function TextInput(props: {
                 val = val.toUpperCase();
             }
             if (e?.target.selectionStart) {
-                setCursorLoc(e.target.selectionStart);
+                cursorLocRef.current = e.target.selectionStart
             }
-            startTransition(() => {
-                handleValueChange(val).then();
-            })
+            setLocalValue(val);
+            if(debounceChangeEvent === undefined || debounceChangeEvent <= 0 ){
+                handleValueChange(val);
+            }else{
+                handleValueChangeDebounce(val);
+            }
         };
-        const handleFocus = () => {
-            const hasOnFocus = handleOnFocus();
+        const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
+            const hasOnFocus = handleOnFocus(e);
             if (!hasOnFocus) {
                 inputRef.current?.select()
             }
         };
-        const handleBlur = (e: ChangeEvent<HTMLInputElement>) => {
+        const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
             const val = e.target.value;
             if (onBlur) {
-                onBlur(val);
+                onBlur(val, e);
             }
         }
-        const handleKeyDown = (e: ChangeEvent<HTMLInputElement>) => {
+        const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
             const val = getValue(e) ?? '';
             if (onKeyDown) {
-                onKeyDown(val)
+                onKeyDown(val, e)
             }
         }
-        const handleKeyUp = (e: ChangeEvent<HTMLInputElement>) => {
+        const handleKeyUp = (e: KeyboardEvent<HTMLInputElement>) => {
             const val = getValue(e) ?? '';
             if (onKeyUp) {
-                onKeyUp(val)
+                onKeyUp(val, e)
             }
         }
-        const handleMouseDown = () => {
+        const handleMouseDown = (e: MouseEvent<HTMLInputElement>) => {
+            const val = getValue(e) ?? '';
             if (onMouseDown) {
-                onMouseDown()
+                onMouseDown(val, e)
             }
         }
 
@@ -192,10 +207,10 @@ export const TextInput = forwardRef(function TextInput(props: {
         return <Label errorMessage={localError} label={label} ref={ref} style={{minWidth: 0, ...defaultStyle}}
                       onMouseLeave={(e) => {
                           let containsElement = true;
-                          if(e.relatedTarget){
-                              if(e.relatedTarget === window){
+                          if (e.relatedTarget) {
+                              if (e.relatedTarget === window) {
                                   containsElement = false;
-                              }else{
+                              } else {
                                   containsElement = inputRef.current ? inputRef.current.contains(e.relatedTarget as Node) : false;
                               }
                           }
@@ -238,4 +253,18 @@ function getValue(e: unknown): string | undefined {
         return e.target.value as string;
     }
     return undefined;
+}
+
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+    let timeoutId: ReturnType<typeof setTimeout> | null;
+    return function debounced(...args: Parameters<T>) {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(() => {
+            func(...args);
+            timeoutId = null;
+        }, wait);
+    }
+
 }

@@ -1,3 +1,4 @@
+import {isNumberAble} from "./isNumberAble.ts";
 
 export function toNumber(val: unknown, defaultVal?: number): number | undefined {
     if (val === undefined || val === null) {
@@ -6,7 +7,7 @@ export function toNumber(val: unknown, defaultVal?: number): number | undefined 
     if (typeof val === 'number') {
         return val;
     }
-    if (typeof val === 'string') {
+    if (typeof val === 'string' && isNumberAble(val)) {
         let result = NaN;
         try {
             if (val.indexOf('.') > 0) {

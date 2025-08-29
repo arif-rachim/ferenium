@@ -18,6 +18,7 @@ import {IconType} from "../../core/components/icon/IconElement.tsx";
 import * as Io from "react-icons/io";
 import {useSignalEffect} from "react-hook-signal";
 import {isNotEmpty} from "../../core/utils/isNotEmpty.ts";
+import {isNumber} from "../../core/utils/isNumber.ts";
 
 /**
  * A custom Button component.
@@ -114,7 +115,3 @@ export const Button = forwardRef(function Button(props: DetailedHTMLProps<Button
 
     </button>
 });
-
-function isNumber(val: unknown): val is number {
-    return val !== null && val !== undefined && typeof val === 'number';
-}

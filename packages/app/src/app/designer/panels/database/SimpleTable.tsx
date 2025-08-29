@@ -50,7 +50,8 @@ export type ColumnsConfig = Record<string, {
     rendererPageDataMapperFormula?: string,
     cellValueMapper?: string,
     title?: string,
-    index?: number
+    index?: number,
+    align?: "left" | "center" | "right"
 }>
 
 
@@ -134,7 +135,7 @@ function FilterHeaderRow(props: {
                     minWidth: minWidth ? minWidth : '0px',
                     maxWidth
                 }} key={`filter-${col}`}>
-                    <TextInput allCaps={false} inputStyle={{borderRadius:0}} style={{
+                    <TextInput allCaps={true} inputStyle={{borderRadius:0}} style={{
                         border: 'unset',
                         width: '100%',
                         padding: '0px 0px',
@@ -217,14 +218,10 @@ function TitleHeaderRow(props: {
             return <ThreeStateCheckbox value={multipleSelection}/>
         }}</notifiable.td>}
         {columns.map((col) => {
-            let title = col;
-            if (columnsConfig && typeof columnsConfig === 'object' && col in columnsConfig) {
-                const config = columnsConfig[col];
 
-                if (config.title) {
-                    title = config.title;
-                }
-            }
+            const config = columnsConfig && typeof columnsConfig === 'object' && col in columnsConfig ? columnsConfig[col] : undefined;
+            const title = config?.title ?? col;
+
             let sortDirection: 'asc' | 'desc' | undefined = undefined;
             let sortIndex = -1;
             if (sortable && sort) {
@@ -233,18 +230,30 @@ function TitleHeaderRow(props: {
                     sortDirection = sort[sortIndex].direction;
                 }
             }
-            const minWidth = isNotEmpty(columnsConfig) && isNotEmpty(columnsConfig[col]) ? columnsConfig[col].minWidth : undefined;
-            const maxWidth = isNotEmpty(columnsConfig) && isNotEmpty(columnsConfig[col]) ? columnsConfig[col].maxWidth : undefined;
-
-            return <td style={{
+            const minWidth = config?.minWidth;
+            const maxWidth = config?.minWidth;
+            let tdStyle = {
                 //borderBottom: BORDER,
                 background: '#F2F2F2',
                 color: "black",
-                padding: '2px 0px 2px 10px',
+                padding: '2px 0px 2px 0px',
                 minWidth,
                 maxWidth,
                 width: minWidth === maxWidth ? maxWidth : 'unset'
-            }} onClick={() => {
+            } as CSSProperties;
+
+            let titleStyle = {
+                width: '100%',
+                fontSize: 'smaller',
+                fontWeight: 'bold',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+                paddingLeft : 5,
+                paddingRight : 5,
+                textAlign : config?.align
+            } as CSSProperties
+
+            return <td style={tdStyle} onClick={() => {
                 if (onSortChange === undefined) {
                     return;
                 }
@@ -257,13 +266,7 @@ function TitleHeaderRow(props: {
                 }
             }} key={col}>
                 <div style={{display: 'flex', justifyContent: 'center', gap: 5}}>
-                    <div title={title} style={{
-                        width: '100%',
-                        fontSize: 'smaller',
-                        fontWeight: 'bold',
-                        textOverflow: 'ellipsis',
-                        overflow: 'hidden'
-                    }}>
+                    <div title={title} style={titleStyle}>
                         {title}
                     </div>
                     {sortable && sortIndex >= 0 &&
@@ -894,8 +897,8 @@ export const defaultItemToKey = (item: unknown) => {
     return undefined;
 }
 
-function CellRenderer(props: { value: ReactNode | Promise<ReactNode> }) {
-    const {value: propsValue} = props;
+function CellRenderer(props: { value: ReactNode | Promise<ReactNode>,textAlign?:'left'|'center'|'right' }) {
+    const {value: propsValue,textAlign} = props;
     const [value, setValue] = useState(() => {
         if (isPromise(props.value)) {
             return '';
@@ -922,7 +925,7 @@ function CellRenderer(props: { value: ReactNode | Promise<ReactNode> }) {
         }
     }, [propsValue]);
 
-    return <div style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', padding: '0px 10px'}}
+    return <div style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', padding: '0px 10px',textAlign: textAlign}}
                 dangerouslySetInnerHTML={{__html: utils.toString(value) ?? ''}}/>
 }
 

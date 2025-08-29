@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node house-keeping.cjs && vite",
     "tsc": "tsc",
-    "build": "echo \"Compiling App\" && tsc && node --max-old-space-size=8192 ../../node_modules/vite/bin/vite.js build",
+    "build": "node house-keeping.cjs && echo \"Compiling App\" && tsc && node --max-old-space-size=8192 ../../node_modules/vite/bin/vite.js build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

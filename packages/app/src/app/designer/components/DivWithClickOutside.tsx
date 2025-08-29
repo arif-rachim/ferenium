@@ -1,23 +1,21 @@
-import {ForwardedRef, forwardRef, HTMLProps, PropsWithChildren, useEffect} from "react";
+import {ForwardedRef, forwardRef, HTMLProps, PropsWithChildren, useEffect, useRef} from "react";
 import {useForwardedRef} from "../../../core/hooks/useForwardedRef.ts";
 
 export const DivWithClickOutside = forwardRef(function DivWithClickOutside(props: PropsWithChildren<HTMLProps<HTMLDivElement> & {
     onClickOutside?: (event: MouseEvent) => void
 }>, ref: ForwardedRef<HTMLElement>) {
     const localRef = useForwardedRef<HTMLDivElement>(ref as ForwardedRef<HTMLDivElement>);
+
     const {onClickOutside, children, ...properties} = props;
+    const propsRef = useRef({onClickOutside});
+    propsRef.current.onClickOutside = onClickOutside;
     useEffect(() => {
-        let unregisterListener = () => {
-        };
-        if (onClickOutside) {
-            unregisterListener = detectClickOutside(localRef as ForwardedRef<HTMLElement>, (event) => {
-                onClickOutside(event);
-            }, {delay: 100})
-        }
-        return () => {
-            unregisterListener()
-        }
-    }, [localRef, onClickOutside]);
+        return detectClickOutside(localRef as ForwardedRef<HTMLElement>, (event) => {
+            if (propsRef.current.onClickOutside) {
+                propsRef.current.onClickOutside(event);
+            }
+        }, {delay: 100})
+    }, [localRef, propsRef]);
     return <div ref={localRef} {...properties}>{children}</div>
 })
 

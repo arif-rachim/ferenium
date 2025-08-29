@@ -100,7 +100,17 @@ async function loadConfig() {
 
 async function getResource(fileName: string) {
     const response = await Promise.all([loadFromFile(fileName), loadFromOPFSLite(fileName), loadFromNetworkLite(fileName)]);
-    const [file, opfs, http] = response.map(buffer => buffer ? JSON.parse(decodeToString(buffer)) : undefined) as Array<{
+    const [file, opfs, http] = response.map(buffer => {
+        if(buffer){
+            try{
+                const string = decodeToString(buffer);
+                return string ? JSON.parse(string) : undefined;
+            }catch (err){
+                console.log(err)
+            }
+        }
+        return undefined;
+    }) as Array<{
         version: number,
         lastUpdate: string
     }>;

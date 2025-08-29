@@ -15,7 +15,7 @@ import {FormContext} from "../../../form/Form.tsx";
 import {utils} from "../../../../core/utils/utils.ts";
 import {ClosePanelContext, useNavigatePanel} from "../../../../core/hooks/useNavigatePanel.ts";
 import {useReadSqlLite} from "../../../../core/hooks/modal/useReadSqlLite.ts";
-import {createLogger} from "../../../../core/utils/logger.ts";
+import {createLogger, wrapWithLog} from "../../../../core/utils/logger.ts";
 
 const db = dbSchemaInitialization();
 const log = createLogger('prop-initialization');
@@ -54,7 +54,7 @@ export function usePropertyInitialization(props: { container: Container }) {
             const allVariablesInstance = allVariablesSignalInstance.get();
             const allVariables = allVariablesSignal.get();
             const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
-            const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', containerProp.formula] as Array<string>;
+            const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', wrapWithLog(containerProp.formula)] as Array<string>;
             const module: { exports: unknown } = {exports: defaultExports};
             try {
                 const fun = new Function(...funcParams);
@@ -124,7 +124,7 @@ export function usePropertyInitialization(props: { container: Container }) {
                 const allVariablesInstance = allVariablesSignalInstance.get();
                 const allVariables = allVariablesSignal.get();
                 const propDependencies = allVariables.map(t => allVariablesInstance.find(v => v.id === t.id)?.instance) as Array<AnySignal<unknown>>;
-                const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', containerProp.formula] as Array<string>;
+                const funcParams = ['module', 'navigate', 'navigatePanel', 'closePanel', 'db', 'app', 'page', 'z', 'alertBox', 'tools', 'utils', 'formContext', wrapWithLog(containerProp.formula)] as Array<string>;
                 const module: { exports: unknown } = {exports: defaultExports};
                 try {
                     if (pageId !== context.activePageIdSignal.get()) {
