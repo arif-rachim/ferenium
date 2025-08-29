@@ -2,6 +2,9 @@
   "name": "ferenium",
   "private": true,
   "scripts": {
+    "dev:app" : "npm run dev --workspace=packages/app",
+    "dev:electron" : "npm run dev --workspace=packages/electron",
+    "dev:all" : "npm run build --workspace=packages/app && npm run dev --workspace=packages/electron",
     "build": "npm run build --workspace=packages/app && npm run build --workspace=packages/electron"
   },
   "workspaces": [
